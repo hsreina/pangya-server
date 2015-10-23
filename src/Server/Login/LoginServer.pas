@@ -2,38 +2,46 @@ unit LoginServer;
 
 interface
 
-uses Server, Client, LoginClient, LoginPlayer, ClientPacket;
+uses Client, LoginPlayer, ClientPacket, SyncClient, Server, SyncableServer;
 
 type
 
   TLoginClient = TClient<TLoginPlayer>;
 
-  TLoginServer = class(TServer<TLoginPlayer>)
+  TLoginServer = class(TSyncableServer<TLoginPlayer>)
     protected
     private
       procedure Init; override;
       procedure OnClientConnect(const client: TLoginClient); override;
       procedure OnClientDisconnect(const client: TLoginClient); override;
       procedure OnReceiveClientData(const client: TLoginClient; const clientPacket: TClientPacket); override;
+      procedure OnReceiveSyncData(const clientPacket: TClientPacket); override;
+      procedure OnStart; override;
 
       function ServersList: AnsiString;
-      procedure LogInPlayer(const client: TLoginClient);
+
+      procedure Sync(const client: TLoginClient; const clientPacket: TClientPacket); overload;
+      procedure PlayerSync(const clientPacket: TClientPacket);
+      procedure ServerPlayerAction(const clientPacket: TClientPacket);
 
       procedure HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
-      procedure HandleServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
-      procedure HandleConfirmNickname(const client: TLoginClient; const clientPacket: TClientPacket);
-      procedure HandleSetNickname(const client: TLoginClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerConfirmNickname(const client: TLoginClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerSetNickname(const client: TLoginClient; const clientPacket: TClientPacket);
       procedure HandleSelectCharacter(const client: TLoginClient; const clientPacket: TClientPacket);
     public
+      procedure Debug;
   end;
 
 implementation
 
-uses Logging, PangyaPacketsDef, ConsolePas, SysUtils;
+uses Logging, PangyaPacketsDef, ConsolePas, SysUtils, defs;
 
 procedure TLoginServer.Init;
 begin
   self.SetPort(10103);
+  self.SetSyncPort(7998);
+  self.setSyncHost('127.0.0.1');
 end;
 
 procedure TLoginServer.OnClientConnect(const client: TLoginClient);
@@ -57,6 +65,12 @@ begin
     player.Free;
     player := nil;
   end;
+end;
+
+procedure TLoginServer.OnStart;
+begin
+  self.Log('TLoginServer.OnStart', TLogType_not);
+  self.StartSyncClient;
 end;
 
 function TLoginServer.ServersList: AnsiString;
@@ -88,6 +102,75 @@ begin
     #$00;
 end;
 
+procedure TLoginServer.PlayerSync(const clientPacket: TClientPacket);
+var
+  playerUID: TPlayerUID;
+  client: TLoginClient;
+  test: AnsiString;
+begin
+  self.Log('TLoginServer.PlayerSync', TLogType_not);
+  playerUID := clientPacket.GetStr;
+
+  console.Log(Format('player UID : %s', [playerUID]));
+
+  client := self.GetClientByUID(playerUID);
+
+  // Then forward the data
+  client.Send(clientPacket.GetRemainingData);
+end;
+
+procedure TLoginServer.ServerPlayerAction(const clientPacket: TClientPacket);
+var
+  playerUID: TPlayerUID;
+  client: TLoginClient;
+  actionId: TSSAPID;
+begin
+  self.Log('TLoginServer.PlayerSync', TLogType_not);
+  playerUID := clientPacket.GetStr;
+
+  console.Log(Format('player UID : %s', [playerUID]));
+
+  client := self.GetClientByUID(playerUID);
+
+  if (not (client = nil) and clientPacket.GetBuffer(actionId, 2)) then
+  begin
+    case actionId of
+      SSAPID_SEND_SERVER_LIST:
+      begin
+        client.Send(ServersList);
+      end;
+      else
+      begin
+        self.Log(Format('Unknow action Id %x', [Word(actionId)]), TLogType_err);
+      end;
+    end;
+  end;
+end;
+
+procedure TLoginServer.OnReceiveSyncData(const clientPacket: TClientPacket);
+var
+  packetId: TSSPID;
+begin
+  self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
+  if (clientPacket.getBuffer(packetID, 2)) then
+  begin
+    case packetId of
+      SSPID_LOGIN_PLAYER_SYNC:
+      begin
+        self.PlayerSync(clientPacket);
+      end;
+      SSPID_LOGIN_PLAYER_ACTION:
+      begin
+        self.ServerPlayerAction(clientPacket);
+      end;
+      else
+      begin
+        self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+      end;
+    end;
+  end;
+end;
+
 procedure TLoginServer.OnReceiveClientData(const client: TLoginClient; const clientPacket: TClientPacket);
 var
   player: TLoginPlayer;
@@ -104,15 +187,15 @@ begin
       end;
       CLPID_PLAYER_SELECT_SERVER:
       begin
-        self.HandleServerSelect(client, clientPacket);
+        self.HandlePlayerServerSelect(client, clientPacket);
       end;
       CLPID_PLAYER_SET_NICKNAME:
       begin
-        self.HandleSetNickname(client, clientPacket);
+        self.HandlePlayerSetNickname(client, clientPacket);
       end;
       CLPID_PLAYER_CONFIRM:
       begin
-        self.HandleConfirmNickname(client, clientPacket);
+        self.HandlePlayerConfirmNickname(client, clientPacket);
       end;
       CLPID_PLAYER_SELECT_CHARCTER:
       begin
@@ -126,43 +209,33 @@ begin
   end;
 end;
 
+procedure TLoginServer.Sync(const client: TLoginClient; const clientPacket: TClientPacket);
+begin
+  self.Log('TLoginServer.Sync', TLogType.TLogType_not);
+  self.Sync(#$01#$00 + writeStr(client.UID) + clientPacket.ToStr);
+end;
+
 procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
 var
   login: AnsiString;
-  password: AnsiString;
 begin
   self.Log('TLoginServer.HandlePlayerLogin', TLogType_not);
-
-  clientPacket.Log;
-
   login := clientPacket.GetStr;
-  password := clientPacket.GetStr;
 
-  self.Log(Format('Login : %s', [login]));
-  self.Log(Format('Password : %s', [password]));
-
-  client.Send(#$0F#$00#$01 + writeStr(login));
-
-  // New player
-  client.Send(#$01#$00#$D8#$FF#$FF#$FF#$FF#$00#$00);
-
-  // Invalid Login/password
-  //client.Send(#$01#$00#$E2#$72#$D2#$4D#$00#$00#$00);
-
-  // Or logIn player
-  //LogInPlayer(client);
+  // use the login as identifier on the server
+  client.UID := login;
+  self.Sync(client, clientPacket);
 end;
 
-procedure TLoginServer.HandleServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
+procedure TLoginServer.HandlePlayerServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
 begin
   self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
   clientPacket.Log;
-  // A code o_O
+  // A code o_O must be send from sync server
   client.Send(#$03#$00#$00#$00#$00#$00 + WriteStr('1f766c8'))
 end;
 
-
-procedure TLoginServer.HandleSetNickname(const client: TLoginClient; const clientPacket: TClientPacket);
+procedure TLoginServer.HandlePlayerSetNickname(const client: TLoginClient; const clientPacket: TClientPacket);
 var
   nickname: AnsiString;
 begin
@@ -176,7 +249,7 @@ begin
 end;
 
 
-procedure TLoginServer.HandleConfirmNickname(const client: TLoginClient; const clientPacket: TClientPacket);
+procedure TLoginServer.HandlePlayerConfirmNickname(const client: TLoginClient; const clientPacket: TClientPacket);
 var
   nickname: AnsiString;
 begin
@@ -208,16 +281,12 @@ begin
   // validate character
   client.Send(#$11#$00#$00);
 
-  LogInPlayer(client);
+  //LogInPlayer(client);
 end;
 
-procedure TLoginServer.LogInPlayer(const client: TLoginClient);
+procedure TLoginServer.Debug;
 begin
-  // Another code
-  client.Send(#$10#$00 + WriteStr('178d22e'));
-
-  // Servers list
-  client.Send(ServersList);
+  self.Sync('cool');
 end;
 
 end.

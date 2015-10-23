@@ -15,6 +15,7 @@ type
       procedure OnClientConnect(const client: TGameClient); override;
       procedure OnClientDisconnect(const client: TGameClient); override;
       procedure OnReceiveClientData(const client: TGameClient; const clientPacket: TClientPacket); override;
+      procedure OnStart; override;
 
       procedure HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
   end;
@@ -55,6 +56,11 @@ begin
     player.Free;
     player := nil;
   end;
+end;
+
+procedure TGameServer.OnStart;
+begin
+  self.Log('TGameServer.OnStart', TLogType_not);
 end;
 
 procedure TGameServer.OnReceiveClientData(const client: TGameClient; const clientPacket: TClientPacket);

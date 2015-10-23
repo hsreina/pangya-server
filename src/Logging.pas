@@ -13,7 +13,7 @@ type
 
   TOnLogEvent = procedure(sender: TObject; msg: string; logType: TLogType) of object;
 
-  TLogging = class
+  TLogging = class abstract
     private
       var m_onLogEvent: TOnLogEvent;
     protected

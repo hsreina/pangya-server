@@ -52,8 +52,8 @@ var
   Console: TConsole;
 
 const
-  C_TAB: char        = #$09;
-  C_NL: ansistring  = #13#10;
+  C_TAB: char       = #$09;
+  C_NL: string      = #13#10;
   C_BLACK           = clBlack;
   C_GREEN           = clGreen;
   C_RED             = clRed;

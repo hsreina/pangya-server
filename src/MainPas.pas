@@ -5,15 +5,18 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, LoginServer, Server, Logging, CryptLib,
-  gameServer;
+  gameServer, SyncUser, SyncServer, Vcl.StdCtrls;
 
 type
   TMain = class(TForm)
+    Button1: TButton;
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     var m_loginServer: TLoginServer;
     var m_gameServer: TGameServer;
+    var m_synServer: TSyncServer;
     var m_cryptLib: TCryptLib;
     procedure OnServerLog(sender: TObject; msg: string; logType: TLogType);
   public
@@ -28,11 +31,17 @@ implementation
 
 uses ConsolePas;
 
+procedure TMain.Button1Click(Sender: TObject);
+begin
+  m_loginServer.Debug;
+end;
+
 procedure TMain.FormDestroy(Sender: TObject);
 begin
   m_loginServer.Free;
   m_cryptLib.Free;
   m_gameServer.Free;
+  m_synServer.Free;
 end;
 
 procedure TMain.FormShow(Sender: TObject);
@@ -44,6 +53,7 @@ begin
 
   m_loginServer := TLoginServer.Create(m_cryptLib);
   m_gameServer := TGameServer.Create(m_cryptLib);
+  m_synServer := TSyncServer.Create(m_cryptLib);
 
   if not m_cryptLib.init then
   begin
@@ -54,8 +64,11 @@ begin
     Console.Log('CryptLib init Ok', C_GREEN);
   end;
 
+  m_synServer.OnLog := self.OnServerLog;
   m_loginServer.OnLog := self.OnServerLog;
   m_gameServer.OnLog := self.OnServerLog;
+
+  m_synServer.Start;
   m_loginServer.Start;
   m_gameServer.Start;
 end;

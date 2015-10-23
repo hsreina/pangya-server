@@ -3,19 +3,25 @@ program PangyaServer;
 uses
   Vcl.Forms,
   MainPas in 'MainPas.pas' {Main},
-  LoginServer in 'LoginServer.pas',
-  Server in 'Server.pas',
   ConsolePas in 'ConsolePas.pas' {Console},
   Logging in 'Logging.pas',
-  Client in 'Client.pas',
   CryptLib in 'CryptLib.pas',
   Buffer in 'Buffer.pas',
-  LoginPlayer in 'LoginPlayer.pas',
-  ServerClient in 'ServerClient.pas',
-  ClientPacket in 'ClientPacket.pas',
   PangyaPacketsDef in 'PangyaPacketsDef.pas',
-  gameServer in 'gameServer.pas',
-  GamePlayer in 'GamePlayer.pas';
+  SyncClient in 'Client\SyncClient.pas',
+  Client in 'Server\Client.pas',
+  ClientPacket in 'Server\ClientPacket.pas',
+  PrivateClient in 'Server\PrivateClient.pas',
+  Server in 'Server\Server.pas',
+  ServerClient in 'Server\ServerClient.pas',
+  SyncableServer in 'Server\SyncableServer.pas',
+  GamePlayer in 'Server\Game\GamePlayer.pas',
+  gameServer in 'Server\Game\gameServer.pas',
+  LoginPlayer in 'Server\Login\LoginPlayer.pas',
+  LoginServer in 'Server\Login\LoginServer.pas',
+  SyncServer in 'Server\Sync\SyncServer.pas',
+  SyncUser in 'Server\Sync\SyncUser.pas',
+  Database in 'Server\Sync\Database.pas';
 
 {$R *.res}
 

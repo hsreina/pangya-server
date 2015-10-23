@@ -3,11 +3,15 @@ unit Server;
 interface
 
 uses ScktComp, Logging, Client, Generics.Collections, ExtCtrls, CryptLib,
-  ServerClient, ClientPacket;
+  ServerClient, ClientPacket, SyncClient, defs;
 
 type
 
-  TServer<ClientType> = class (TLogging)
+  {
+    Base function of the servers like handling clients, receiving and decrypting packet
+    and some other basic function to send back message to the game
+  }
+  TServer<ClientType> = class abstract (TLogging)
     private
 
       var m_clients: TList<TServerClient<ClientType>>;
@@ -33,19 +37,21 @@ type
       procedure OnClientConnect(const client: TClient<ClientType>); virtual; abstract;
       procedure OnClientDisconnect(const client: TClient<ClientType>); virtual; abstract;
       procedure OnReceiveClientData(const client: TClient<ClientType>; const clientPacket: TClientPacket); virtual; abstract;
+      procedure OnStart; virtual; abstract;
+
+      function GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
 
       function Write(const source; const count: UInt32): AnsiString;
       function WriteStr(str: AnsiString): AnsiString;
       function FillStr(data: AnsiString; size: UInt32; withWhat: AnsiChar): AnsiString;
       function Deserialize(value: UInt32): UInt32;
-
     public
       constructor Create(cryptLib: TCryptLib);
       destructor Destroy; override;
       function Start: Boolean;
-  end;
+    end;
 
-implementation
+  implementation
 
 uses Buffer, ConsolePas;
 
@@ -86,6 +92,7 @@ begin
     self.m_server.Active := true;
     m_timer.Enabled := true;
     Result := true;
+    OnStart;
   except
     Result := false;
   end;
@@ -94,6 +101,7 @@ end;
 procedure TServer<ClientType>.ServerAccept(Sender: TObject; Socket: TCustomWinSocket);
 var
   client: TServerClient<ClientType>;
+  index: Integer;
 begin
   Log('TServer.serverAccept', TLogType.TLogType_not);
   if (m_clients.Count < 10) then
@@ -117,6 +125,7 @@ begin
   Log('TServer.serverRead', TLogType.TLogType_not);
   client := GetClientBySocket(Socket);
   size := 0;
+
   if client = nil then
   begin
     Exit;
@@ -124,23 +133,22 @@ begin
   client.ReceiveData(Socket.ReceiveText);
 
   buffin := client.GetBuffin;
+
   if (buffin.GetLength > 2) then
   begin
     move(buffin.GetData[2], size, 2);
+    realPacketSize := size + 4;
   end else
   begin
     Exit;
   end;
 
-  realPacketSize := size + 4;
   while buffin.GetLength >= realPacketSize  do
   begin
     buffer := buffin.Read(0, realPacketSize);
     buffin.Delete(0, realPacketSize);
 
     buffer := m_cryptLib.ClientDecrypt(buffer, client.GetKey);
-
-    Console.WriteDump(buffer);
 
     clientPacket := TClientPacket.Create(buffer);
 
@@ -151,6 +159,7 @@ begin
     if (buffin.GetLength > 2) then
     begin
       move(buffin.GetData[2], size, 2);
+      realPacketSize := size + 4;
     end else
     begin
       Exit;
@@ -193,6 +202,19 @@ begin
   for Client in m_clients do
   begin
     if client.HasSocket(socket) then
+    begin
+      Exit(client);
+    end;
+  end;
+end;
+
+function TServer<ClientType>.GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
+var
+  Client: TServerClient<ClientType>;
+begin
+  for Client in m_clients do
+  begin
+    if client.HasUID(UID) then
     begin
       Exit(client);
     end;

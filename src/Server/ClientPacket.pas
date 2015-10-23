@@ -17,6 +17,7 @@ type
       function GetByte(var dst: byte): boolean;
       function GetWord(var dst: word): boolean;
       function GetCardinal(var dst: cardinal): boolean;
+      function GetInteger(var dst: Integer): boolean;
       function GetBuffer(var dst; const size: integer): boolean;
 
       function GetStr: ansistring; overload;
@@ -123,6 +124,11 @@ end;
 function TClientPacket.GetCardinal(var dst: cardinal): boolean;
 begin
   result := getBuffer(dst, sizeof(cardinal));
+end;
+
+function TClientPacket.GetInteger(var dst: Integer): boolean;
+begin
+  result := getBuffer(dst, sizeof(Integer));
 end;
 
 function TClientPacket.GetBuffer(var dst; const size: integer): boolean;

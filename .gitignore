@@ -1,7 +1,13 @@
 /logs
-/src/Win32
+/docs
 /src/PangyaServer.identcache
 /src/PangyaServer.res
 /src/PangyaServer.stat
 /src/PangyaServer.dproj.local
 /bin/bin
+*.iff
+*.exe
+*.dcu
+__history
+*.tvsconfig
+*.db

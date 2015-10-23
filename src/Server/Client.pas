@@ -3,7 +3,7 @@ unit Client;
 interface
 
 uses
-  ScktComp, Buffer, ClientPacket, CryptLib;
+  ScktComp, Buffer, ClientPacket, CryptLib, defs;
 
 type
   TClient<ClientType> = class
@@ -13,6 +13,7 @@ type
       var m_key: Byte;
       var m_data: ClientType;
       var m_cryptLib: TCryptLib;
+      var m_uid: TPlayerUID;
     public
       constructor Create(Socket: TCustomWinSocket; cryptLib: TCryptLib);
       destructor Destroy; override;
@@ -20,6 +21,8 @@ type
       procedure Send(data: AnsiString); overload;
       procedure Send(data: AnsiString; encrypt: Boolean); overload;
       property Data: ClientType read m_data write m_data;
+      property UID: TPlayerUID read m_uid write m_uid;
+      function HasUID(UID: AnsiString): Boolean;
   end;
 
 implementation
@@ -35,13 +38,20 @@ procedure TClient<ClientType>.Send(data: AnsiString; encrypt: Boolean);
 begin
   if encrypt then
   begin
-    m_buffout.Write(m_cryptLib.ServerEncrypt(data, m_key));
+    if (UID = 'Sync') then
+    begin
+      console.Log('Sync With server ' + UID);
+      m_buffout.Write(m_cryptLib.ClientEncrypt(data, m_key, 0));
+    end else
+    begin
+      console.Log('Sync With game ' + self.UID);
+      m_buffout.Write(m_cryptLib.ServerEncrypt(data, m_key));
+    end;
   end else
   begin
     m_buffout.Write(data);
   end;
 end;
-
 
 constructor TClient<ClientType>.Create(Socket: TCustomWinSocket; cryptLib: TCryptLib);
 begin
@@ -60,6 +70,11 @@ end;
 function TClient<ClientType>.GetKey: Byte;
 begin
   Result := m_key;
+end;
+
+function TClient<ClientType>.HasUID(UID: AnsiString): Boolean;
+begin
+  Exit(m_uid = UID);
 end;
 
 end.

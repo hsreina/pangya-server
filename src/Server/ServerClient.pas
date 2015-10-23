@@ -57,7 +57,7 @@ end;
 
 function TServerClient<ClientType>.HasSocket(Socket: TCustomWinSocket): Boolean;
 begin
-  Result := m_socket = Socket;
+  Exit(m_socket = Socket);
 end;
 
 function TServerClient<ClientType>.GetBuffout: TBuffer;
