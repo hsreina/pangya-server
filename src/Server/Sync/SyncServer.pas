@@ -25,9 +25,13 @@ type
       procedure PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
 
       procedure SyncLoginPlayer(const client: TSyncClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerLogin(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
-      procedure LoginPlayer(const client: TSyncClient; const playerUID: TPlayerUID);
 
+      procedure HandlePlayerSelectCharacter(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
+      procedure HandlePlayerConfirmNickname(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
+      procedure HandlePlayerLogin(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
+      procedure HandlePlayerSetNickname(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
+
+      procedure LoginPlayer(const client: TSyncClient; const playerUID: TPlayerUID);
 
     public
       constructor Create(cryptLib: TCryptLib);
@@ -41,9 +45,7 @@ uses Logging, PangyaPacketsDef, ConsolePas;
 constructor TSyncServer.Create(cryptLib: TCryptLib);
 begin
   inherited;
-
   m_database := TDatabase.Create;
-
 end;
 
 destructor TSyncServer.Destroy;
@@ -85,41 +87,102 @@ begin
   client.Send(#$02#$00 + WriteStr(playerUID) + data);
 end;
 
+procedure TSyncServer.HandlePlayerSelectCharacter(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
+var
+  characterId: UInt32;
+  hairColor: UInt16;
+begin
+  self.Log('TSyncServer.HandlePlayerSelectCharacter', TLogType_not);
+
+  clientPacket.GetCardinal(characterId);
+  clientPacket.GetWord(hairColor);
+
+  self.Log(Format('chracterId : %x', [characterId]));
+  self.Log(Format('hairColor : %x', [hairColor]));
+
+  // validate character
+  self.SendToGame(client, playerUID, #$11#$00#$00);
+
+  self.LoginPlayer(client, playerUID);
+end;
+
+procedure TSyncServer.HandlePlayerConfirmNickname(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
+var
+  nickname: AnsiString;
+begin
+  self.Log('TSyncServer.HandlePlayerConfirmNickname', TLogType_not);
+  nickname := clientPacket.GetStr;
+
+  if m_database.NicknameAvailable(nickname) then
+  begin
+    self.SendToGame(client, playerUID, #$0E#$00#$00#$00#$00#$00 + WriteStr(nickname));
+  end else
+  begin
+    self.SendToGame(client, playerUID, #$0E#$00#$0B#$00#$00#$00#$21#$D2#$4D#$00);
+  end;
+end;
+
 procedure TSyncServer.HandlePlayerLogin(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
 var
   login: AnsiString;
   md5Password: AnsiString;
 begin
-  self.Log('TSyncServer.HandlePlayerLogin', TLogType_not);
+  Console.Log('TSyncServer.HandlePlayerLogin', C_BLUE);
+
   login := clientPacket.GetStr;
-  self.Log(Format('login : %s', [login]));
   md5Password := clientPacket.GetStr;
+
+  self.Log(Format('login : %s', [login]));
   self.Log(Format('password : %s', [md5Password]));
 
 
-  //SendToGame(client, playerUID, #$0F#$00#$01 + writeStr(login));
+  if not m_database.DoLogin(login, md5Password) then
+  begin
+    self.SendToGame(client, playerUID, #$01#$00#$E2#$72#$D2#$4D#$00#$00#$00);
+    Exit;
+  end;
 
-  // New Player
-  //SendToGame(client, playerUID, #$01#$00#$D8#$FF#$FF#$FF#$FF#$00#$00);
+  self.LoginPlayer(client, login);
+end;
 
-  //client.Send(#$0F#$00#$01 + writeStr(login));
+procedure TSyncServer.HandlePlayerSetNickname(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
+var
+  nickname: AnsiString;
+begin
+  Console.Log('TLoginServer.HandleConfirmNickname', C_BLUE);
+  nickname := clientPacket.GetStr;
+  self.Log(Format('nickname : %s', [nickname]));
 
-  // New player
-  //client.Send(#$01#$00#$D8#$FF#$FF#$FF#$FF#$00#$00);
+  m_database.SetNickname(playerUID, nickname);
 
-  // Invalid Login/password
-  //SendToGame(client, playerUID, #$01#$00#$E2#$72#$D2#$4D#$00#$00#$00);
+  self.SendToGame(client, playerUID, #$06#$00 + WriteStr(nickname));
 
-  self.LoginPlayer(client, playerUID);
+  // Character selection menu
+  //self.SendToGame(client, playerUID, #$01#$00#$D9#$00#$00);
+
+  LoginPlayer(client, playerUID);
 end;
 
 procedure TSyncServer.LoginPlayer(const client: TSyncClient; const playerUID: TPlayerUID);
 begin
-  self.Log('TSyncServer.LoginPlayer', TLogType_not);
-  SendToGame(client, playerUID, #$10#$00 + WriteStr('178d22e'));
+  Console.Log('TSyncServer.LoginPlayer', C_BLUE);
 
-  // Sender server list
-  PlayerAction(client, playerUID, #$01#$00);
+  if not m_database.PlayerHaveNicknameSet(playerUID) then
+  begin
+    self.SendToGame(client, playerUID, #$01#$00#$D8#$FF#$FF#$FF#$FF#$00#$00);
+    Exit;
+  end;
+
+  if not m_database.PlayerHaveAnInitialCharacter(playerUID) then
+  begin
+    // Character selection menu
+    self.SendToGame(client, playerUID, #$01#$00#$D9#$00#$00);
+    Exit;
+  end;
+
+  self.SendToGame(client, playerUID, #$10#$00 + WriteStr('178d22e'));
+
+  self.PlayerAction(client, playerUID, #$01#$00);
 end;
 
 procedure TSyncServer.SyncLoginPlayer(const client: TSyncClient; const clientPacket: TClientPacket);
@@ -140,6 +203,18 @@ begin
       begin
         HandlePlayerLogin(client, clientPacket, playerUID);
       end;
+      CLPID_PLAYER_CONFIRM:
+      begin
+        self.HandlePlayerConfirmNickname(client, clientPacket, playerUID);
+      end;
+      CLPID_PLAYER_SELECT_CHARCTER:
+      begin
+        self.HandlePlayerSelectCharacter(client, clientpacket, playerUID);
+      end;
+      CLPID_PLAYER_SET_NICKNAME:
+      begin
+        self.HandlePlayerSetNickname(client, clientpacket, playerUID);
+      end
       else
       begin
         self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);

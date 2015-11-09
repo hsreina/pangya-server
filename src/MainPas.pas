@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, LoginServer, Server, Logging, CryptLib,
-  gameServer, SyncUser, SyncServer, Vcl.StdCtrls;
+  gameServer, SyncUser, SyncServer, Vcl.StdCtrls, ShellApi;
 
 type
   TMain = class(TForm)
@@ -20,6 +20,7 @@ type
     var m_cryptLib: TCryptLib;
     procedure OnServerLog(sender: TObject; msg: string; logType: TLogType);
   public
+    procedure AcceptFiles(var msg: TMessage); message WM_DROPFILES;
   end;
 
 var
@@ -29,7 +30,7 @@ implementation
 
 {$R *.dfm}
 
-uses ConsolePas;
+uses ConsolePas, DataChecker, Buffer, Tools;
 
 procedure TMain.Button1Click(Sender: TObject);
 begin
@@ -44,10 +45,48 @@ begin
   m_synServer.Free;
 end;
 
-procedure TMain.FormShow(Sender: TObject);
+procedure TMain.AcceptFiles(var msg: TMessage);
+const
+  cnMaxFileNameLen = 255;
+var
+  i, nCount: integer;
+  acFileName: array [0 .. cnMaxFileNameLen] of char;
+  outdata: AnsiString;
 begin
+  nCount := DragQueryFile(msg.WParam, $FFFFFFFF, acFileName, cnMaxFileNameLen);
+
+  for i := 0 to nCount - 1 do
+  begin
+    DragQueryFile(msg.WParam, i, acFileName, cnMaxFileNameLen);
+    outdata := GetDataFromFile(acFileName);
+    console.writeDump(outdata);
+    console.log('send to game 0');
+    m_loginServer.SendDebugData(outdata);
+  end;
+
+  DragFinish(msg.WParam);
+end;
+
+procedure TMain.FormShow(Sender: TObject);
+var
+  dataChecker: TDataChecker;
+begin
+
+  DragAcceptFiles(Handle, true);
+
   Console.Show;
   Console.Log('PANGYA SERVER by HSReina', C_GREEN);
+
+  dataChecker := TDataChecker.Create;
+
+  try
+    dataChecker.Validate;
+  except
+    on E : Exception do
+    begin
+      Console.Log(Format('Data validation failed : %s', [E.Message]), C_RED);
+    end;
+  end;
 
   m_cryptLib:= TCryptLib.Create;
 

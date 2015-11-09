@@ -29,6 +29,12 @@ type
       function GetRemainingSize: integer;
       function GetRemainingData: ansistring;
 
+      procedure Write(const source; const count: UInt32); overload;
+      procedure Write(str: AnsiString); overload;
+      procedure Write(data: AnsiString; size: UInt32; withWhat: AnsiChar); overload;
+
+      procedure WriteStr(str: AnsiString);
+
       function ToStr: ansistring;
       procedure Log;
   end;
@@ -36,6 +42,55 @@ type
 implementation
 
 uses ConsolePas;
+
+procedure TClientPacket.Write(const source; const count: Cardinal);
+var
+  tmp: AnsiString;
+begin
+  setlength(tmp, count);
+  move(source, tmp[1], count);
+  m_packetData := m_packetData + tmp;
+  inc(m_index, count);
+  inc(m_size, count);
+end;
+
+procedure TClientPacket.Write(str: AnsiString);
+var
+  size: UInt16;
+  tmp: AnsiString;
+begin
+  size := Length(str);
+  self.Write(str[1], size);
+end;
+
+procedure TClientPacket.WriteStr(str: AnsiString);
+var
+  size: UInt16;
+  tmp: AnsiString;
+begin
+  size := Length(str);
+  self.Write(size, sizeof(size));
+  self.Write(str[1], size);
+end;
+
+procedure TClientPacket.Write(data: AnsiString; size: Cardinal; withWhat: AnsiChar);
+var
+  dataSize: Integer;
+  remainingDataSize: integer;
+  remainningData: AnsiString;
+begin
+  dataSize := Length(data);
+  if dataSize <= size then
+  begin
+    self.Write(data[1], dataSize);
+    remainingDataSize :=  size - dataSize;
+    remainningData := StringOfChar(#$00, remainingDataSize);
+    self.Write(remainningData[1], remainingDataSize);
+  end else
+  begin
+    self.Write(data, size);
+  end;
+end;
 
 constructor TClientPacket.Create;
 begin
@@ -155,7 +210,8 @@ var
   count: word;
 begin
   result := '';
-  if (getWord(count)) then begin
+  if (getWord(count)) then
+  begin
     result := getStr(count);
   end;
 end;

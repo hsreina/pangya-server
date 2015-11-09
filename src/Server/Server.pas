@@ -3,7 +3,7 @@ unit Server;
 interface
 
 uses ScktComp, Logging, Client, Generics.Collections, ExtCtrls, CryptLib,
-  ServerClient, ClientPacket, SyncClient, defs;
+  ServerClient, ClientPacket, SyncClient, defs, PacketData;
 
 type
 
@@ -44,10 +44,14 @@ type
       function Write(const source; const count: UInt32): AnsiString;
       function WriteStr(str: AnsiString): AnsiString;
       function FillStr(data: AnsiString; size: UInt32; withWhat: AnsiChar): AnsiString;
+
       function Deserialize(value: UInt32): UInt32;
     public
       constructor Create(cryptLib: TCryptLib);
       destructor Destroy; override;
+
+      procedure SendDebugData(data: TPacketData);
+
       function Start: Boolean;
     end;
 
@@ -57,6 +61,7 @@ uses Buffer, ConsolePas;
 
 constructor TServer<ClientType>.Create(cryptLib: TCryptLib);
 begin
+  console.Log('TServer<ClientType>.Create');
   m_cryptLib := cryptLib;
   m_timer := TTimer.Create(nil);
   m_timer.OnTimer := OnTimer;
@@ -239,18 +244,25 @@ function TServer<ClientType>.FillStr(data: AnsiString; size: UInt32; withWhat: A
 begin
   while length(data) < size do
   begin
-    data:=data + withWhat;
+    data := data + withWhat;
   end;
   if length(data) > size then
   begin
-    setlength(data,size);
+    setlength(data, size);
   end;
-  result:=data;
+  result := data;
 end;
 
 function TServer<ClientType>.Deserialize(value: UInt32): UInt32;
 begin
   Result := self.m_cryptLib.Deserialize(value);
+end;
+
+procedure TServer<ClientType>.SendDebugData(data: TPacketData);
+begin
+  Console.Log('SendDebugData', C_BLUE);
+  Console.WriteDump(data);
+  m_clients.First.Send(data);
 end;
 
 end.

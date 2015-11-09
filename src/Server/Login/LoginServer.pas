@@ -24,11 +24,8 @@ type
       procedure PlayerSync(const clientPacket: TClientPacket);
       procedure ServerPlayerAction(const clientPacket: TClientPacket);
 
-      procedure HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
       procedure HandlePlayerServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerConfirmNickname(const client: TLoginClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerSetNickname(const client: TLoginClient; const clientPacket: TClientPacket);
-      procedure HandleSelectCharacter(const client: TLoginClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
     public
       procedure Debug;
   end;
@@ -76,12 +73,20 @@ end;
 function TLoginServer.ServersList: AnsiString;
 var
   port: UInt32;
+  packet: TClientPacket;
 begin
   port := 7997;
-  Result :=
+
+  packet := TClientPacket.Create;
+
+  packet.Write(
     #$02#$00 +
-    #$01 +
-    fillStr('server name', 16, #$00) +
+    #$01 // Number of servers
+  );
+
+  packet.Write('server name', 16, #$00);
+
+  packet.Write(
     #$00#$00#$00#$00 +
     #$00#$00#$00#$00 +
     #$00#$00#$00#$00 +
@@ -90,16 +95,29 @@ begin
     #$00#$00#$00#$00 +
     #$7F#$00#$00#$01 + // unique ID?
     #$40#$06#$00#$00 +
-    #$45#$00#$00#$00 +
-    fillStr('127.0.0.1', 15, #$00) +
-    #$00#$00#$00 +
-    Write(port, 2) +
+    #$45#$00#$00#$00
+  );
+
+  packet.Write('127.0.0.1', 15, #$00);
+
+  packet.Write(#$00#$00#$00);
+
+  packet.Write(port, 2);
+
+  packet.Write(
     #$00#$00#$00 +
     #$08#$00#$00 +
     #$08 + // Wings
     #$00#$00#$00#$00#$00#$00#$00#$64#$00#$00#$00 +
     #$03 + // icon
-    #$00;
+    #$00
+  );
+
+  Result := packet.ToStr;
+
+  Console.WriteDump(Result);
+
+  packet.Free;
 end;
 
 procedure TLoginServer.PlayerSync(const clientPacket: TClientPacket);
@@ -191,16 +209,20 @@ begin
       end;
       CLPID_PLAYER_SET_NICKNAME:
       begin
-        self.HandlePlayerSetNickname(client, clientPacket);
+        self.Sync(client, clientPacket);
       end;
       CLPID_PLAYER_CONFIRM:
       begin
-        self.HandlePlayerConfirmNickname(client, clientPacket);
+        self.Sync(client, clientPacket);
       end;
       CLPID_PLAYER_SELECT_CHARCTER:
       begin
-        self.HandleSelectCharacter(client, clientPacket);
+        self.Sync(client, clientPacket);
       end;
+      CLPID_PLAYER_RECONNECT: // ??
+      begin
+        self.Log('CLPID_PLAYER_RECONNECT', TLogType.TLogType_not);
+      end
       else
       begin
         self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
@@ -215,14 +237,12 @@ begin
   self.Sync(#$01#$00 + writeStr(client.UID) + clientPacket.ToStr);
 end;
 
+
 procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
 var
   login: AnsiString;
 begin
-  self.Log('TLoginServer.HandlePlayerLogin', TLogType_not);
   login := clientPacket.GetStr;
-
-  // use the login as identifier on the server
   client.UID := login;
   self.Sync(client, clientPacket);
 end;
@@ -231,57 +251,8 @@ procedure TLoginServer.HandlePlayerServerSelect(const client: TLoginClient; cons
 begin
   self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
   clientPacket.Log;
-  // A code o_O must be send from sync server
+  // this code will be send by the client to the game server
   client.Send(#$03#$00#$00#$00#$00#$00 + WriteStr('1f766c8'))
-end;
-
-procedure TLoginServer.HandlePlayerSetNickname(const client: TLoginClient; const clientPacket: TClientPacket);
-var
-  nickname: AnsiString;
-begin
-  self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
-  nickname := clientPacket.GetStr;
-  self.Log(Format('nickname : %s', [nickname]));
-  client.Send(#$06#$00 + WriteStr(nickname));
-
-  // Character selection ?
-  client.Send(#$01#$00#$D9#$00#$00);
-end;
-
-
-procedure TLoginServer.HandlePlayerConfirmNickname(const client: TLoginClient; const clientPacket: TClientPacket);
-var
-  nickname: AnsiString;
-begin
-  self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
-  nickname := clientPacket.GetStr;
-  self.Log(Format('nickname %s', [nickname]));
-
-  // nickname already in use
-  //client.Send(#$0E#$00#$0B#$00#$00#$00#$21#$D2#$4D#$00);
-
-  // nickname is available
-  client.Send(#$0E#$00#$00#$00#$00#$00 + WriteStr(nickname));
-end;
-
-procedure TLoginServer.HandleSelectCharacter(const client: TLoginClient; const clientPacket: TClientPacket);
-var
-  characterId: UInt32;
-  hairColor: UInt16;
-begin
-  self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
-  clientPacket.Log;
-
-  clientPacket.GetCardinal(characterId);
-  clientPacket.GetWord(hairColor);
-
-  self.Log(Format('chracterId : %x', [characterId]));
-  self.Log(Format('hairColor : %x', [hairColor]));
-
-  // validate character
-  client.Send(#$11#$00#$00);
-
-  //LogInPlayer(client);
 end;
 
 procedure TLoginServer.Debug;

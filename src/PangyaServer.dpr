@@ -11,17 +11,23 @@ uses
   SyncClient in 'Client\SyncClient.pas',
   Client in 'Server\Client.pas',
   ClientPacket in 'Server\ClientPacket.pas',
-  PrivateClient in 'Server\PrivateClient.pas',
   Server in 'Server\Server.pas',
   ServerClient in 'Server\ServerClient.pas',
   SyncableServer in 'Server\SyncableServer.pas',
-  GamePlayer in 'Server\Game\GamePlayer.pas',
-  gameServer in 'Server\Game\gameServer.pas',
   LoginPlayer in 'Server\Login\LoginPlayer.pas',
   LoginServer in 'Server\Login\LoginServer.pas',
   SyncServer in 'Server\Sync\SyncServer.pas',
   SyncUser in 'Server\Sync\SyncUser.pas',
-  Database in 'Server\Sync\Database.pas';
+  Database in 'Server\Sync\Database.pas',
+  PacketData in 'Server\PacketData.pas',
+  GamePlayer in 'Server\Game\GamePlayer.pas',
+  gameServer in 'Server\Game\gameServer.pas',
+  LobbiesList in 'Server\Game\LobbiesList.pas',
+  Lobby in 'Server\Game\Lobby.pas',
+  PlayerCharacter in 'Server\Game\PlayerCharacter.pas',
+  PlayerCharacters in 'Server\Game\PlayerCharacters.pas',
+  PlayerData in 'Server\Game\PlayerData.pas',
+  Tools in 'Tools.pas';
 
 {$R *.res}
 

@@ -11,6 +11,7 @@ type
     CLPID_PLAYER_SET_NICKNAME         = $0006,
     CLPID_PLAYER_CONFIRM              = $0007,
     CLPID_PLAYER_SELECT_CHARCTER      = $0008,
+    CLPID_PLAYER_RECONNECT = $000B,
     CLPID_NOTHING                     = $FFFF
   );
 
@@ -21,7 +22,11 @@ type
 
   // Client game packets (packets sent from the game to the Game Server)
   TCGPID = (
-    CGPID_PLAYER_LOGIN                = $0002
+    CGPID_PLAYER_LOGIN                = $0002,
+    CGPID_PLAYER_JOIN_LOBBY           = $0004,
+    CGPID_PLAYER_BUY_ITEM             = $001D,
+    CGPID_PLAYER_CHANGE_EQUIP         = $0020,
+    CGPID_PLAYER_UN_0140              = $0140
   );
 
   // Sync server packets from any server to Sync server

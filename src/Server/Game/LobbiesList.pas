@@ -1,0 +1,60 @@
+unit LobbiesList;
+
+interface
+
+uses
+  Generics.Collections, Lobby, PacketData;
+
+type
+
+  TLobbyList = TList<TLobby>;
+
+  TLobbiesList = class (TInterfacedObject, IPacketData)
+    protected
+    private
+      var m_lobbies: TLobbyList;
+    public
+
+      function GetLobbyById(lobbyId: Byte): TLobby;
+
+      function Build: TPacketData;
+
+      constructor Create;
+      destructor Destroy; override;
+  end;
+
+implementation
+
+function TLobbiesList.GetLobbyById(lobbyId: Byte): TLobby;
+begin
+  // For now, just return the 1st one
+  Exit(m_lobbies.Items[0]);
+end;
+
+constructor TLobbiesList.Create;
+var
+  lobby: TLobby;
+  index: integer;
+begin
+  m_lobbies := TLobbyList.Create;
+  lobby := TLobby.Create;
+  lobby.Id := m_lobbies.Add(lobby);
+end;
+
+destructor TLobbiesList.Destroy;
+begin
+  m_lobbies.Free;
+end;
+
+function TLobbiesList.Build: TPacketData;
+var
+  lobby: TLobby;
+begin
+  Result := #$4D#$00 + #$01;
+  for lobby in m_lobbies do
+  begin
+    Result := Result + lobby.Build;
+  end;
+end;
+
+end.

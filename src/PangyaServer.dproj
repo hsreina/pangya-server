@@ -86,17 +86,23 @@
         <DCCReference Include="Client\SyncClient.pas"/>
         <DCCReference Include="Server\Client.pas"/>
         <DCCReference Include="Server\ClientPacket.pas"/>
-        <DCCReference Include="Server\PrivateClient.pas"/>
         <DCCReference Include="Server\Server.pas"/>
         <DCCReference Include="Server\ServerClient.pas"/>
         <DCCReference Include="Server\SyncableServer.pas"/>
-        <DCCReference Include="Server\Game\GamePlayer.pas"/>
-        <DCCReference Include="Server\Game\gameServer.pas"/>
         <DCCReference Include="Server\Login\LoginPlayer.pas"/>
         <DCCReference Include="Server\Login\LoginServer.pas"/>
         <DCCReference Include="Server\Sync\SyncServer.pas"/>
         <DCCReference Include="Server\Sync\SyncUser.pas"/>
         <DCCReference Include="Server\Sync\Database.pas"/>
+        <DCCReference Include="Server\PacketData.pas"/>
+        <DCCReference Include="Server\Game\GamePlayer.pas"/>
+        <DCCReference Include="Server\Game\gameServer.pas"/>
+        <DCCReference Include="Server\Game\LobbiesList.pas"/>
+        <DCCReference Include="Server\Game\Lobby.pas"/>
+        <DCCReference Include="Server\Game\PlayerCharacter.pas"/>
+        <DCCReference Include="Server\Game\PlayerCharacters.pas"/>
+        <DCCReference Include="Server\Game\PlayerData.pas"/>
+        <DCCReference Include="Tools.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -126,7 +132,7 @@
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">False</Platform>
             </Platforms>
-            <Deployment Version="1">
+            <Deployment Version="2">
                 <DeployFile LocalName="..\bin\bin\PangyaServer.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>PangyaServer.exe</RemoteName>
@@ -509,14 +515,15 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
-                <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
-                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
             </Deployment>
+            <ModelSupport>False</ModelSupport>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>

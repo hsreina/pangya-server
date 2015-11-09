@@ -35,6 +35,7 @@ begin
   if (Assigned(self.m_onLogEvent)) then
   begin
     self.m_onLogEvent(self, msg, logType);
-  end;end;
+  end;
+end;
 
 end.

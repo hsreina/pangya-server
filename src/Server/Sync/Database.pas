@@ -16,8 +16,16 @@ type
       m_physDriver: TFDPhysSQLiteDriverLink;
       m_query: TFDQuery;
     public
+
       constructor Create;
-      destructor Destroy; virtual;
+      destructor Destroy; override;
+
+      function DoLogin(userName: AnsiString; password: AnsiString): Boolean;
+      function NicknameAvailable(nickname: AnsiString): Boolean;
+      function SetNickname(playerUID: AnsiString; nickname: AnsiString): Boolean;
+      function PlayerHaveNicknameSet(playerUID: AnsiString): Boolean;
+      function PlayerHaveAnInitialCharacter(playerUID: AnsiString): Boolean;
+
       procedure Init;
   end;
 
@@ -35,7 +43,7 @@ begin
   m_physDriver := TFDPhysSQLiteDriverLink.Create(nil);
   m_query := TFDQuery.Create(nil);
 
-  dbPath := ExtractFilePath(ParamStr(0)) + '..\data\users.db';
+  dbPath := ExtractFilePath(ParamStr(0)) + '..\data\players.db';
 
   m_connection.DriverName := 'SQLITE';
   m_connection.Params.Values['Database'] := dbPath;
@@ -60,17 +68,131 @@ begin
   try
     m_connection.Open;
     Console.Log('connection success');
-    // Should create the db if it doesn't not exists
-    if (not FileExists(m_connection.Params.Values['Database'])) then
+
+    m_connection.ExecSQL('CREATE TABLE IF NOT EXISTS "player" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , "login" varchar(16) NOT NULL, "password" varchar(32) NOT NULL, "nickname" varchar(16));');
+    m_connection.ExecSQL('CREATE TABLE IF NOT EXISTS "character" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);');
+    //m_connection.ExecSQL('INSERT INTO "player" ("login","password","nickname") VALUES ("hsreina", "5F4DCC3B5AA765D61D8327DEB882CF99", "hsreina");');
+
+    if PlayerHaveAnInitialCharacter('hsreina') then
     begin
-      m_connection.ExecSQL('CREATE TABLE "User" ("uid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , "login" varchar(16) NOT NULL, "nickname" varchar(16));');
+      Console.Log('Yes', C_GREEN);
+    end else
+    begin
+      Console.Log('No', C_RED);
     end;
+
   except
     on E: EDatabaseError do
     begin
       Console.Log('Exception raised with message' + E.Message, C_RED);
     end;
   end;
+end;
+
+function TDatabase.NicknameAvailable(nickname: AnsiString): Boolean;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT 1 FROM player WHERE nickname = :nickname LIMIT 1';
+    query.ParamByName('nickname').AsAnsiString := nickname;
+    query.Open();
+    Exit(query.RowsAffected = 0);
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+function TDatabase.PlayerHaveAnInitialCharacter(playerUID: AnsiString): Boolean;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT 1 FROM player u INNER JOIN character c ON c.player_id = u.id WHERE u.login = :playerUID LIMIT 1';
+    query.ParamByName('playerUID').AsAnsiString := playerUID;
+    query.Open();
+    Exit(query.RowsAffected = 1);
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+function TDatabase.PlayerHaveNicknameSet(playerUID: AnsiString): Boolean;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT 1 FROM player WHERE login = :playerUID AND (nickname IS NOT NULL AND nickname <> '''') LIMIT 1';
+    query.ParamByName('playerUID').AsAnsiString := playerUID;
+    query.Open();
+    Exit(query.RowsAffected = 1);
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+function TDatabase.SetNickname(playerUID: AnsiString; nickname: AnsiString): Boolean;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'UPDATE player SET nickname = :nickname WHERE login= :playerUID';
+    query.ParamByName('nickname').AsAnsiString := nickname;
+    query.ParamByName('playerUID').AsAnsiString := playerUID;
+    query.ExecSQL();
+    Exit(query.RowsAffected = 1);
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+function TDatabase.DoLogin(userName: AnsiString; password: AnsiString): Boolean;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    // Define the SQL Query
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT 1 FROM player WHERE login = :login AND password = :password LIMIT 1';
+    Console.Log(Format('query : %s', [query.SQL.Text]), C_RED);
+    query.ParamByName('login').AsAnsiString := userName;
+    query.ParamByName('password').AsAnsiString := password;
+    query.Open();
+
+    Exit(query.RowsAffected > 0);
+
+    //outputMemo.Text := '';
+    // Add the field names from the table.
+    //outputMemo.Lines.Add(String.Format('|%8s|%25s|%25s|', [' ID ', ' NAME ',
+      //' DEPARTMENT ']));
+    // Add one line to the memo for each record in the table.
+    while not query.Eof do
+    begin
+      Console.Log(Format('login=>%s', [query.FieldByName('login').AsString]));
+      //outputMemo.Lines.Add(String.Format('|%8d|%-25|%-25s|',
+      //  [query.FieldByName('ID').AsInteger, query.FieldByName('Name').AsString,
+      //  query.FieldByName('Department').AsString]));
+      query.Next;
+    end;
+
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+
 end;
 
 end.

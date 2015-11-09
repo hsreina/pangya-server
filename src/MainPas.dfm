@@ -16,8 +16,8 @@ object Main: TMain
   PixelsPerInch = 96
   TextHeight = 13
   object Button1: TButton
-    Left = 168
-    Top = 88
+    Left = 8
+    Top = 8
     Width = 75
     Height = 25
     Caption = 'Button1'
