@@ -4,6 +4,8 @@ interface
 
 type
 
+
+
   TPacketData = AnsiString;
 
   IPacketData = interface

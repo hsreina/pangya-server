@@ -7,7 +7,8 @@ uses
   FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
   FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, Data.DB,
   FireDAC.Comp.Client, FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteDef,
-  FireDAC.Phys.SQLite, FireDAC.ConsoleUI.Wait, FireDac.Dapt, sysUtils;
+  FireDAC.Phys.SQLite, FireDAC.ConsoleUI.Wait, FireDac.Dapt, sysUtils,
+  PacketData, PlayerCharacters;
 
 type
   TDatabase = class
@@ -25,6 +26,7 @@ type
       function SetNickname(playerUID: AnsiString; nickname: AnsiString): Boolean;
       function PlayerHaveNicknameSet(playerUID: AnsiString): Boolean;
       function PlayerHaveAnInitialCharacter(playerUID: AnsiString): Boolean;
+      procedure SavePlayerCharacters(playerId: integer; data: TPlayerCharacters);
 
       procedure Init;
   end;
@@ -193,6 +195,23 @@ begin
     query.DisposeOf;
   end;
 
+end;
+
+procedure TDatabase.SavePlayerCharacters(playerId: integer; data: TPlayerCharacters);
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'INSERT INTO "character" ("player_id","data") VALUES (:player_id, :data)';
+    query.ParamByName('data').AsBlob := data.ToPacketData;
+    query.ParamByName('player_id').AsInteger := playerId;
+    query.ExecSQL;
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
 end;
 
 end.

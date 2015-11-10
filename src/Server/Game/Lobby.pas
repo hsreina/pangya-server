@@ -6,17 +6,29 @@ uses PacketData;
 
 type
 
-  TLobby = class (TInterfacedObject, IPacketData)
+  TLobby = class
     private
       var FId: Integer;
     public
       function Build: TPacketData;
       property Id: Integer read FId write FId;
+      constructor Create;
+      destructor Destroy; override;
   end;
 
 implementation
 
-uses ClientPacket;
+uses ClientPacket, ConsolePas;
+
+constructor TLobby.Create;
+begin
+
+end;
+
+destructor TLobby.Destroy;
+begin
+
+end;
 
 function TLobby.Build: TPacketData;
 var

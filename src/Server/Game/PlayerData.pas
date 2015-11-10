@@ -10,7 +10,7 @@ type
     var un0001: array [0..$17F] of AnsiChar;
     var pangs: Uint64;
     var un0002: array [0..$2BAB] of AnsiChar;
-    var equipedCharacter: TPlayerCharacter;
+    var equipedCharacter: TPlayerCharacterData;
     var un0000: array [0..$1B3] of AnsiChar;
 
     function ToPacketData: TPacketData;

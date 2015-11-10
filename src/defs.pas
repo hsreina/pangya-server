@@ -3,7 +3,10 @@ unit defs;
 interface
 
 type
-  TPlayerUID = AnsiString;
+  TPlayerUID = record
+    var id: integer;
+    var login: AnsiString;
+  end;
 
 implementation
 

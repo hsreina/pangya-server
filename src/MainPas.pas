@@ -9,7 +9,6 @@ uses
 
 type
   TMain = class(TForm)
-    Button1: TButton;
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -40,9 +39,9 @@ end;
 procedure TMain.FormDestroy(Sender: TObject);
 begin
   m_loginServer.Free;
-  m_cryptLib.Free;
   m_gameServer.Free;
   m_synServer.Free;
+  m_cryptLib.Free;
 end;
 
 procedure TMain.AcceptFiles(var msg: TMessage);

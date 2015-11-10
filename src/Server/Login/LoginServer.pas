@@ -18,11 +18,11 @@ type
       procedure OnReceiveSyncData(const clientPacket: TClientPacket); override;
       procedure OnStart; override;
 
-      function ServersList: AnsiString;
-
       procedure Sync(const client: TLoginClient; const clientPacket: TClientPacket); overload;
       procedure PlayerSync(const clientPacket: TClientPacket);
       procedure ServerPlayerAction(const clientPacket: TClientPacket);
+
+      function ServersList: AnsiString;
 
       procedure HandlePlayerServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
@@ -127,9 +127,11 @@ var
   test: AnsiString;
 begin
   self.Log('TLoginServer.PlayerSync', TLogType_not);
-  playerUID := clientPacket.GetStr;
 
-  console.Log(Format('player UID : %s', [playerUID]));
+  clientPacket.GetInteger(playerUID.id);
+  playerUID.login := clientPacket.GetStr;
+
+  console.Log(Format('player UID : %s', [playerUID.login]));
 
   client := self.GetClientByUID(playerUID);
 
@@ -144,9 +146,11 @@ var
   actionId: TSSAPID;
 begin
   self.Log('TLoginServer.PlayerSync', TLogType_not);
-  playerUID := clientPacket.GetStr;
 
-  console.Log(Format('player UID : %s', [playerUID]));
+  clientPacket.GetInteger(playerUID.id);
+  playerUID.login := clientPacket.GetStr;
+
+  console.Log(Format('player UID : %s', [playerUID.login]));
 
   client := self.GetClientByUID(playerUID);
 
@@ -173,11 +177,11 @@ begin
   if (clientPacket.getBuffer(packetID, 2)) then
   begin
     case packetId of
-      SSPID_LOGIN_PLAYER_SYNC:
+      SSPID_PLAYER_SYNC:
       begin
         self.PlayerSync(clientPacket);
       end;
-      SSPID_LOGIN_PLAYER_ACTION:
+      SSPID_PLAYER_ACTION:
       begin
         self.ServerPlayerAction(clientPacket);
       end;
@@ -234,16 +238,16 @@ end;
 procedure TLoginServer.Sync(const client: TLoginClient; const clientPacket: TClientPacket);
 begin
   self.Log('TLoginServer.Sync', TLogType.TLogType_not);
-  self.Sync(#$01#$00 + writeStr(client.UID) + clientPacket.ToStr);
+  self.Sync(#$01 + #$01#$00 + write(client.UID.id, 4) + writeStr(client.UID.login) + clientPacket.ToStr);
 end;
-
 
 procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
 var
   login: AnsiString;
 begin
   login := clientPacket.GetStr;
-  client.UID := login;
+  client.UID.login := login;
+  client.UID.id := 0;
   self.Sync(client, clientPacket);
 end;
 

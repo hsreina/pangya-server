@@ -14,7 +14,7 @@ uses
 
 procedure TDataChecker.Validate;
 const
-  playerCharacterSize = SizeOf(TPlayerCharacter);
+  playerCharacterSize = SizeOf(TPlayerCharacterData);
   playerDataSize = SizeOf(TPlayerData);
 begin
   if not (playerCharacterSize = $201) then

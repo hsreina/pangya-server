@@ -9,7 +9,7 @@ type
 
   TLobbyList = TList<TLobby>;
 
-  TLobbiesList = class (TInterfacedObject, IPacketData)
+  TLobbiesList = class
     protected
     private
       var m_lobbies: TLobbyList;
@@ -42,7 +42,13 @@ begin
 end;
 
 destructor TLobbiesList.Destroy;
+var
+  lobby: TLobby;
 begin
+  for lobby in m_lobbies do
+  begin
+    lobby.Free;
+  end;
   m_lobbies.Free;
 end;
 

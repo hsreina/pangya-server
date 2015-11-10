@@ -2,20 +2,25 @@ unit GameServer;
 
 interface
 
-uses Client, GamePlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib;
+uses Client, GamePlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib, SyncableServer;
 
 type
 
   TGameClient = TClient<TGamePlayer>;
 
-  TGameServer = class (TServer<TGamePlayer>)
+  TGameServer = class (TSyncableServer<TGamePlayer>)
     protected
     private
       procedure Init; override;
       procedure OnClientConnect(const client: TGameClient); override;
       procedure OnClientDisconnect(const client: TGameClient); override;
       procedure OnReceiveClientData(const client: TGameClient; const clientPacket: TClientPacket); override;
+      procedure OnReceiveSyncData(const clientPacket: TClientPacket); override;
       procedure OnStart; override;
+
+      procedure Sync(const client: TGameClient; const clientPacket: TClientPacket); overload;
+      procedure PlayerSync(const clientPacket: TClientPacket);
+      procedure ServerPlayerAction(const clientPacket: TClientPacket);
 
       var m_lobbies: TLobbiesList;
 
@@ -27,6 +32,7 @@ type
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
 
+
     public
       constructor Create(cryptLib: TCryptLib);
       destructor Destroy; override;
@@ -34,7 +40,7 @@ type
 
 implementation
 
-uses Logging, PangyaPacketsDef, ConsolePas, Buffer, utils, PacketData;
+uses Logging, PangyaPacketsDef, ConsolePas, Buffer, utils, PacketData, defs;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -57,6 +63,8 @@ end;
 procedure TGameServer.Init;
 begin
   self.SetPort(7997);
+  self.SetSyncPort(7998);
+  self.setSyncHost('127.0.0.1');
 end;
 
 procedure TGameServer.OnClientConnect(const client: TGameClient);
@@ -91,52 +99,24 @@ end;
 procedure TGameServer.OnStart;
 begin
   self.Log('TGameServer.OnStart', TLogType_not);
+  self.StartSyncClient;
+end;
+
+procedure TGameServer.Sync(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  self.Log('TGameServer.Sync', TLogType.TLogType_not);
+  self.Sync(#$02 + #$01#$00 + write(client.UID.id, 4) + writeStr(client.UID.login) + clientPacket.ToStr);
 end;
 
 procedure TGameServer.HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
 var
   login: AnsiString;
-  UID: UInt32;
-  checkA: AnsiString;
-  checkB: AnsiString;
-  checkC: UInt32;
-  clientVersion: AnsiString;
-  I: integer;
-  d: ansiString;
 begin
   self.Log('TGameServer.HandlePlayerLogin', TLogType_not);
-
   login := clientPacket.GetStr;
-  clientPacket.GetCardinal(UID);
-  clientPacket.Skip(6);
-  checkA := clientPacket.GetStr;
-  clientVersion := clientPacket.GetStr;
-
-  ClientPacket.getCardinal(checkc);
-  checkc := self.Deserialize(checkc);
-  self.Log(Format('check c dec : %x, %d', [checkc, checkc]));
-
-  ClientPacket.seek(4, 1);
-
-  checkb := ClientPacket.getStr();
-  self.Log(Format('Check b  : %s', [checkb]));
-
-  client.Data.data.Load(GetDataFromFile('../data/debug/sp21.dat'));
-
-  // tmp pang cheat
-  client.Data.data.pangs := 99999999;
-
-  // main save data
-  client.Send(client.Data.data.ToPacketData);
-
-  // characters
-  client.Send(GetDataFromFile('../data/debug/sp22.dat'));
-
-  // tmp cookies cheat
-  client.Data.Cookies := 99999999;
-  client.Send(#$96#$00 + self.Write(client.Data.Cookies, 8));
-
-  client.Send(LobbiesList);
+  client.UID.login := login;
+  client.UID.id := 0;
+  self.Sync(client, clientPacket);
 end;
 
 procedure TGameServer.HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
@@ -292,6 +272,79 @@ begin
       begin
         self.HandlePlayerUnknow0140(client, clientPacket);
       end
+      else
+      begin
+        self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+      end;
+    end;
+  end;
+end;
+
+// TODO: move that to parent class
+procedure TGameServer.PlayerSync(const clientPacket: TClientPacket);
+var
+  playerUID: TPlayerUID;
+  client: TGameClient;
+  test: AnsiString;
+begin
+  self.Log('TGameServer.PlayerSync', TLogType_not);
+
+  clientPacket.GetInteger(playerUID.id);
+  playerUID.login := clientPacket.GetStr;
+
+  console.Log(Format('player UID : %s', [playerUID.login]));
+
+  client := self.GetClientByUID(playerUID);
+
+  // Then forward the data
+  client.Send(clientPacket.GetRemainingData);
+end;
+
+// TODO: create a virtual method from that in the parent class
+procedure TGameServer.ServerPlayerAction(const clientPacket: TClientPacket);
+var
+  playerUID: TPlayerUID;
+  client: TGameClient;
+  actionId: TSSAPID;
+begin
+  self.Log('TGameServer.PlayerSync', TLogType_not);
+  clientPacket.GetInteger(playerUID.id);
+  playerUID.login := clientPacket.GetStr;
+  console.Log(Format('player UID : %s', [playerUID.login]));
+  client := self.GetClientByUID(playerUID);
+
+  if (not (client = nil) and clientPacket.GetBuffer(actionId, 2)) then
+  begin
+    case actionId of
+      SSAPID_SEND_LOBBIES_LIST:
+      begin
+        client.Send(LobbiesList);
+      end;
+      else
+      begin
+        self.Log(Format('Unknow action Id %x', [Word(actionId)]), TLogType_err);
+      end;
+    end;
+  end;
+
+end;
+
+procedure TGameServer.OnReceiveSyncData(const clientPacket: TClientPacket);
+var
+  packetId: TSSPID;
+begin
+  self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
+  if (clientPacket.getBuffer(packetID, 2)) then
+  begin
+    case packetId of
+      SSPID_PLAYER_SYNC:
+      begin
+        self.PlayerSync(clientPacket);
+      end;
+      SSPID_PLAYER_ACTION:
+      begin
+        self.ServerPlayerAction(clientPacket);
+      end;
       else
       begin
         self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);

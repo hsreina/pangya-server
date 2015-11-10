@@ -23,7 +23,7 @@ type
 
     public
       constructor Create(cryptLib: TCryptLib);
-      destructor Destroy;
+      destructor Destroy; override;
   end;
 
 implementation

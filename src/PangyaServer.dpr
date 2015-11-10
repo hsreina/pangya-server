@@ -27,7 +27,7 @@ uses
   PlayerCharacter in 'Server\Game\PlayerCharacter.pas',
   PlayerCharacters in 'Server\Game\PlayerCharacters.pas',
   PlayerData in 'Server\Game\PlayerData.pas',
-  Tools in 'Tools.pas';
+  utils in 'utils.pas';
 
 {$R *.res}
 

@@ -31,15 +31,16 @@ type
 
   // Sync server packets from any server to Sync server
   TSSPID = (
-    SSPID_LOGIN_PLAYER_SYNC           = $0001, // send player Sync packet
-    SSPID_LOGIN_PLAYER_ACTION         = $0002, // do an action related to the player
+    SSPID_PLAYER_SYNC                 = $0001, // send player Sync packet
+    SSPID_PLAYER_ACTION               = $0002, // do an action related to the player
     SSPID_NOTHING                     = $FFFF
   );
 
 
   // Action packet with players
   TSSAPID = (
-    SSAPID_SEND_SERVER_LIST           = $0001, // Send the list of gamae server
+    SSAPID_SEND_SERVER_LIST           = $0001, // Send the list of game server
+    SSAPID_SEND_LOBBIES_LIST          = $0002, // Send the list of lobbies
     SSAPID_NOTHING                    = $FFFF
   );
 

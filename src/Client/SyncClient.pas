@@ -85,7 +85,7 @@ destructor TSyncClient.Destroy;
 begin
   m_timer.Free;
   m_buffin.Free;
-  m_buffin.Free;
+  m_buffout.Free;
   m_clientSocket.Free;
 end;
 
@@ -169,8 +169,6 @@ begin
   begin
     Exit;
   end;
-
-  Console.WriteDump(m_buffin.GetData);
 
   realPacketSize := size + 4;
   while m_buffin.GetLength >= realPacketSize  do
