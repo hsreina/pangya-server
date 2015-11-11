@@ -21,7 +21,7 @@ type
       procedure Send(data: AnsiString; encrypt: Boolean); overload;
       property Data: ClientType read m_data write m_data;
       var UID: TPlayerUID;
-      function HasUID(UID: TPlayerUID): Boolean;
+      function HasUID(playerUID: TPlayerUID): Boolean;
   end;
 
 implementation
@@ -71,9 +71,14 @@ begin
   Result := m_key;
 end;
 
-function TClient<ClientType>.HasUID(UID: TPlayerUID): Boolean;
+function TClient<ClientType>.HasUID(playerUID: TPlayerUID): Boolean;
 begin
-  Exit(UID.login = UID.login);
+  if (UID.id = 0) then
+  begin
+    Exit(playerUID.login = UID.login);
+  end;
+
+  Exit(playerUID.id = UID.id);
 end;
 
 end.

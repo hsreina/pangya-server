@@ -119,7 +119,7 @@ begin
     Exit;
   end;
 
-  m_database.SavePlayerCharacters(1, playerCharacters);
+  m_database.SavePlayerCharacters(playerUID.id, playerCharacters);
 
   playerCharacters.Free;
 
@@ -149,6 +149,7 @@ procedure TSyncServer.HandleLoginPlayerLogin(const client: TSyncClient; const cl
 var
   login: AnsiString;
   md5Password: AnsiString;
+  userId: integer;
 begin
   Console.Log('TSyncServer.HandleLoginPlayerLogin', C_BLUE);
 
@@ -158,12 +159,15 @@ begin
   self.Log(Format('login : %s', [login]));
   self.Log(Format('password : %s', [md5Password]));
 
-  if not m_database.DoLogin(login, md5Password) then
+  userId := m_database.DoLogin(login, md5Password);
+
+  if 0 = userId then
   begin
     self.SendToGame(client, playerUID, #$01#$00#$E2#$72#$D2#$4D#$00#$00#$00);
     Exit;
   end;
 
+  playerUID.SetId(userId);
   self.LoginPlayer(client, playerUID);
 end;
 
@@ -177,10 +181,20 @@ var
   clientVersion: AnsiString;
   I: integer;
   d: ansiString;
+  playerId: integer;
 begin
   Console.Log('TSyncServer.HandleGamePlayerLogin', C_BLUE);
 
   login := clientPacket.GetStr;
+
+  playerId := m_database.GetPlayerId(login);
+  playerUID.SetId(playerId);
+
+  if 0 = playerId then
+  begin
+    Console.Log('Should do something here', C_RED);
+    Exit;
+  end;
 
   clientPacket.GetCardinal(UID);
   clientPacket.Skip(6);
@@ -199,8 +213,12 @@ begin
   // main save
   self.SendToGame(client, playerUID, GetDataFromFile('../data/debug/sp21.dat'));
 
+  d := #$70#$00 + m_database.GetPlayerCharacter(playerUID.id);
+
+  WriteDataToFile('debug.dat', d);
+
   // characters
-  self.SendToGame(client, playerUID, GetDataFromFile('../data/debug/sp22.dat'));
+  self.SendToGame(client, playerUID, d);
 
   // Send Lobbies list
   self.PlayerAction(client, playerUID, #$02#$00);

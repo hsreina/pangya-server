@@ -29,7 +29,7 @@ implementation
 
 {$R *.dfm}
 
-uses ConsolePas, DataChecker, Buffer, Tools;
+uses ConsolePas, DataChecker, Buffer, utils;
 
 procedure TMain.Button1Click(Sender: TObject);
 begin

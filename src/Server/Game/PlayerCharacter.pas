@@ -46,8 +46,8 @@ end;
 
 function TPlayerCharacter.ToPacketData: TPacketData;
 begin
-  setLength(result, sizeof(TPlayerCharacter));
-  move(m_data.IffId, result[1], sizeof(TPlayerCharacter));
+  setLength(result, sizeof(TPlayerCharacterData));
+  move(m_data.IffId, result[1], sizeof(TPlayerCharacterData));
 end;
 
 function TPlayerCharacter.Load(packetData: AnsiString): Boolean;
@@ -59,7 +59,7 @@ begin
     Exit(False);
   end;
 
-  move(packetData[1], m_data.IffId, SizeOf(TPlayerCharacter));
+  move(packetData[1], m_data.IffId, sizeOfCharacter);
 
   Exit(True);
 end;

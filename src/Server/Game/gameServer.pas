@@ -19,8 +19,8 @@ type
       procedure OnStart; override;
 
       procedure Sync(const client: TGameClient; const clientPacket: TClientPacket); overload;
-      procedure PlayerSync(const clientPacket: TClientPacket);
-      procedure ServerPlayerAction(const clientPacket: TClientPacket);
+      procedure PlayerSync(const clientPacket: TClientPacket; const client: TGameClient);
+      procedure ServerPlayerAction(const clientPacket: TClientPacket; const client: TGameClient);
 
       var m_lobbies: TLobbiesList;
 
@@ -281,39 +281,20 @@ begin
 end;
 
 // TODO: move that to parent class
-procedure TGameServer.PlayerSync(const clientPacket: TClientPacket);
-var
-  playerUID: TPlayerUID;
-  client: TGameClient;
-  test: AnsiString;
+procedure TGameServer.PlayerSync(const clientPacket: TClientPacket; const client: TGameClient);
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
-
-  clientPacket.GetInteger(playerUID.id);
-  playerUID.login := clientPacket.GetStr;
-
-  console.Log(Format('player UID : %s', [playerUID.login]));
-
-  client := self.GetClientByUID(playerUID);
-
   // Then forward the data
   client.Send(clientPacket.GetRemainingData);
 end;
 
 // TODO: create a virtual method from that in the parent class
-procedure TGameServer.ServerPlayerAction(const clientPacket: TClientPacket);
+procedure TGameServer.ServerPlayerAction(const clientPacket: TClientPacket; const client: TGameClient);
 var
-  playerUID: TPlayerUID;
-  client: TGameClient;
   actionId: TSSAPID;
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
-  clientPacket.GetInteger(playerUID.id);
-  playerUID.login := clientPacket.GetStr;
-  console.Log(Format('player UID : %s', [playerUID.login]));
-  client := self.GetClientByUID(playerUID);
-
-  if (not (client = nil) and clientPacket.GetBuffer(actionId, 2)) then
+  if clientPacket.GetBuffer(actionId, 2) then
   begin
     case actionId of
       SSAPID_SEND_LOBBIES_LIST:
@@ -332,18 +313,37 @@ end;
 procedure TGameServer.OnReceiveSyncData(const clientPacket: TClientPacket);
 var
   packetId: TSSPID;
+  playerUID: TPlayerUID;
+  client: TGameClient;
 begin
   self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
   if (clientPacket.getBuffer(packetID, 2)) then
   begin
+
+    clientPacket.GetInteger(playerUID.id);
+    playerUID.login := clientPacket.GetStr;
+
+    client := self.GetClientByUID(playerUID);
+    if client = nil then
+    begin
+      Console.Log('something went wrong client not found', C_RED);
+      Exit;
+    end;
+
+    if client.UID.id = 0 then
+    begin
+      client.UID.id := playerUID.id;
+    end;
+    console.Log(Format('player UID : %s/%d', [playerUID.login, playerUID.id]));
+
     case packetId of
       SSPID_PLAYER_SYNC:
       begin
-        self.PlayerSync(clientPacket);
+        self.PlayerSync(clientPacket, client);
       end;
       SSPID_PLAYER_ACTION:
       begin
-        self.ServerPlayerAction(clientPacket);
+        self.ServerPlayerAction(clientPacket, client);
       end;
       else
       begin

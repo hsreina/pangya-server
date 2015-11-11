@@ -8,7 +8,7 @@ uses
   FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, Data.DB,
   FireDAC.Comp.Client, FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteDef,
   FireDAC.Phys.SQLite, FireDAC.ConsoleUI.Wait, FireDac.Dapt, sysUtils,
-  PacketData, PlayerCharacters;
+  PacketData, PlayerCharacters, Classes;
 
 type
   TDatabase = class
@@ -21,12 +21,15 @@ type
       constructor Create;
       destructor Destroy; override;
 
-      function DoLogin(userName: AnsiString; password: AnsiString): Boolean;
+      function DoLogin(userName: AnsiString; password: AnsiString): Integer;
+      function GetPlayerId(userName: AnsiString): Integer;
       function NicknameAvailable(nickname: AnsiString): Boolean;
       function SetNickname(playerUID: AnsiString; nickname: AnsiString): Boolean;
       function PlayerHaveNicknameSet(playerUID: AnsiString): Boolean;
       function PlayerHaveAnInitialCharacter(playerUID: AnsiString): Boolean;
-      procedure SavePlayerCharacters(playerId: integer; data: TPlayerCharacters);
+
+      procedure SavePlayerCharacters(playerId: integer; playerCharacters: TPlayerCharacters);
+      function GetPlayerCharacter(playerId: integer): AnsiString;
 
       procedure Init;
   end;
@@ -66,6 +69,8 @@ begin
 end;
 
 procedure TDatabase.Init;
+var
+  test: integer;
 begin
   try
     m_connection.Open;
@@ -74,15 +79,7 @@ begin
     m_connection.ExecSQL('CREATE TABLE IF NOT EXISTS "player" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , "login" varchar(16) NOT NULL, "password" varchar(32) NOT NULL, "nickname" varchar(16));');
     m_connection.ExecSQL('CREATE TABLE IF NOT EXISTS "character" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);');
     //m_connection.ExecSQL('INSERT INTO "player" ("login","password","nickname") VALUES ("hsreina", "5F4DCC3B5AA765D61D8327DEB882CF99", "hsreina");');
-
-    if PlayerHaveAnInitialCharacter('hsreina') then
-    begin
-      Console.Log('Yes', C_GREEN);
-    end else
-    begin
-      Console.Log('No', C_RED);
-    end;
-
+    
   except
     on E: EDatabaseError do
     begin
@@ -160,44 +157,57 @@ begin
   end;
 end;
 
-function TDatabase.DoLogin(userName: AnsiString; password: AnsiString): Boolean;
+function TDatabase.GetPlayerId(userName: AnsiString): Integer;
 var
   query: TFDQuery;
 begin
+  Result := 0;
   query := TFDQuery.Create(nil);
   try
-    // Define the SQL Query
     query.Connection := m_connection;
-    query.SQL.Text := 'SELECT 1 FROM player WHERE login = :login AND password = :password LIMIT 1';
+    query.SQL.Text := 'SELECT id FROM player WHERE login = :login';
     Console.Log(Format('query : %s', [query.SQL.Text]), C_RED);
     query.ParamByName('login').AsAnsiString := userName;
-    query.ParamByName('password').AsAnsiString := password;
     query.Open();
 
-    Exit(query.RowsAffected > 0);
-
-    //outputMemo.Text := '';
-    // Add the field names from the table.
-    //outputMemo.Lines.Add(String.Format('|%8s|%25s|%25s|', [' ID ', ' NAME ',
-      //' DEPARTMENT ']));
-    // Add one line to the memo for each record in the table.
-    while not query.Eof do
+    if query.RowsAffected = 1 then
     begin
-      Console.Log(Format('login=>%s', [query.FieldByName('login').AsString]));
-      //outputMemo.Lines.Add(String.Format('|%8d|%-25|%-25s|',
-      //  [query.FieldByName('ID').AsInteger, query.FieldByName('Name').AsString,
-      //  query.FieldByName('Department').AsString]));
-      query.Next;
+      Result := query.FieldByName('id').AsInteger;
     end;
 
   finally
     query.Close;
     query.DisposeOf;
   end;
-
 end;
 
-procedure TDatabase.SavePlayerCharacters(playerId: integer; data: TPlayerCharacters);
+
+function TDatabase.DoLogin(userName: AnsiString; password: AnsiString): integer;
+var
+  query: TFDQuery;
+begin
+  Result := 0;
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT id FROM player WHERE login = :login AND password = :password LIMIT 1';
+    Console.Log(Format('query : %s', [query.SQL.Text]), C_RED);
+    query.ParamByName('login').AsAnsiString := userName;
+    query.ParamByName('password').AsAnsiString := password;
+    query.Open();
+
+    if query.RowsAffected = 1 then
+    begin
+      Result := query.FieldByName('id').AsInteger;
+    end;
+
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+procedure TDatabase.SavePlayerCharacters(playerId: integer; playerCharacters: TPlayerCharacters);
 var
   query: TFDQuery;
 begin
@@ -205,9 +215,31 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'INSERT INTO "character" ("player_id","data") VALUES (:player_id, :data)';
-    query.ParamByName('data').AsBlob := data.ToPacketData;
+    query.ParamByName('data').AsBlob := playerCharacters.ToPacketData;
     query.ParamByName('player_id').AsInteger := playerId;
     query.ExecSQL;
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+function Tdatabase.GetPlayerCharacter(playerId: integer): AnsiString;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT "data" FROM "character" WHERE "player_id" = :player_id LIMIT 1;';
+    query.ParamByName('player_id').AsInteger := playerId;
+    query.Open();
+
+    if query.RowsAffected = 1 then
+    begin
+      Result := query.FieldByName('data').AsString;
+    end;
+
   finally
     query.Close;
     query.DisposeOf;

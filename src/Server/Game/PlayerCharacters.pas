@@ -15,10 +15,14 @@ type
       function Add: TPlayerCharacter;
       procedure Remove(character: TPlayerCharacter);
 
+      procedure Load(packetData: TPacketData);
+
       function ToPacketData: TPacketData;
   end;
 
 implementation
+
+uses ConsolePas, SysUtils;
 
 constructor TPlayerCharacters.Create;
 begin
@@ -61,6 +65,7 @@ begin
   charactersCount := m_characters.Count;
 
   data.Write(charactersCount, 2);
+  data.Write(charactersCount, 2);
 
   for playerCharacter in m_characters do
   begin
@@ -70,6 +75,31 @@ begin
   Result := data.ToStr;
 
   data.Free;
+end;
+
+procedure TPlayerCharacters.Load(packetData: TPacketData);
+var
+  clientPacket: TClientPacket;
+  playerCharacter: TPlayerCharacter;
+  count1, count2: word;
+  i: integer;
+  tmp: AnsiString;
+begin
+  clientPacket := TClientPacket.Create(packetData);
+
+  clientPacket.GetWord(count1);
+  clientPacket.GetWord(count2);
+
+  setlength(tmp, sizeof(TPlayerCharacterData));
+
+  for I := 1 to count1 do
+  begin
+    if clientPacket.GetBuffer(tmp[1], sizeof(TPlayerCharacterData)) then
+    begin
+      playerCharacter := self.Add;
+      playerCharacter.Load(tmp);
+    end;
+  end;
 end;
 
 end.
