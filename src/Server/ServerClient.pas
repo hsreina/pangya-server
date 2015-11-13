@@ -13,7 +13,6 @@ type
       destructor Destroy; override;
       function GetBuffin: TBuffer;
       function HasSocket(Socket: TCustomWinSocket): Boolean;
-      function GetBuffout: TBuffer;
       procedure ReceiveData(data: AnsiString);
       procedure HandleSend;
   end;
@@ -45,24 +44,16 @@ begin
 end;
 
 procedure TServerClient<ClientType>.handleSend;
-var
-  y: integer;
 begin
-  if (m_buffout.GetLength > 0) then
+  if (m_buffout.GetSize > 0) then
   begin
-    y := m_socket.SendText(m_buffout.GetData);
-    m_buffout.Delete(0, y);
+    m_socket.SendStream(m_buffout.ToStream);
   end;
 end;
 
 function TServerClient<ClientType>.HasSocket(Socket: TCustomWinSocket): Boolean;
 begin
   Exit(m_socket = Socket);
-end;
-
-function TServerClient<ClientType>.GetBuffout: TBuffer;
-begin
-  Result := m_buffout;
 end;
 
 end.

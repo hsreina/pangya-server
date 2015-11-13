@@ -3,16 +3,21 @@ unit PangyaBuffer;
 interface
 
 uses
-  Classes;
+  Classes, System.SyncObjs, SysUtils;
 
 type
   TPangyaBuffer = class
     private
       var m_data: TMemoryStream;
+      var m_bufferLock: TCriticalSection;
+      procedure Init;
     public
       constructor Create; overload;
       constructor Create(const src: AnsiString); overload;
       destructor Destroy; override;
+
+      procedure Lock;
+      procedure Unlock;
 
       function WriteUInt8(const src: UInt8): Boolean;
       function ReadUInt8(var dst: UInt8): Boolean;
@@ -40,24 +45,47 @@ type
       procedure Skip(count: integer);
       procedure Seek(offset, origin: integer);
       function GetSize: UInt32;
-      function GetStream: TStream;
+      procedure Delete(offset: UInt32; length: UInt32);
+      function ToStream: TStream;
+
+      procedure Clear;
   end;
 
 implementation
 
+uses ConsolePas;
+
 constructor TPangyaBuffer.Create;
 begin
-  m_data := TMemoryStream.Create;
+  Init;
 end;
 
 constructor TPangyaBuffer.Create(const src: AnsiString);
 begin
+  init;
   WriteStr(src);
+end;
+
+procedure TPangyaBuffer.Init;
+begin
+  m_bufferLock := TCriticalSection.Create;
+  m_data := TMemoryStream.Create;
 end;
 
 destructor TPangyaBuffer.Destroy;
 begin
   m_data.Free;
+  m_bufferLock.Free;
+end;
+
+procedure TPangyaBuffer.Lock;
+begin
+  m_bufferLock.Enter;
+end;
+
+procedure TPangyaBuffer.Unlock;
+begin
+  m_bufferLock.Leave;
 end;
 
 function TPangyaBuffer.WriteUInt8(const src: UInt8): Boolean;
@@ -92,12 +120,12 @@ end;
 
 function TPangyaBuffer.Write(const src; const count: Cardinal): Boolean;
 begin
-  Exit(m_data.Write(src, count) = count);
+  Result := m_data.Write(src, count) = count;
 end;
 
 function TPangyaBuffer.Read(var dst; const count: Cardinal): Boolean;
 begin
-  Exit(m_data.Read(dst, count) = count);
+  Result := m_data.Read(dst, count) = count;
 end;
 
 function TPangyaBuffer.WriteDouble(const src: Double): boolean;
@@ -167,7 +195,7 @@ end;
 
 procedure TPangyaBuffer.Skip(count: integer);
 begin
-  m_data.Seek(count, 1);
+  Seek(count, 1);
 end;
 
 procedure TPangyaBuffer.Seek(offset, origin: integer);
@@ -177,12 +205,56 @@ end;
 
 function TPangyaBuffer.GetSize;
 begin
-  Exit(m_data.Size);
+  Result := m_data.Size;
 end;
 
-function TPangyaBuffer.GetStream;
+procedure TPangyaBuffer.Delete(offset: UInt32; length: UInt32);
+var
+  tmp: TMemoryStream;
+  pos: Int64;
+  offsetAndLen: Int64;
+  leftSize: Int64;
+  dataSize: Int64;
 begin
-  Exit(m_data);
+  dataSize := m_data.Size;
+
+  if offset > dataSize then
+  begin
+    Exit;
+  end;
+
+  if offset + length > dataSize then
+  begin
+    length := dataSize - offset;
+  end;
+
+  offsetAndLen := offset + length;
+  leftSize := dataSize - offsetAndLen;
+
+  pos := m_data.Seek(0, 1);
+  tmp := TMemoryStream.Create;
+  m_data.Seek(offsetAndLen, 0);
+  tmp.CopyFrom(m_data, leftSize);
+  m_data.Seek(offset, 0);
+  m_data.Write(tmp.Memory, leftSize);
+
+  m_data.SetSize(dataSize - length);
+  m_data.Seek(pos, 0);
+  tmp.Free;
+end;
+
+function TPangyaBuffer.ToStream: TStream;
+begin
+  Result := TMemoryStream.Create;
+  Seek(0, 0);
+  Result.CopyFrom(m_data, m_data.Size);
+  Result.Seek(0, 0);
+  Clear;
+end;
+
+procedure TPangyaBuffer.Clear;
+begin
+  m_data.Clear;
 end;
 
 end.

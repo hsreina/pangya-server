@@ -3,12 +3,12 @@ unit Client;
 interface
 
 uses
-  ScktComp, Buffer, ClientPacket, CryptLib, defs;
+  ScktComp, ClientPacket, CryptLib, defs, PangyaBuffer;
 
 type
   TClient<ClientType> = class
     protected
-      var m_buffout: TBuffer;
+      var m_buffout: TPangyaBuffer;
       var m_socket: TCustomWinSocket;
       var m_key: Byte;
       var m_data: ClientType;
@@ -34,21 +34,25 @@ begin
 end;
 
 procedure TClient<ClientType>.Send(data: AnsiString; encrypt: Boolean);
+var
+  encrypted: AnsiString;
 begin
   if encrypt then
   begin
     if (UID.login = 'Sync') then
     begin
       console.Log('Sync With server ' + UID.login);
-      m_buffout.Write(m_cryptLib.ClientEncrypt(data, m_key, 0));
+      encrypted := m_cryptLib.ClientEncrypt(data, m_key, 0);
+      m_buffout.WriteStr(encrypted);
     end else
     begin
       console.Log('Sync With game ' + self.UID.login);
-      m_buffout.Write(m_cryptLib.ServerEncrypt(data, m_key));
+      encrypted := m_cryptLib.ServerEncrypt(data, m_key);
+      m_buffout.WriteStr(encrypted);
     end;
   end else
   begin
-    m_buffout.Write(data);
+    m_buffout.WriteStr(data);
   end;
 end;
 
@@ -57,7 +61,7 @@ begin
   m_key := 2;
   m_cryptLib := cryptLib;
   m_socket := socket;
-  m_buffout := TBuffer.Create
+  m_buffout := TPangyaBuffer.Create;
 end;
 
 destructor TClient<ClientType>.Destroy;
