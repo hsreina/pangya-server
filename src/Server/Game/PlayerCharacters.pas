@@ -69,7 +69,7 @@ begin
 
   for playerCharacter in m_characters do
   begin
-    data.Write(playerCharacter.ToPacketData);
+    data.WriteStr(playerCharacter.ToPacketData);
   end;
 
   Result := data.ToStr;
@@ -87,14 +87,14 @@ var
 begin
   clientPacket := TClientPacket.Create(packetData);
 
-  clientPacket.GetWord(count1);
-  clientPacket.GetWord(count2);
+  clientPacket.ReadUInt16(count1);
+  clientPacket.ReadUInt16(count2);
 
   setlength(tmp, sizeof(TPlayerCharacterData));
 
   for I := 1 to count1 do
   begin
-    if clientPacket.GetBuffer(tmp[1], sizeof(TPlayerCharacterData)) then
+    if clientPacket.Read(tmp[1], sizeof(TPlayerCharacterData)) then
     begin
       playerCharacter := self.Add;
       playerCharacter.Load(tmp);

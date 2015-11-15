@@ -22,6 +22,7 @@ type
       procedure Clear;
       function ToPacketData: TPacketData;
       function Load(packetData: TPacketData): Boolean;
+      function GetData: TPlayerCharacterData;
   end;
 
 implementation
@@ -62,6 +63,11 @@ begin
   move(packetData[1], m_data.IffId, sizeOfCharacter);
 
   Exit(True);
+end;
+
+function TPlayerCharacter.GetData: TPlayerCharacterData;
+begin
+  Exit(m_data);
 end;
 
 end.

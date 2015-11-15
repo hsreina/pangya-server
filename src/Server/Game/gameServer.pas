@@ -30,8 +30,9 @@ type
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
-
 
     public
       constructor Create(cryptLib: TCryptLib);
@@ -113,7 +114,7 @@ var
   login: AnsiString;
 begin
   self.Log('TGameServer.HandlePlayerLogin', TLogType_not);
-  login := clientPacket.GetStr;
+  clientPacket.ReadPStr(login);
   client.UID.login := login;
   client.UID.id := 0;
   self.Sync(client, clientPacket);
@@ -121,11 +122,11 @@ end;
 
 procedure TGameServer.HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
 var
-  lobbyId: byte;
+  lobbyId: UInt8;
 begin
   self.Log('TGameServer.HandlePlayerJoinLobby', TLogType_not);
 
-  if false = clientPacket.GetByte(lobbyId) then
+  if false = clientPacket.ReadUInt8(lobbyId) then
   begin
     Exit;
   end;
@@ -164,14 +165,14 @@ begin
     00000010  FF 01 00 00 00 C4 09 00  00 00 00 00 00 00 00 00    ÿ....Ä..........
     00000020  00                                                  .
   }
-  clientPacket.GetByte(rental);
-  clientPacket.GetWord(count);
+  clientPacket.ReadUInt8(rental);
+  clientPacket.ReadUInt16(count);
 
   randomId := random(134775813);
 
   for I := 1 to count do
   begin
-    clientPacket.GetBuffer(shopItem.un1, sizeof(TShopItemDesc));
+    clientPacket.Read(shopItem.un1, sizeof(TShopItemDesc));
 
     inc(successCount);
     shopResult := shopResult +
@@ -209,17 +210,17 @@ end;
 procedure TGameServer.HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
 var
   packetData: TPacketData;
-  itemType: byte;
+  itemType: UInt8;
   IffId: UInt32;
 begin
   self.Log('TGameServer.HandlePlayerChangeEquipment', TLogType_not);
 
-  clientPacket.GetByte(itemType);
+  clientPacket.ReadUint8(itemType);
 
   case itemType of
     0: begin
       console.Log('character data', C_ORANGE);
-      clientPacket.GetCardinal(IffId);
+      clientPacket.ReadUInt32(IffId);
       WriteDataToFile(Format('c_%x.dat', [IffId]), clientPacket.ToStr);
     end;
     1: begin
@@ -232,6 +233,18 @@ begin
       clientPacket.Log;
     end;
   end;
+end;
+
+procedure TGameServer.HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerJoinMultiplayerGamesList', C_BLUE);
+  client.Send(#$F5#$00);
+end;
+
+procedure TGameServer.HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerLeaveMultiplayerGamesList', C_BLUE);
+  client.Send(#$F6#$00);
 end;
 
 procedure TGameServer.HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
@@ -249,7 +262,7 @@ begin
   clientPacket.Log;
 
   player := client.Data;
-  if (clientPacket.getBuffer(packetID, 2)) then
+  if (clientPacket.Read(packetID, 2)) then
   begin
     case packetID of
       CGPID_PLAYER_LOGIN:
@@ -268,6 +281,14 @@ begin
       begin
         self.HandlePlayerChangeEquipment(client, clientPacket);
       end;
+      CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST:
+      begin
+        self.HandlePlayerJoinMultiplayerGamesList(client, clientPacket);
+      end;
+      CGPID_PLAYER_LEAV_MULTIPLAYER_GAME_LIST:
+      begin
+        self.HandlePlayerLeaveMultiplayerGamesList(client, clientPacket);
+      end;
       CGPID_PLAYER_UN_0140:
       begin
         self.HandlePlayerUnknow0140(client, clientPacket);
@@ -284,6 +305,7 @@ end;
 procedure TGameServer.PlayerSync(const clientPacket: TClientPacket; const client: TGameClient);
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
+
   // Then forward the data
   client.Send(clientPacket.GetRemainingData);
 end;
@@ -294,7 +316,7 @@ var
   actionId: TSSAPID;
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
-  if clientPacket.GetBuffer(actionId, 2) then
+  if clientPacket.Read(actionId, 2) then
   begin
     case actionId of
       SSAPID_SEND_LOBBIES_LIST:
@@ -317,11 +339,11 @@ var
   client: TGameClient;
 begin
   self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
-  if (clientPacket.getBuffer(packetID, 2)) then
+  if (clientPacket.Read(packetID, 2)) then
   begin
 
-    clientPacket.GetInteger(playerUID.id);
-    playerUID.login := clientPacket.GetStr;
+    clientPacket.ReadUInt32(playerUID.id);
+    clientPacket.ReadPStr(playerUID.login);
 
     client := self.GetClientByUID(playerUID);
     if client = nil then

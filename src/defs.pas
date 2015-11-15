@@ -6,7 +6,7 @@ uses PacketData;
 
 type
   TPlayerUID = record
-    var id: integer;
+    var id: UInt32;
     var login: AnsiString;
     procedure SetId(id: integer);
   end;

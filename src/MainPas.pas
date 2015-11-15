@@ -93,6 +93,8 @@ begin
   m_gameServer := TGameServer.Create(m_cryptLib);
   m_synServer := TSyncServer.Create(m_cryptLib);
 
+  m_synServer.Debug;
+
   if not m_cryptLib.init then
   begin
     Console.Log('CryptLib init Failed', C_RED);

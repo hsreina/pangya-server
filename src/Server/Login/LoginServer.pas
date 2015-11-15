@@ -79,14 +79,14 @@ begin
 
   packet := TClientPacket.Create;
 
-  packet.Write(
+  packet.WriteStr(
     #$02#$00 +
     #$01 // Number of servers
   );
 
-  packet.Write('server name', 16, #$00);
+  packet.WriteStr('server name', 16, #$00);
 
-  packet.Write(
+  packet.WriteStr(
     #$00#$00#$00#$00 +
     #$00#$00#$00#$00 +
     #$00#$00#$00#$00 +
@@ -98,13 +98,13 @@ begin
     #$45#$00#$00#$00
   );
 
-  packet.Write('127.0.0.1', 15, #$00);
+  packet.WriteStr('127.0.0.1', 15, #$00);
 
-  packet.Write(#$00#$00#$00);
+  packet.WriteStr(#$00#$00#$00);
 
   packet.Write(port, 2);
 
-  packet.Write(
+  packet.WriteStr(
     #$00#$00#$00 +
     #$08#$00#$00 +
     #$08 + // Wings
@@ -135,7 +135,7 @@ var
   actionId: TSSAPID;
 begin
   self.Log('TLoginServer.PlayerSync', TLogType_not);
-  if clientPacket.GetBuffer(actionId, 2) then
+  if clientPacket.Read(actionId, 2) then
   begin
     case actionId of
       SSAPID_SEND_SERVER_LIST:
@@ -157,11 +157,11 @@ var
   client: TLoginClient;
 begin
   self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
-  if (clientPacket.getBuffer(packetID, 2)) then
+  if (clientPacket.Read(packetID, 2)) then
   begin
 
-    clientPacket.GetInteger(playerUID.id);
-    playerUID.login := clientPacket.GetStr;
+    clientPacket.ReadUInt32(playerUID.id);
+    clientPacket.ReadPStr(playerUID.login);
 
     client := self.GetClientByUID(playerUID);
     if client = nil then
@@ -200,7 +200,7 @@ var
 begin
   self.Log('TLoginServer.OnReceiveClientData', TLogType_not);
   player := client.Data;
-  if (clientPacket.getBuffer(packetID, 2)) then
+  if (clientPacket.Read(packetID, 2)) then
   begin
     case packetID of
       CLPID_PLAYER_LOGIN:
@@ -245,7 +245,7 @@ procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const clien
 var
   login: AnsiString;
 begin
-  login := clientPacket.GetStr;
+  clientPacket.ReadPStr(login);
   client.UID.login := login;
   client.UID.id := 0;
   self.Sync(client, clientPacket);

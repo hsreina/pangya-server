@@ -28,6 +28,9 @@ type
       function WriteUInt32(const src: UInt32): Boolean;
       function ReadUInt32(var dst: UInt32): Boolean;
 
+      function WriteInt32(const src: Int32): Boolean;
+      function ReadInt32(var dst: Int32): Boolean;
+
       function Write(const src; const count: UInt32): Boolean;
       function Read(var dst; const count: UInt32): Boolean;
 
@@ -43,7 +46,7 @@ type
       function ReadPStr(var dst: AnsiString): Boolean;
 
       procedure Skip(count: integer);
-      procedure Seek(offset, origin: integer);
+      function Seek(offset, origin: integer): integer;
       function GetSize: UInt32;
       procedure Delete(offset: UInt32; length: UInt32);
       function ToStream: TStream;
@@ -64,6 +67,7 @@ constructor TPangyaBuffer.Create(const src: AnsiString);
 begin
   init;
   WriteStr(src);
+  Seek(0, 0);
 end;
 
 procedure TPangyaBuffer.Init;
@@ -114,6 +118,16 @@ begin
 end;
 
 function TPangyaBuffer.ReadUInt32(var dst: UInt32): Boolean;
+begin
+  Exit(Read(dst, 4));
+end;
+
+function TPangyaBuffer.WriteInt32(const src: Int32): Boolean;
+begin
+  Exit(Write(src, 4));
+end;
+
+function TPangyaBuffer.ReadInt32(var dst: Int32): Boolean;
 begin
   Exit(Read(dst, 4));
 end;
@@ -198,9 +212,9 @@ begin
   Seek(count, 1);
 end;
 
-procedure TPangyaBuffer.Seek(offset, origin: integer);
+function TPangyaBuffer.Seek(offset, origin: integer): integer;
 begin
-  m_data.Seek(offset, origin);
+  Exit(m_data.Seek(offset, origin));
 end;
 
 function TPangyaBuffer.GetSize;

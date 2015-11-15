@@ -22,7 +22,7 @@ begin
     raise Exception.CreateFmt('TPlayerCharacter Invalid Size (%x)', [playerCharacterSize]);
   end;
 
-  if not (playerDataSize = $30E9) then
+  if not (playerDataSize = $30C5) then
   begin
     raise Exception.CreateFmt('TPlayerData Invalid Size (%x)', [playerDataSize]);
   end;

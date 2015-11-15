@@ -28,7 +28,8 @@ uses
   PlayerCharacters in 'Server\Game\PlayerCharacters.pas',
   PlayerData in 'Server\Game\PlayerData.pas',
   utils in 'utils.pas',
-  PangyaBuffer in 'PangyaBuffer.pas';
+  PangyaBuffer in 'PangyaBuffer.pas',
+  DataChecker in 'DataChecker.pas';
 
 {$R *.res}
 
