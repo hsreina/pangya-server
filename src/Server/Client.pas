@@ -17,6 +17,7 @@ type
       constructor Create(Socket: TCustomWinSocket; cryptLib: TCryptLib);
       destructor Destroy; override;
       function GetKey: Byte;
+      procedure Send(data: TPangyaBuffer); overload;
       procedure Send(data: AnsiString); overload;
       procedure Send(data: AnsiString; encrypt: Boolean); overload;
       property Data: ClientType read m_data write m_data;
@@ -27,6 +28,20 @@ type
 implementation
 
 uses ConsolePas;
+
+procedure TClient<ClientType>.Send(data: TPangyaBuffer);
+var
+  oldPos: Integer;
+  size: integer;
+  buff: AnsiString;
+begin
+  oldPos := data.Seek(0, 1);
+  data.Seek(0, 0);
+  size := data.GetSize;
+  data.ReadStr(buff, size);
+  self.Send(buff);
+  data.Seek(oldPos, 0);
+end;
 
 procedure TClient<ClientType>.Send(data: AnsiString);
 begin

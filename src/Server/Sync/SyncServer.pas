@@ -190,6 +190,7 @@ var
   playerData: TPlayerData;
 begin
   playerData.Clear;
+  playerData.SetLogin(login);
   Exit(m_database.CreatePlayer(login, password, playerData));
 end;
 
@@ -247,7 +248,9 @@ begin
   // main save
   self.SendToGame(client, playerUID, d);
 
-  d := #$70#$00 + m_database.GetPlayerCharacter(playerUID.id);
+  d := WriteAction(SGPID_PLAYER_MAIN_DATA) + m_database.GetPlayerCharacter(playerUID.id);
+
+  console.WriteDump(d);
 
   // characters
   self.SendToGame(client, playerUID, d);
@@ -263,12 +266,17 @@ end;
 procedure TSyncServer.HandlePlayerSetNickname(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
 var
   nickname: AnsiString;
+  playerData: TPlayerData;
 begin
   Console.Log('TLoginServer.HandleConfirmNickname', C_BLUE);
   clientPacket.ReadPStr(nickname);
   self.Log(Format('nickname : %s', [nickname]));
 
-  m_database.SetNickname(playerUID.login, nickname);
+  playerData.Load(m_database.GetPlayerMainSave(playerUID.id));
+  playerData.SetNickname(nickname);
+  m_database.SavePlayerMainSave(playerUID.id, playerData);
+
+  m_database.SetNickname(playerUID.id, nickname);
 
   self.SendToGame(client, playerUID, #$06#$00 + WriteStr(nickname));
 
@@ -393,13 +401,7 @@ begin
 end;
 
 procedure TSyncServer.Debug;
-var
-  playerData: TPlayerData;
 begin
-  playerData.load(m_database.GetPlayerMainSave(1));
-
-  console.Log(Format('%x, %x', [playerData.pangs, playerData.pangs]))
-
 end;
 
 end.

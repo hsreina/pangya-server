@@ -23,12 +23,19 @@ type
   // Client game packets (packets sent from the game to the Game Server)
   TCGPID = (
     CGPID_PLAYER_LOGIN                      = $0002,
+    CGPID_PLAYER_MESSAGE                    = $0003,
     CGPID_PLAYER_JOIN_LOBBY                 = $0004,
     CGPID_PLAYER_BUY_ITEM                   = $001D,
     CGPID_PLAYER_CHANGE_EQUIP               = $0020,
     CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST = $0081,
     CGPID_PLAYER_LEAV_MULTIPLAYER_GAME_LIST = $0082,
-    CGPID_PLAYER_UN_0140                    = $0140
+    CGPID_PLAYER_UN_0140                    = $0140,
+    CGPID_NOTHING                           = $FFFF
+  );
+
+  TSGPID = (
+    SGPID_PLAYER_MAIN_DATA                  = $0070,
+    SGPID_NOTHING                           = $FFFF
   );
 
   // Sync server packets from any server to Sync server
@@ -46,6 +53,14 @@ type
     SSAPID_NOTHING                    = $FFFF
   );
 
+function WriteAction(actionId: TSGPID): AnsiString;
+
 implementation
+
+function WriteAction(actionId: TSGPID): AnsiString;
+begin
+  setLength(result, 2);
+  move(actionId, result[1], 2);
+end;
 
 end.

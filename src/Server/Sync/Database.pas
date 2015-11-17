@@ -24,7 +24,7 @@ type
       function DoLogin(userName: AnsiString; password: AnsiString): Integer;
       function GetPlayerId(userName: AnsiString): Integer;
       function NicknameAvailable(nickname: AnsiString): Boolean;
-      function SetNickname(playerUID: AnsiString; nickname: AnsiString): Boolean;
+      function SetNickname(playerId: integer; nickname: AnsiString): Boolean;
       function PlayerHaveNicknameSet(playerUID: AnsiString): Boolean;
       function PlayerHaveAnInitialCharacter(playerUID: AnsiString): Boolean;
 
@@ -147,16 +147,16 @@ begin
   end;
 end;
 
-function TDatabase.SetNickname(playerUID: AnsiString; nickname: AnsiString): Boolean;
+function TDatabase.SetNickname(playerId: integer; nickname: AnsiString): Boolean;
 var
   query: TFDQuery;
 begin
   query := TFDQuery.Create(nil);
   try
     query.Connection := m_connection;
-    query.SQL.Text := 'UPDATE player SET nickname = :nickname WHERE login= :playerUID';
+    query.SQL.Text := 'UPDATE player SET nickname = :nickname WHERE id= :player_id';
     query.ParamByName('nickname').AsAnsiString := nickname;
-    query.ParamByName('playerUID').AsAnsiString := playerUID;
+    query.ParamByName('player_id').AsInteger := playerId;
     query.ExecSQL();
     Exit(query.RowsAffected = 1);
   finally

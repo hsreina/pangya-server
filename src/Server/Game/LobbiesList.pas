@@ -26,9 +26,17 @@ type
 implementation
 
 function TLobbiesList.GetLobbyById(lobbyId: Byte): TLobby;
+var
+  lobby: TLobby;
 begin
-  // For now, just return the 1st one
-  Exit(m_lobbies.Items[0]);
+  for lobby in m_lobbies do
+  begin
+    if lobby.Id = lobbyId then
+    begin
+      Exit(lobby);
+    end;
+  end;
+  Exit(nil);
 end;
 
 constructor TLobbiesList.Create;

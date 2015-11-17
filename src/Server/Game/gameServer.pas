@@ -27,6 +27,7 @@ type
       function LobbiesList: AnsiString;
 
       procedure HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
@@ -41,7 +42,8 @@ type
 
 implementation
 
-uses Logging, PangyaPacketsDef, ConsolePas, Buffer, utils, PacketData, defs;
+uses Logging, PangyaPacketsDef, ConsolePas, Buffer, utils, PacketData, defs,
+  PangyaBuffer, Lobby;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -87,11 +89,20 @@ end;
 procedure TGameServer.OnClientDisconnect(const client: TGameClient);
 var
   player: TGamePlayer;
+  lobby: TLobby;
 begin
   self.Log('TGameServer.OnDisconnectClient', TLogType_not);
   player := client.Data;
   if not (player = nil) then
   begin
+
+    // Remove the player from the lobby
+    if not player.Lobby = $FF then
+    begin
+      lobby := m_lobbies.GetLobbyById(player.Lobby);
+      lobby.RemovePlayer(player);
+    end;
+
     player.Free;
     player := nil;
   end;
@@ -120,19 +131,50 @@ begin
   self.Sync(client, clientPacket);
 end;
 
+procedure TGameServer.HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  login: AnsiString;
+  msg: AnsiString;
+  reply: TPangyaBuffer;
+begin
+  Console.Log('TGameeServer.HandlePlayerSendMessage', C_BLUE);
+  clientPacket.ReadPStr(login);
+  clientPacket.ReadPStr(msg);
+
+  reply := TPangyaBuffer.Create;
+  reply.WriteStr(#$40#$00 + #$00);
+  reply.WritePStr(login);
+  reply.WritePStr(msg);
+  client.Send(reply);
+
+  reply.Free;
+end;
+
 procedure TGameServer.HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
 var
   lobbyId: UInt8;
+  lobby: TLobby;
 begin
   self.Log('TGameServer.HandlePlayerJoinLobby', TLogType_not);
 
   if false = clientPacket.ReadUInt8(lobbyId) then
   begin
+    Console.Log('Failed to read lobby id', C_RED);
     Exit;
   end;
 
+  lobby := m_lobbies.GetLobbyById(lobbyId);
+
+  if nil = lobby then
+  begin
+    Console.Log('lobby doesn''t exists', C_RED);
+    Exit;
+  end;
+
+  lobby.AddPlayer(client.Data);
+
   client.Send(#$95#$00 + AnsiChar(lobbyId) + #$01#$00);
-  client.Send(#$4E#$00#$01);
+  client.Send(#$4E#$00 + #$01);
 end;
 
 procedure TGameServer.HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
@@ -269,6 +311,10 @@ begin
       begin
         self.HandlePlayerLogin(client, clientPacket);
       end;
+      CGPID_PLAYER_MESSAGE:
+      begin
+        self.HandlePlayerSendMessage(client, clientPacket);
+      end;
       CGPID_PLAYER_JOIN_LOBBY:
       begin
         self.HandlePlayerJoinLobby(client, clientPacket);
@@ -303,10 +349,27 @@ end;
 
 // TODO: move that to parent class
 procedure TGameServer.PlayerSync(const clientPacket: TClientPacket; const client: TGameClient);
+var
+  actionId: TSGPID;
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
 
-  // Then forward the data
+  {
+  if clientPacket.Read(actionId, 2) then
+  begin
+    case actionId of
+      SGPID_PLAYER_MAIN_DATA:
+      begin
+
+      end
+      else
+      begin
+        self.Log(Format('Unknow action Id %x', [Word(actionId)]), TLogType_err);
+        clientPacket.Seek(-2, 1);
+      end;
+    end;
+  end;
+  }
   client.Send(clientPacket.GetRemainingData);
 end;
 
