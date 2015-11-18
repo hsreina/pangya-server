@@ -81,7 +81,8 @@ begin
   client.Send(
     #$00#$16#$00#$00#$3F#$00#$01#$01 +
     AnsiChar(client.GetKey()) +
-    WriteStr('173.179.168.96'),
+    // no clue about that.
+    WriteStr(client.Host),
     false
   );
 end;
@@ -230,20 +231,20 @@ begin
     #$AA#$00 +
     self.Write(successCount, 2) +
     shopResult +
-    self.Write(client.Data.data.pangs, 8) +
+    self.Write(client.Data.data.playerInfo2.pangs, 8) +
     #$00#$00#$00#$00#$00#$00#$00#$00
   );
 
   client.Send(
     #$C8#$00 +
-    self.Write(client.Data.data.pangs, 8) +
+    self.Write(client.Data.data.playerInfo2.pangs, 8) +
     #$C4#$09#$00#$00#$00#$00#$00#$00
   );
 
   // Pangs and cookies info
   client.Send(
     #$68#$00#$00#$00#$00#$00 +
-    self.Write(client.Data.data.pangs, 8) +
+    self.Write(client.Data.data.playerInfo2.pangs, 8) +
     self.Write(client.Data.Cookies, 8)
   );
 
@@ -353,30 +354,13 @@ var
   actionId: TSGPID;
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
-
-  {
-  if clientPacket.Read(actionId, 2) then
-  begin
-    case actionId of
-      SGPID_PLAYER_MAIN_DATA:
-      begin
-
-      end
-      else
-      begin
-        self.Log(Format('Unknow action Id %x', [Word(actionId)]), TLogType_err);
-        clientPacket.Seek(-2, 1);
-      end;
-    end;
-  end;
-  }
   client.Send(clientPacket.GetRemainingData);
 end;
 
-// TODO: create a virtual method from that in the parent class
 procedure TGameServer.ServerPlayerAction(const clientPacket: TClientPacket; const client: TGameClient);
 var
   actionId: TSSAPID;
+  buffer: AnsiString;
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
   if clientPacket.Read(actionId, 2) then
@@ -386,6 +370,18 @@ begin
       begin
         client.Send(LobbiesList);
       end;
+      SSAPID_PLAYER_MAIN_SAVE:
+      begin
+        buffer := clientPacket.GetRemainingData;
+        client.Data.Data.Load(buffer);
+        client.Data.Data.playerInfo1.ConnectionId := client.ID;
+        client.Send(
+          #$44#$00 + #$00 +
+          WriteStr('xxx.xx') +
+          WriteStr(ExtractFilename(ParamStr(0))) +
+          buffer
+        );
+      end
       else
       begin
         self.Log(Format('Unknow action Id %x', [Word(actionId)]), TLogType_err);

@@ -107,12 +107,13 @@ procedure TServer<ClientType>.ServerAccept(Sender: TObject; Socket: TCustomWinSo
 var
   client: TServerClient<ClientType>;
   index: Integer;
+  id: integer;
 begin
   Log('TServer.serverAccept', TLogType.TLogType_not);
   if (m_clients.Count < 10) then
   begin
     client := TServerClient<ClientType>.Create(Socket, m_cryptLib);
-    m_clients.Add(client);
+    client.ID := m_clients.Add(client);
     self.OnClientConnect(client);
   end;
 end;

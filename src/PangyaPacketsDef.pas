@@ -50,14 +50,29 @@ type
   TSSAPID = (
     SSAPID_SEND_SERVER_LIST           = $0001, // Send the list of game server
     SSAPID_SEND_LOBBIES_LIST          = $0002, // Send the list of lobbies
+    SSAPID_PLAYER_MAIN_SAVE           = $0003,
     SSAPID_NOTHING                    = $FFFF
   );
 
-function WriteAction(actionId: TSGPID): AnsiString;
+function WriteAction(actionId: TSGPID): AnsiString; overload;
+function WriteAction(actionId: TSSPID): AnsiString; overload;
+function WriteAction(actionId: TSSAPID): AnsiString; overload;
 
 implementation
 
 function WriteAction(actionId: TSGPID): AnsiString;
+begin
+  setLength(result, 2);
+  move(actionId, result[1], 2);
+end;
+
+function WriteAction(actionId: TSSPID): AnsiString;
+begin
+  setLength(result, 2);
+  move(actionId, result[1], 2);
+end;
+
+function WriteAction(actionId: TSSAPID): AnsiString;
 begin
   setLength(result, 2);
   move(actionId, result[1], 2);

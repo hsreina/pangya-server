@@ -13,6 +13,7 @@ type
       var m_key: Byte;
       var m_data: ClientType;
       var m_cryptLib: TCryptLib;
+      function FGetHost: AnsiString;
     public
       constructor Create(Socket: TCustomWinSocket; cryptLib: TCryptLib);
       destructor Destroy; override;
@@ -21,13 +22,21 @@ type
       procedure Send(data: AnsiString); overload;
       procedure Send(data: AnsiString; encrypt: Boolean); overload;
       property Data: ClientType read m_data write m_data;
+      property Host: AnsiString read FGetHost;
       var UID: TPlayerUID;
+      var ID: integer;
       function HasUID(playerUID: TPlayerUID): Boolean;
   end;
 
 implementation
 
 uses ConsolePas;
+
+function TClient<ClientType>.FGetHost: AnsiString;
+begin
+  Exit('www.google.com');
+  //Exit(m_socket.RemoteHost);
+end;
 
 procedure TClient<ClientType>.Send(data: TPangyaBuffer);
 var
@@ -72,7 +81,10 @@ begin
 end;
 
 constructor TClient<ClientType>.Create(Socket: TCustomWinSocket; cryptLib: TCryptLib);
+var
+  rnd: Byte;
 begin
+  //rnd := Byte(Random(255));
   m_key := 2;
   m_cryptLib := cryptLib;
   m_socket := socket;

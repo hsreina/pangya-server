@@ -237,20 +237,19 @@ begin
 
   playerData.Load(m_database.GetPlayerMainSave(playerId));
 
-  playerData.pangs := 99999999;
+  playerData.playerInfo2.pangs := 99999999;
 
-  d :=
-    #$44#$00#$00 +
-    WriteStr('xxx.xx') +
-    WriteStr(ExtractFilename(ParamStr(0))) +
-    playerData.ToPacketData;
+  playerData.playerInfo1.PlayerID := playerId;
 
-  // main save
-  self.SendToGame(client, playerUID, d);
+  // Send Lobbies list
+  self.PlayerAction(
+    client,
+    playerUID,
+    WriteAction(SSAPID_PLAYER_MAIN_SAVE) + playerData.ToPacketData
+  );
+
 
   d := WriteAction(SGPID_PLAYER_MAIN_DATA) + m_database.GetPlayerCharacter(playerUID.id);
-
-  console.WriteDump(d);
 
   // characters
   self.SendToGame(client, playerUID, d);
