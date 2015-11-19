@@ -3,17 +3,17 @@ Welcome to pangya-server an emulation server for Pangya FreshUp.
 The server is as always, an experiment on trying to code strange things. And hope someone will try to work on it instead of begging for release.
 
 # What is working?
-Quite nothing. You can login and select your 1st character and go to tranning for now.
+Quite nothing. You can login and select your 1st character and go to training for now.
 
 # How to compile?
-I created the project with Delphi XE8, you should be abble to open the project with the same version or above and compile it.
+I created the project with Delphi XE8, you should be able to open the project with the same version or above and compile it.
 
 # Pangya Crypt library
 In the project files, you'll see references to a library "pang.dll"
 
 "pang.dll" is a library used in some of my projects and will not be shared in this project. It will not be shared with the source code but maybe someone will can create it for you. Or maybe you'll create it for yourself.
 
-To make it work with your project, "pangya.dll" must share some functions the server will be able to unnderstand.
+To make it work with your project, "pangya.dll" must share some functions the server will be able to understand.
   - _pangya_client_decrypt
   - _pangya_server_encrypt
   - _pangya_client_encrypt
