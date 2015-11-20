@@ -29,10 +29,13 @@ type
       procedure HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
 
     public
@@ -43,7 +46,7 @@ type
 implementation
 
 uses Logging, PangyaPacketsDef, ConsolePas, Buffer, utils, PacketData, defs,
-  PangyaBuffer, Lobby;
+  PangyaBuffer, Lobby, PlayerCharacter, Game, GameServerExceptions;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -178,6 +181,116 @@ begin
   client.Send(#$4E#$00 + #$01);
 end;
 
+procedure TGameServer.HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  gameInfo: TPlayerCreateGameInfo;
+  gameName: AnsiString;
+  gamePassword: AnsiString;
+  artifact: UInt32;
+  playerLobby: TLobby;
+  game: TGame;
+begin
+  Console.Log('TGameServer.HandlePlayerBuyItem', C_BLUE);
+  clientPacket.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
+  clientPacket.ReadPStr(gameName);
+  clientPacket.ReadPStr(gamePassword);
+  clientPacket.ReadUInt32(artifact);
+
+  playerLobby := m_lobbies.GetPlayerLobby(client.Data);
+
+  if playerLobby = nil then
+  begin
+    Console.Log('lobby not found for player', C_RED);
+    Exit;
+  end;
+
+  try
+    game := playerLobby.Games.CreateGame(gamename, gamePassword, gameInfo, artifact);
+  except
+    on E: LobbyGamesFullException do begin
+      Console.Log(E.Message, C_RED);
+      Exit;
+    end;
+  end;
+
+  try
+    game.AddPlayer(client.Data);
+  except
+    on E: GameFullException do begin
+      Console.Log(E.Message, C_RED);
+      Exit;
+    end;
+  end;
+
+  // result
+  client.Send(
+    #$4A#$00 +
+    #$FF#$FF +
+    #$02 + // game type 02: CHat room
+    AnsiChar(gameInfo.map) +
+    AnsiChar(gameInfo.holeCount) +
+    AnsiChar(gameInfo.mode) +
+    #$00#$00#$00#$00 +
+    AnsiChar(gameInfo.maxPlayers) +
+    #$1E#$00 +
+    self.Write(gameInfo.turnTime, 4) +
+    self.Write(gameInfo.gameTime, 4) +
+    #$00#$00#$00#$00#$00 +
+    self.WriteStr(gameName)
+  );
+
+  // game game informations
+  client.Send(
+    #$49#$00 +
+    #$00#$00 +
+    game.GameInformation
+  );
+
+  client.Send(
+      #$48#$00#$00#$FF#$FF#$01 +
+      client.Data.GameInformation
+  );
+
+  // Game lobby info
+  client.Send(
+    #$47#$00#$01#$01#$FF#$FF +
+    game.LobbyInformation
+  );
+
+  // Lobby player informations
+  client.Send(
+    #$46#$00#$03#$01 +
+    client.Data.LobbyInformations
+  );
+
+end;
+
+procedure TgameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  playerLobby: TLobby;
+  playergame: TGame;
+begin
+  Console.Log('TGameServer.HandlePlayerLeaveGame', C_BLUE);
+  playerLobby := m_lobbies.GetPlayerLobby(client.Data);
+
+  if playerLobby = nil then
+  begin
+    Console.Log('lobby not found for player', C_RED);
+    Exit;
+  end;
+
+  playerGame := playerLobby.Games.getPlayerGame(client.Data);
+
+  if playerGame = nil then
+  begin
+    Console.Log('player game not found', C_RED);
+    Exit;
+  end;
+
+  playerGame.RemovePlayer(client.Data);
+
+end;
+
 procedure TGameServer.HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
 type
   TShopItemDesc = packed record
@@ -290,6 +403,17 @@ begin
   client.Send(#$F6#$00);
 end;
 
+procedure TGameServer.HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerUnknow0140', C_BLUE);
+  // Should send that to all players
+  client.Send(
+    #$96#$01 +
+    #$4E#$01#$00#$00 + #$00#$00#$80#$3F + #$00#$00#$80#$3F +
+    #$00#$00#$80#$3F + #$00#$00#$80#$3F + #$00#$00#$80#$3F
+  );
+end;
+
 procedure TGameServer.HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   self.Log('TGameServer.HandlePlayerUnknow0140', TLogType_not);
@@ -320,6 +444,14 @@ begin
       begin
         self.HandlePlayerJoinLobby(client, clientPacket);
       end;
+      CGPID_PLAYER_CREATE_GAME:
+      begin
+        self.HandlePlayerCreateGame(client, clientPacket);
+      end;
+      CGPID_PLAYER_LEAVE_GAME:
+      begin
+        self.HandlePlayerLeaveGame(client, clientPacket);
+      end;
       CGPID_PLAYER_BUY_ITEM:
       begin
         self.HandlePlayerBuyItem(client, clientPacket);
@@ -335,6 +467,10 @@ begin
       CGPID_PLAYER_LEAV_MULTIPLAYER_GAME_LIST:
       begin
         self.HandlePlayerLeaveMultiplayerGamesList(client, clientPacket);
+      end;
+      CGPID_PLAYER_UN_00EB:
+      begin
+        self.HandlePlayerUnknow00EB(client, clientPacket);
       end;
       CGPID_PLAYER_UN_0140:
       begin
@@ -377,9 +513,19 @@ begin
         client.Data.Data.playerInfo1.ConnectionId := client.ID;
         client.Send(
           #$44#$00 + #$00 +
-          WriteStr('xxx.xx') +
+          WriteStr('824.00') +
           WriteStr(ExtractFilename(ParamStr(0))) +
           buffer
+        );
+      end;
+      SSAPID_PLAYER_CHARACTERS:
+      begin
+        Console.Log('Characters');
+        client.Data.Characters.Load(clientPacket.GetRemainingData);
+        Console.WriteDump(client.Data.Characters.ToPacketData);
+        client.Send(
+          #$70#$00 +
+          client.Data.Characters.ToPacketData
         );
       end
       else

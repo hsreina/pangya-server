@@ -241,18 +241,19 @@ begin
 
   playerData.playerInfo1.PlayerID := playerId;
 
-  // Send Lobbies list
+  // Send Main player data
   self.PlayerAction(
     client,
     playerUID,
     WriteAction(SSAPID_PLAYER_MAIN_SAVE) + playerData.ToPacketData
   );
 
-
-  d := WriteAction(SGPID_PLAYER_MAIN_DATA) + m_database.GetPlayerCharacter(playerUID.id);
-
-  // characters
-  self.SendToGame(client, playerUID, d);
+  // player characters
+  self.PlayerAction(
+    client,
+    playerUID,
+    WriteAction(SSAPID_PLAYER_CHARACTERS) + m_database.GetPlayerCharacters(playerUID.id)
+  );
 
   cookies := 99999999;
   // Cookies

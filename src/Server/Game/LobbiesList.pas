@@ -3,7 +3,7 @@ unit LobbiesList;
 interface
 
 uses
-  Generics.Collections, Lobby, PacketData;
+  Generics.Collections, Lobby, PacketData, GamePlayer;
 
 type
 
@@ -13,17 +13,44 @@ type
     protected
     private
       var m_lobbies: TLobbyList;
+      procedure DestroyLobbies;
     public
-
-      function GetLobbyById(lobbyId: Byte): TLobby;
-
-      function Build: TPacketData;
-
       constructor Create;
       destructor Destroy; override;
+      function GetLobbyById(lobbyId: Byte): TLobby;
+      function GetPlayerLobby(player: TGamePlayer): TLobby;
+      function Build: TPacketData;
   end;
 
 implementation
+
+constructor TLobbiesList.Create;
+var
+  lobby: TLobby;
+  index: integer;
+begin
+  inherited;
+  m_lobbies := TLobbyList.Create;
+  lobby := TLobby.Create;
+  lobby.Id := m_lobbies.Add(lobby);
+end;
+
+destructor TLobbiesList.Destroy;
+begin
+  inherited;
+  DestroyLobbies;
+  m_lobbies.Free;
+end;
+
+procedure TLobbiesList.DestroyLobbies;
+var
+  lobby: TLobby;
+begin
+  for lobby in m_lobbies do
+  begin
+    lobby.Free;
+  end;
+end;
 
 function TLobbiesList.GetLobbyById(lobbyId: Byte): TLobby;
 var
@@ -39,25 +66,11 @@ begin
   Exit(nil);
 end;
 
-constructor TLobbiesList.Create;
-var
-  lobby: TLobby;
-  index: integer;
-begin
-  m_lobbies := TLobbyList.Create;
-  lobby := TLobby.Create;
-  lobby.Id := m_lobbies.Add(lobby);
-end;
-
-destructor TLobbiesList.Destroy;
+function TLobbiesList.GetPlayerLobby(player: TGamePlayer): TLobby;
 var
   lobby: TLobby;
 begin
-  for lobby in m_lobbies do
-  begin
-    lobby.Free;
-  end;
-  m_lobbies.Free;
+  Exit(self.GetLobbyById(player.Lobby));
 end;
 
 function TLobbiesList.Build: TPacketData;

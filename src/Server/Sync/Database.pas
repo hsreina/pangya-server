@@ -29,7 +29,7 @@ type
       function PlayerHaveAnInitialCharacter(playerUID: AnsiString): Boolean;
 
       procedure SavePlayerCharacters(playerId: integer; playerCharacters: TPlayerCharacters);
-      function GetPlayerCharacter(playerId: integer): AnsiString;
+      function GetPlayerCharacters(playerId: integer): AnsiString;
 
       procedure SavePlayerMainSave(playerId: integer; playerData: TPlayerData);
       function GetPlayerMainSave(playerid: integer): AnsiString;
@@ -232,7 +232,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerCharacter(playerId: integer): AnsiString;
+function TDatabase.GetPlayerCharacters(playerId: integer): AnsiString;
 var
   query: TFDQuery;
 begin
@@ -242,12 +242,10 @@ begin
     query.SQL.Text := 'SELECT "data" FROM "character" WHERE "player_id" = :player_id LIMIT 1;';
     query.ParamByName('player_id').AsInteger := playerId;
     query.Open();
-
     if query.RowsAffected = 1 then
     begin
       Result := query.FieldByName('data').AsString;
     end;
-
   finally
     query.Close;
     query.DisposeOf;

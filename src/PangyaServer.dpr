@@ -29,7 +29,11 @@ uses
   PlayerData in 'Server\Game\PlayerData.pas',
   utils in 'utils.pas',
   PangyaBuffer in 'PangyaBuffer.pas',
-  DataChecker in 'DataChecker.pas';
+  DataChecker in 'DataChecker.pas',
+  Game in 'Server\Game\Game.pas',
+  GamesList in 'Server\Game\GamesList.pas',
+  GameServerExceptions in 'Server\Game\Exceptions\GameServerExceptions.pas',
+  defs in 'defs.pas';
 
 {$R *.res}
 

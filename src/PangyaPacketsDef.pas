@@ -25,10 +25,13 @@ type
     CGPID_PLAYER_LOGIN                      = $0002,
     CGPID_PLAYER_MESSAGE                    = $0003,
     CGPID_PLAYER_JOIN_LOBBY                 = $0004,
+    CGPID_PLAYER_CREATE_GAME                = $0008,
+    CGPID_PLAYER_LEAVE_GAME                 = $000F,
     CGPID_PLAYER_BUY_ITEM                   = $001D,
     CGPID_PLAYER_CHANGE_EQUIP               = $0020,
     CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST = $0081,
     CGPID_PLAYER_LEAV_MULTIPLAYER_GAME_LIST = $0082,
+    CGPID_PLAYER_UN_00EB                    = $00EB,
     CGPID_PLAYER_UN_0140                    = $0140,
     CGPID_NOTHING                           = $FFFF
   );
@@ -51,6 +54,7 @@ type
     SSAPID_SEND_SERVER_LIST           = $0001, // Send the list of game server
     SSAPID_SEND_LOBBIES_LIST          = $0002, // Send the list of lobbies
     SSAPID_PLAYER_MAIN_SAVE           = $0003,
+    SSAPID_PLAYER_CHARACTERS          = $0004,
     SSAPID_NOTHING                    = $FFFF
   );
 
