@@ -3,7 +3,7 @@ unit LobbiesList;
 interface
 
 uses
-  Generics.Collections, Lobby, PacketData, GamePlayer;
+  Generics.Collections, Lobby, PacketData, GamePlayer, Game;
 
 type
 
@@ -19,10 +19,13 @@ type
       destructor Destroy; override;
       function GetLobbyById(lobbyId: Byte): TLobby;
       function GetPlayerLobby(player: TGamePlayer): TLobby;
+      function GetPlayerGame(player: TGamePlayer): TGame;
       function Build: TPacketData;
   end;
 
 implementation
+
+uses GameServerExceptions;
 
 constructor TLobbiesList.Create;
 var
@@ -63,14 +66,20 @@ begin
       Exit(lobby);
     end;
   end;
-  Exit(nil);
+  raise LobbyNotFoundException.Create('Lobby not found');
 end;
 
 function TLobbiesList.GetPlayerLobby(player: TGamePlayer): TLobby;
+begin
+  Exit(self.GetLobbyById(player.Lobby));
+end;
+
+function TLobbiesList.GetPlayerGame(player: TGamePlayer): TGame;
 var
   lobby: TLobby;
 begin
-  Exit(self.GetLobbyById(player.Lobby));
+  lobby := self.GetLobbyById(player.Lobby);
+  lobby.Games.GetGameById(player.Data.playerInfo1.game);
 end;
 
 function TLobbiesList.Build: TPacketData;

@@ -30,12 +30,15 @@ type
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
 
     public
@@ -99,14 +102,15 @@ begin
   player := client.Data;
   if not (player = nil) then
   begin
-
-    // Remove the player from the lobby
-    if not player.Lobby = $FF then
-    begin
+    try
       lobby := m_lobbies.GetLobbyById(player.Lobby);
       lobby.RemovePlayer(player);
+    Except
+      on E: Exception do
+      begin
+        Console.Log(E.Message, C_RED);
+      end;
     end;
-
     player.Free;
     player := nil;
   end;
@@ -167,12 +171,14 @@ begin
     Exit;
   end;
 
-  lobby := m_lobbies.GetLobbyById(lobbyId);
-
-  if nil = lobby then
-  begin
-    Console.Log('lobby doesn''t exists', C_RED);
-    Exit;
+  try
+    lobby := m_lobbies.GetLobbyById(lobbyId);
+  except
+    on E: Exception do
+    begin
+      Console.Log(E.Message, C_RED);
+      Exit;
+    end;
   end;
 
   lobby.AddPlayer(client.Data);
@@ -196,27 +202,21 @@ begin
   clientPacket.ReadPStr(gamePassword);
   clientPacket.ReadUInt32(artifact);
 
-  playerLobby := m_lobbies.GetPlayerLobby(client.Data);
-
-  if playerLobby = nil then
-  begin
-    Console.Log('lobby not found for player', C_RED);
-    Exit;
-  end;
-
   try
-    game := playerLobby.Games.CreateGame(gamename, gamePassword, gameInfo, artifact);
+    playerLobby := m_lobbies.GetPlayerLobby(client.Data);
   except
-    on E: LobbyGamesFullException do begin
+    on E: Exception do
+    begin
       Console.Log(E.Message, C_RED);
-      Exit;
     end;
   end;
 
   try
+    game := playerLobby.Games.CreateGame(gamename, gamePassword, gameInfo, artifact);
     game.AddPlayer(client.Data);
   except
-    on E: GameFullException do begin
+    on E: Exception do
+    begin
       Console.Log(E.Message, C_RED);
       Exit;
     end;
@@ -226,17 +226,7 @@ begin
   client.Send(
     #$4A#$00 +
     #$FF#$FF +
-    #$02 + // game type 02: CHat room
-    AnsiChar(gameInfo.map) +
-    AnsiChar(gameInfo.holeCount) +
-    AnsiChar(gameInfo.mode) +
-    #$00#$00#$00#$00 +
-    AnsiChar(gameInfo.maxPlayers) +
-    #$1E#$00 +
-    self.Write(gameInfo.turnTime, 4) +
-    self.Write(gameInfo.gameTime, 4) +
-    #$00#$00#$00#$00#$00 +
-    self.WriteStr(gameName)
+    game.GameResume
   );
 
   // game game informations
@@ -265,29 +255,50 @@ begin
 
 end;
 
-procedure TgameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TgameServer.HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
 var
   playerLobby: TLobby;
   playergame: TGame;
 begin
+  Console.Log('TGameServer.HandlePlayerChangeGameSettings', C_BLUE);
+
+end;
+
+procedure TgameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  playergame: TGame;
+begin
   Console.Log('TGameServer.HandlePlayerLeaveGame', C_BLUE);
-  playerLobby := m_lobbies.GetPlayerLobby(client.Data);
 
-  if playerLobby = nil then
-  begin
-    Console.Log('lobby not found for player', C_RED);
-    Exit;
-  end;
-
-  playerGame := playerLobby.Games.getPlayerGame(client.Data);
-
-  if playerGame = nil then
-  begin
-    Console.Log('player game not found', C_RED);
-    Exit;
+  try
+  playerGame := m_lobbies.GetPlayerGame(client.Data);
+  except
+    on E: Exception do
+    begin
+      Console.Log(E.Message, C_RED);
+      Exit;
+    end;
   end;
 
   playerGame.RemovePlayer(client.Data);
+
+  {
+    // Game lobby info
+    // if player count reach 0
+    client.Send(
+      #$47#$00#$01#$02#$FF#$FF +
+      game.LobbyInformation
+    );
+
+    // if player count reach 0
+    client.Send(
+      #$47#$00#$01#$03#$FF#$FF +
+      game.LobbyInformation
+    );
+
+  }
+
+  client.Send(#$4C#$00#$FF#$FF);
 
 end;
 
@@ -403,6 +414,12 @@ begin
   client.Send(#$F6#$00);
 end;
 
+procedure TGameServer.HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerOpenRareShop', C_BLUE);
+  client.Send(#$0B#$01#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$00#$00#$00#$00);
+end;
+
 procedure TGameServer.HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   Console.Log('TGameServer.HandlePlayerUnknow0140', C_BLUE);
@@ -412,6 +429,12 @@ begin
     #$4E#$01#$00#$00 + #$00#$00#$80#$3F + #$00#$00#$80#$3F +
     #$00#$00#$80#$3F + #$00#$00#$80#$3F + #$00#$00#$80#$3F
   );
+end;
+
+procedure TGameServer.HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerOpenScratchyCard', C_BLUE);
+  client.Send(#$EB#$01#$00#$00#$00#$00#$00);
 end;
 
 procedure TGameServer.HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
@@ -448,6 +471,10 @@ begin
       begin
         self.HandlePlayerCreateGame(client, clientPacket);
       end;
+      CGPID_PLAYER_CHANGE_GAME_SETTINGS:
+      begin
+        self.HandlePlayerChangeGameSettings(client, clientPacket);
+      end;
       CGPID_PLAYER_LEAVE_GAME:
       begin
         self.HandlePlayerLeaveGame(client, clientPacket);
@@ -468,9 +495,17 @@ begin
       begin
         self.HandlePlayerLeaveMultiplayerGamesList(client, clientPacket);
       end;
+      CGPID_PLAYER_OPEN_RARE_SHOP:
+      begin
+        self.HandlePlayerOpenRareShop(client, clientPacket);
+      end;
       CGPID_PLAYER_UN_00EB:
       begin
         self.HandlePlayerUnknow00EB(client, clientPacket);
+      end;
+      CGPID_PLAYER_OPEN_SCRATCHY_CARD:
+      begin
+        self.HandlePlayerOpenScratchyCard(client, clientPacket);
       end;
       CGPID_PLAYER_UN_0140:
       begin

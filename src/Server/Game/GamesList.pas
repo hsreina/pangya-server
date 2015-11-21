@@ -81,6 +81,7 @@ begin
       Exit(game);
     end;
   end;
+  raise GameNotFoundException.Create('Game not found');
   Exit(nil);
 end;
 

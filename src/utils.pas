@@ -5,6 +5,9 @@ interface
 uses
   SysUtils;
 
+type
+  TIfThen<T>= function(conditionResult: Boolean; IfValue, ElseValue: T): T;
+
 function GetDataFromfile(filePath: string): AnsiString;
 procedure WriteDataToFile(filePath: string; data: AnsiString);
 

@@ -7,15 +7,31 @@ uses
 
 type
 
-  LobbyGamesFullException = class(Exception)
+  FullException = class(Exception)
 
   end;
 
-  GameFullException = class(Exception)
+  LobbyGamesFullException = class(FullException)
 
   end;
 
-  PlayerNotFoundException = class(Exception)
+  GameFullException = class(FullException)
+
+  end;
+
+  NotFoundException = class(Exception)
+
+  end;
+
+  PlayerNotFoundException = class(NotFoundException)
+
+  end;
+
+  GameNotFoundException = class(NotFoundException)
+
+  end;
+
+  LobbyNotFoundException = class(NotFoundException)
 
   end;
 

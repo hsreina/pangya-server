@@ -65,12 +65,10 @@ begin
   begin
     if (UID.login = 'Sync') then
     begin
-      console.Log('Sync With server ' + UID.login);
       encrypted := m_cryptLib.ClientEncrypt(data, m_key, 0);
       m_buffout.WriteStr(encrypted);
     end else
     begin
-      console.Log('Sync With game ' + self.UID.login);
       encrypted := m_cryptLib.ServerEncrypt(data, m_key);
       m_buffout.WriteStr(encrypted);
     end;

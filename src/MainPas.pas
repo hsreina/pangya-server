@@ -60,7 +60,7 @@ begin
     outdata := GetDataFromFile(acFileName);
     console.writeDump(outdata);
     console.log('send to game 0');
-    m_loginServer.SendDebugData(outdata);
+    m_gameServer.SendDebugData(outdata);
   end;
 
   DragFinish(msg.WParam);
