@@ -2,7 +2,7 @@ unit GameServer;
 
 interface
 
-uses Client, GamePlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib, SyncableServer;
+uses Client, GamePlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib, SyncableServer, PangyaBuffer;
 
 type
 
@@ -34,12 +34,18 @@ type
       procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
+
+      procedure SendToGame(const client: TGameClient; data: AnsiString); overload;
+      procedure SendToGame(const client: TGameClient; data: TPangyaBuffer); overload;
+      procedure SendToLobby(const client: TGameClient; data: AnsiString); overload;
+      procedure SendToLobby(const client: TGameClient; data: TPangyaBuffer); overload;
 
     public
       constructor Create(cryptLib: TCryptLib);
@@ -49,7 +55,7 @@ type
 implementation
 
 uses Logging, PangyaPacketsDef, ConsolePas, Buffer, utils, PacketData, defs,
-  PangyaBuffer, Lobby, PlayerCharacter, Game, GameServerExceptions;
+        Lobby, PlayerCharacter, Game, GameServerExceptions;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -83,7 +89,6 @@ begin
   self.Log('TGameServer.OnConnectClient', TLogType_not);
   player := TGamePlayer.Create;
   client.Data := player;
-
   client.Send(
     #$00#$16#$00#$00#$3F#$00#$01#$01 +
     AnsiChar(client.GetKey()) +
@@ -104,7 +109,7 @@ begin
   begin
     try
       lobby := m_lobbies.GetLobbyById(player.Lobby);
-      lobby.RemovePlayer(player);
+      lobby.RemovePlayer(client);
     Except
       on E: Exception do
       begin
@@ -153,7 +158,8 @@ begin
   reply.WriteStr(#$40#$00 + #$00);
   reply.WritePStr(login);
   reply.WritePStr(msg);
-  client.Send(reply);
+
+  SendToGame(client, reply);
 
   reply.Free;
 end;
@@ -181,7 +187,7 @@ begin
     end;
   end;
 
-  lobby.AddPlayer(client.Data);
+  lobby.AddPlayer(client);
 
   client.Send(#$95#$00 + AnsiChar(lobbyId) + #$01#$00);
   client.Send(#$4E#$00 + #$01);
@@ -195,6 +201,7 @@ var
   artifact: UInt32;
   playerLobby: TLobby;
   game: TGame;
+  currentGame: Tgame;
 begin
   Console.Log('TGameServer.HandlePlayerBuyItem', C_BLUE);
   clientPacket.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
@@ -203,17 +210,20 @@ begin
   clientPacket.ReadUInt32(artifact);
 
   try
-    playerLobby := m_lobbies.GetPlayerLobby(client.Data);
+    playerLobby := m_lobbies.GetPlayerLobby(client);
   except
     on E: Exception do
     begin
       Console.Log(E.Message, C_RED);
+      Exit;
     end;
   end;
 
   try
-    game := playerLobby.Games.CreateGame(gamename, gamePassword, gameInfo, artifact);
-    game.AddPlayer(client.Data);
+    game := playerLobby.CreateGame(gamename, gamePassword, gameInfo, artifact);
+    currentGame := m_lobbies.GetPlayerGame(client);
+    currentGame.RemovePlayer(client);
+    game.AddPlayer(client);
   except
     on E: Exception do
     begin
@@ -236,15 +246,10 @@ begin
     game.GameInformation
   );
 
+  // player game info
   client.Send(
-      #$48#$00#$00#$FF#$FF#$01 +
-      client.Data.GameInformation
-  );
-
-  // Game lobby info
-  client.Send(
-    #$47#$00#$01#$01#$FF#$FF +
-    game.LobbyInformation
+    #$48#$00#$00#$FF#$FF#$01 +
+    client.Data.GameInformation
   );
 
   // Lobby player informations
@@ -252,7 +257,6 @@ begin
     #$46#$00#$03#$01 +
     client.Data.LobbyInformations
   );
-
 end;
 
 procedure TgameServer.HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
@@ -267,11 +271,22 @@ end;
 procedure TgameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
 var
   playergame: TGame;
+  playerLobby: TLobby;
 begin
   Console.Log('TGameServer.HandlePlayerLeaveGame', C_BLUE);
 
   try
-  playerGame := m_lobbies.GetPlayerGame(client.Data);
+    playerLobby := m_lobbies.GetPlayerLobby(client);
+  except
+    on e: Exception do
+    begin
+      Console.Log(E.Message, C_RED);
+      Exit;
+    end;
+  end;
+
+  try
+    playerGame := playerLobby.GetPlayerGame(client);
   except
     on E: Exception do
     begin
@@ -280,7 +295,9 @@ begin
     end;
   end;
 
-  playerGame.RemovePlayer(client.Data);
+  playerGame.RemovePlayer(client);
+  playerLobby.NullGame.AddPlayer(client);
+
 
   {
     // Game lobby info
@@ -402,6 +419,31 @@ begin
   end;
 end;
 
+procedure TGameServer.HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  action: UInt8;
+  game: TGame;
+begin
+  Console.Log('TGameServer.HandlePlayerAction', C_BLUE);
+  if not clientPacket.ReadUInt8(action) then
+  begin
+    Console.Log('Failed to read player action', C_RED);
+    Exit;
+  end;
+
+  try
+    game := m_lobbies.GetPlayerGame(client);
+  except
+    on e: Exception do
+    begin
+      Console.Log(e.Message, C_RED);
+      Exit;
+    end;
+  end;
+
+  SendToGame(client, clientPacket.GetRemainingData);
+end;
+
 procedure TGameServer.HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   Console.Log('TGameServer.HandlePlayerJoinMultiplayerGamesList', C_BLUE);
@@ -486,6 +528,10 @@ begin
       CGPID_PLAYER_CHANGE_EQUIP:
       begin
         self.HandlePlayerChangeEquipment(client, clientPacket);
+      end;
+      CGPID_PLAYER_ACTION:
+      begin
+        self.HandlePlayerAction(client, clientPacket);
       end;
       CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST:
       begin
@@ -613,6 +659,70 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TGameServer.SendToGame(const client: TGameClient; data: AnsiString);
+var
+  game: TGame;
+begin
+  try
+    game := m_lobbies.GetPlayerGame(client);
+  except
+    on e: Exception do
+    begin
+      Console.Log(e.Message, C_RED);
+      Exit;
+    end;
+  end;
+  game.Send(data);
+end;
+
+procedure TGameServer.SendToGame(const client: TGameClient; data: TPangyaBuffer);
+var
+  game: TGame;
+begin
+  try
+    game := m_lobbies.GetPlayerGame(client);
+  except
+    on e: Exception do
+    begin
+      Console.Log(e.Message, C_RED);
+      Exit;
+    end;
+  end;
+  game.Send(data);
+end;
+
+procedure TGameServer.SendToLobby(const client: TGameClient; data: AnsiString);
+var
+  lobby: TLobby;
+begin
+  try
+    lobby := m_lobbies.GetPlayerLobby(client);
+  except
+    on e: Exception do
+    begin
+      Console.Log(e.Message, C_RED);
+      Exit;
+    end;
+  end;
+  lobby.Send(data);
+end;
+
+procedure TGameServer.SendToLobby(const client: TGameClient; data: TPangyaBuffer);
+var
+  lobby: TLobby;
+begin
+  try
+    lobby := m_lobbies.GetPlayerLobby(client);
+  except
+    on e: Exception do
+    begin
+      Console.Log(e.Message, C_RED);
+      Exit;
+    end;
+  end;
+  lobby.Send(data);
 end;
 
 end.

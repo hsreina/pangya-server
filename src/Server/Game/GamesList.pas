@@ -6,18 +6,26 @@ uses
   Generics.Collections, Game, GamePlayer;
 
 type
+
   TGamesList = class
     private
       var m_games: TList<TGame>;
       var m_maxGames: UInt32;
+
+      var m_onCreateGame: TGameGenericEvent;
+      var m_onDestroyGame: TGameGenericEvent;
+
+      procedure DestroyGames;
     public
       constructor Create;
       destructor Destroy; override;
       function GetGameById(gameId: Byte): TGame;
       function getPlayerGame(player: TGamePlayer): TGame;
-      procedure DestroyGames;
-      function CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32): TGame;
+      function CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent): TGame;
       procedure DestroyGame(game: Tgame);
+
+      property OnCreateGame: TGameGenericEvent read m_onCreateGame;
+      property OnDestroyGame: TGameGenericEvent read m_onDestroyGame;
   end;
 
 implementation
@@ -29,6 +37,8 @@ begin
   inherited;
   m_maxGames := 10;
   m_games := TList<TGame>.Create;
+  m_onCreateGame := TGameGenericEvent.Create;
+  m_onDestroyGame := TGameGenericEvent.Create;
 end;
 
 destructor TGamesList.Destroy;
@@ -36,6 +46,8 @@ begin
   inherited;
   DestroyGames;
   m_games.Free;
+  m_onCreateGame.Destroy;
+  m_onDestroyGame.Destroy;
 end;
 
 procedure TGamesList.DestroyGames;
@@ -48,7 +60,7 @@ begin
   end;
 end;
 
-function TGamesList.CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32): TGame;
+function TGamesList.CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent): TGame;
 var
   game: TGame;
 begin
@@ -57,15 +69,20 @@ begin
   begin
     raise LobbyGamesFullException.CreateFmt('oups, too much game', []);
   end;
-
-  game := TGame.Create(name, password, gameInfo, artifact);
+  game := TGame.Create(name, password, gameInfo, artifact, onUpdate);
   game.Id := m_games.Add(game);
+  m_onCreateGame.Trigger(game);
   Result := game;
 end;
 
 procedure TGamesList.DestroyGame(game: TGame);
+var
+  res: Integer;
 begin
-  if not -1 = m_games.Remove(game) then begin
+  res := m_games.Remove(game);
+  if not (res = -1) then
+  begin
+    m_onDestroyGame.Trigger(game);
     game.Free;
   end;
 end;

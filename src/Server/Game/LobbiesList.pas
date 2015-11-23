@@ -18,8 +18,8 @@ type
       constructor Create;
       destructor Destroy; override;
       function GetLobbyById(lobbyId: Byte): TLobby;
-      function GetPlayerLobby(player: TGamePlayer): TLobby;
-      function GetPlayerGame(player: TGamePlayer): TGame;
+      function GetPlayerLobby(player: TGameClient): TLobby;
+      function GetPlayerGame(player: TGameClient): TGame;
       function Build: TPacketData;
   end;
 
@@ -69,17 +69,17 @@ begin
   raise LobbyNotFoundException.Create('Lobby not found');
 end;
 
-function TLobbiesList.GetPlayerLobby(player: TGamePlayer): TLobby;
+function TLobbiesList.GetPlayerLobby(player: TGameClient): TLobby;
 begin
-  Exit(self.GetLobbyById(player.Lobby));
+  Exit(self.GetLobbyById(player.Data.Lobby));
 end;
 
-function TLobbiesList.GetPlayerGame(player: TGamePlayer): TGame;
+function TLobbiesList.GetPlayerGame(player: TGameClient): TGame;
 var
   lobby: TLobby;
 begin
-  lobby := self.GetLobbyById(player.Lobby);
-  lobby.Games.GetGameById(player.Data.playerInfo1.game);
+  lobby := self.GetLobbyById(player.Data.Lobby);
+  Exit(lobby.GetPlayerGame(player));
 end;
 
 function TLobbiesList.Build: TPacketData;

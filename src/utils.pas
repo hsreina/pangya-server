@@ -6,7 +6,11 @@ uses
   SysUtils;
 
 type
-  TIfThen<T>= function(conditionResult: Boolean; IfValue, ElseValue: T): T;
+  TGeneric = class
+    class function Iff<T>(const expression: Boolean; trueValue: T; falseValue: T): T;
+  end;
+
+  TEvent<T> = procedure(enventObject: T) of object;
 
 function GetDataFromfile(filePath: string): AnsiString;
 procedure WriteDataToFile(filePath: string; data: AnsiString);
@@ -37,6 +41,17 @@ begin
   size := Length(data);
   FileWrite(x, data[1], size);
   fileclose(x);
+end;
+
+class function TGeneric.Iff<T>(const expression: Boolean; trueValue: T; falseValue: T): T;
+begin
+  if (expression) then
+  begin
+    Exit(trueValue);
+  end else
+  begin
+    Exit(falseValue);
+  end;
 end;
 
 end.

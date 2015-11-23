@@ -19,6 +19,10 @@ type
 
   end;
 
+  LobbyFullException = class(FullException)
+
+  end;
+
   NotFoundException = class(Exception)
 
   end;

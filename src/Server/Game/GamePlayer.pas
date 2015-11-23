@@ -2,9 +2,10 @@ unit GamePlayer;
 
 interface
 
-uses PlayerData, PlayerCharacters;
+uses PlayerData, PlayerCharacters, Client;
 
 type
+
   TGamePlayer = class
     private
       var m_lobby: UInt8;
@@ -24,6 +25,8 @@ type
       constructor Create;
       destructor Destroy; override;
   end;
+
+  TGameClient = TClient<TGamePlayer>;
 
 implementation
 

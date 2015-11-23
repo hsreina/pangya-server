@@ -6,6 +6,7 @@ uses
   ScktComp, ClientPacket, CryptLib, defs, PangyaBuffer;
 
 type
+
   TClient<ClientType> = class
     protected
       var m_buffout: TPangyaBuffer;

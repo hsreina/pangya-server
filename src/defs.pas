@@ -35,6 +35,17 @@ type
     GAME_MODE_REPEAT              = $04
   );
 
+  TPLAYER_ACTION  = (
+    PLAYER_ACTION_APPEAR          = $04,
+    PLAYER_ACTION_SUB             = $05,
+    PLAYER_ACTION_MOVE            = $06
+  );
+
+  TPLAYER_ACTION_SUB = (
+    PLAYER_ACTION_SUB_STAND       = $00,
+    PLAYER_ACTION_SUB_SIT         = $01,
+    PLAYER_ACTION_SUB_SLEEP       = $02
+  );
 
 implementation
 
