@@ -26,6 +26,7 @@ type
     CGPID_PLAYER_MESSAGE                    = $0003,
     CGPID_PLAYER_JOIN_LOBBY                 = $0004,
     CGPID_PLAYER_CREATE_GAME                = $0008,
+    CGPID_PLAYER_JOIN_GAME                  = $0009,
     CGPID_PLAYER_CHANGE_GAME_SETTINGS       = $000A,
     CGPID_PLAYER_LEAVE_GAME                 = $000F,
     CGPID_PLAYER_BUY_ITEM                   = $001D,

@@ -62,9 +62,10 @@ begin
 
   packet.WriteStr(
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$01#$00#$00#$00#$00#$06 +
-    #$01 +
-    #$80#$39
+    #$00 +
+    #$01 + // Slot in game
+    #$00#$00#$00#$00 +
+    #$06#$01#$80#$39
   );
 
   packet.WriteUInt32(Data.equipedCharacter.IffId);
@@ -102,8 +103,6 @@ begin
   );
 
   packet.Write(Data.equipedCharacter.IffId, SizeOf(TPlayerCharacterData));
-
-  packet.WriteStr(#$00);
 
   Result := packet.ToStr;
 

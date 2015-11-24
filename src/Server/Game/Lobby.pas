@@ -26,6 +26,7 @@ type
 
       procedure AddPlayer(player: TGameClient);
       procedure RemovePlayer(player: TGameClient);
+      function GetGameById(gameId: Uint16): TGame;
       function GetPlayerGame(player: TGameClient): TGame;
 
       procedure Send(data: AnsiString); overload;
@@ -122,6 +123,11 @@ end;
 function TLobby.GetPlayerGame(player: TGameClient): TGame;
 begin
   Exit(m_games.GetGameById(player.Data.Data.playerInfo1.game));
+end;
+
+function TLobby.GetGameById(gameId: Uint16): TGame;
+begin
+  Exit(m_games.GetGameById(gameId));
 end;
 
 procedure TLobby.Send(data: AnsiString);

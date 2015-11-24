@@ -30,6 +30,7 @@ type
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
@@ -202,6 +203,7 @@ var
   playerLobby: TLobby;
   game: TGame;
   currentGame: Tgame;
+  d: AnsiString;
 begin
   Console.Log('TGameServer.HandlePlayerBuyItem', C_BLUE);
   clientPacket.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
@@ -246,10 +248,11 @@ begin
     game.GameInformation
   );
 
-  // player game info
+  // my player game info
   client.Send(
     #$48#$00#$00#$FF#$FF#$01 +
-    client.Data.GameInformation
+    client.Data.GameInformation +
+    #$00
   );
 
   // Lobby player informations
@@ -257,6 +260,73 @@ begin
     #$46#$00#$03#$01 +
     client.Data.LobbyInformations
   );
+end;
+
+procedure TGameServer.HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  gameId: UInt16;
+  password: AnsiString;
+  game: TGame;
+  playerLobby: TLobby;
+begin
+  Console.Log('TGameServer.HandlePlayerJoinGame', C_BLUE);
+  {09 00 01 00 00 00  }
+  if not clientPacket.ReadUInt16(gameId) then
+  begin
+    Console.Log('Failed to get game Id', C_RED);
+    Exit;
+  end;
+  clientPacket.ReadPStr(password);
+
+  try
+    playerLobby := m_lobbies.GetPlayerLobby(client);
+    game := playerLobby.GetGameById(gameId);
+  Except
+    on e: Exception do
+    begin
+      Console.Log('well, i ll move that in another place one day or another', C_RED);
+      Exit;
+    end;
+  end;
+
+  try
+    game.AddPlayer(client);
+  except
+    on e: GameFullException do
+    begin
+      Console.Log(e.Message + ' should maybe tell to the user that the game is full?', C_RED);
+      Exit;
+    end;
+  end;
+
+   // result
+  client.Send(
+    #$4A#$00 +
+    #$FF#$FF +
+    game.GameResume
+  );
+
+  // game game informations
+  client.Send(
+    #$49#$00 +
+    #$00#$00 +
+    game.GameInformation
+  );
+
+  // my player game info
+  game.Send(
+    #$48#$00#$00#$FF#$FF#$01 +
+    client.Data.GameInformation
+  );
+
+  // must send other ppl in the game info
+
+  // Lobby player informations
+  playerLobby.Send(
+    #$46#$00#$03#$01 +
+    client.Data.LobbyInformations
+  );
+
 end;
 
 procedure TgameServer.HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
@@ -513,6 +583,10 @@ begin
       begin
         self.HandlePlayerCreateGame(client, clientPacket);
       end;
+      CGPID_PLAYER_JOIN_GAME:
+      begin
+        self.HandlePlayerJoinGame(client, clientPacket);
+      end;
       CGPID_PLAYER_CHANGE_GAME_SETTINGS:
       begin
         self.HandlePlayerChangeGameSettings(client, clientPacket);
@@ -578,6 +652,7 @@ procedure TGameServer.ServerPlayerAction(const clientPacket: TClientPacket; cons
 var
   actionId: TSSAPID;
   buffer: AnsiString;
+  d: AnsiString;
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
   if clientPacket.Read(actionId, 2) then
@@ -592,11 +667,12 @@ begin
         buffer := clientPacket.GetRemainingData;
         client.Data.Data.Load(buffer);
         client.Data.Data.playerInfo1.ConnectionId := client.ID;
+
         client.Send(
           #$44#$00 + #$00 +
           WriteStr('824.00') +
           WriteStr(ExtractFilename(ParamStr(0))) +
-          buffer
+          client.Data.Data.ToPacketData
         );
       end;
       SSAPID_PLAYER_CHARACTERS:
