@@ -20,6 +20,9 @@ type
       procedure OnDestroyGame(game: TGame);
       procedure OnUpdateGame(game: TGame);
 
+      procedure OnPlayerJoinGame(game: TGame; player: TGameClient);
+      procedure OnPlayerLeaveGame(game: TGame; player: TGameClient);
+
     public
       function Build: TPacketData;
       property Id: UInt8 read m_id write m_id;
@@ -28,16 +31,17 @@ type
       procedure RemovePlayer(player: TGameClient);
       function GetGameById(gameId: Uint16): TGame;
       function GetPlayerGame(player: TGameClient): TGame;
-
       procedure Send(data: AnsiString); overload;
       procedure Send(data: TPangyaBuffer); overload;
 
       property Players: TPLayerList read m_players;
-
       property NullGame: TGame read m_nullGame;
 
       function CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32): TGame;
       procedure DestroyGame(game: Tgame);
+
+      procedure JoinMultiplayerGamesList(client: TgameClient);
+      procedure LeaveMultiplayerGamesList(client: TgameClient);
 
       constructor Create;
       destructor Destroy; override;
@@ -75,7 +79,6 @@ begin
   begin
     raise LobbyFullException.Create('Lobby full');
   end;
-
   m_players.Add(player);
   player.Data.Lobby := m_id;
   m_nullGame.AddPlayer(player);
@@ -150,15 +153,26 @@ begin
   end;
 end;
 
+procedure TLobby.OnPlayerJoinGame(game: TGame; player: TGameClient);
+begin
+
+end;
+
+procedure TLobby.OnPlayerLeaveGame(game: TGame; player: TGameClient);
+begin
+
+end;
+
 procedure TLobby.OnCreateGame(game: TGame);
 begin
   if game.Id = 0 then
   begin
     Exit;
   end;
+
   self.Send(
     #$47#$00#$01#$01#$FF#$FF +
-    game.LobbyInformation
+    game.GameInformation
   );
 end;
 
@@ -170,7 +184,7 @@ begin
   end;
   self.Send(
     #$47#$00#$01#$02#$FF#$FF +
-    game.LobbyInformation
+    game.GameInformation
   );
 end;
 
@@ -182,6 +196,74 @@ end;
 procedure TLobby.DestroyGame(game: Tgame);
 begin
   m_games.DestroyGame(game);
+end;
+
+procedure TLobby.JoinMultiplayerGamesList(client: TGameClient);
+var
+  p: TGameClient;
+  playersinlist: integer;
+  outData: AnsiString;
+  firstPacket: Boolean;
+begin
+
+  playersInList := 0;
+  outData := '';
+  firstPacket := true;
+  for p in m_players do
+  begin
+
+    if not P.Data.InGameList then
+    begin
+      continue;
+    end;
+
+    outData := outData + p.Data.LobbyInformations;
+    inc(playersinlist);
+    if playersinlist >= 8 then
+    begin
+      if firstPacket then
+      begin
+        outdata := #$46#$00 + #$04
+          + ansichar(playersinlist) + outdata;
+        firstPacket := false;
+      end else
+      begin
+        outdata := #$46#$00 + #$05
+          + ansichar(playersinlist) + outdata;
+      end;
+      client.Send(outdata);
+      playersinlist := 0;
+      outdata := '';
+    end;
+  end;
+
+  if playersinlist > 0 then begin
+    outdata := #$46#$00 + #$05 +
+      ansichar(playersinlist) +
+      outdata;
+      client.Send(outdata);
+  end;
+
+  self.Send(
+    #$46#$00 + #$01#$01 +
+    client.Data.LobbyInformations
+  );
+
+  client.Data.InGameList := true;
+  client.Send(#$F5#$00);
+end;
+
+procedure TLobby.LeaveMultiplayerGamesList(client: TGameClient);
+begin
+
+  self.Send(
+    #$46#$00 + #$02#$01 +
+    client.Data.LobbyInformations
+  );
+
+  client.Data.InGameList := false;
+
+  client.Send(#$F6#$00);
 end;
 
 procedure TLobby.OnUpdateGame(game: TGame);
@@ -198,10 +280,9 @@ begin
   begin
     self.Send(
       #$47#$00#$01#$03#$FF#$FF +
-      game.LobbyInformation
+      game.GameInformation
     );
   end;
-
 end;
 
 end.

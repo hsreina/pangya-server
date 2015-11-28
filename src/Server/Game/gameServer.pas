@@ -56,7 +56,8 @@ type
 implementation
 
 uses Logging, PangyaPacketsDef, ConsolePas, Buffer, utils, PacketData, defs,
-        Lobby, PlayerCharacter, Game, GameServerExceptions;
+        Lobby, PlayerCharacter, Game, GameServerExceptions, PlayerPos,
+  PlayerAction;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -299,27 +300,19 @@ begin
     end;
   end;
 
-   // result
-  client.Send(
-    #$4A#$00 +
-    #$FF#$FF +
-    game.GameResume
-  );
-
-  // game game informations
-  client.Send(
-    #$49#$00 +
-    #$00#$00 +
-    game.GameInformation
-  );
-
+  {
   // my player game info
-  game.Send(
-    #$48#$00#$00#$FF#$FF#$01 +
+  client.Send(
+    #$48#$00 + #$00#$FF#$FF#$01 +
     client.Data.GameInformation
   );
 
-  // must send other ppl in the game info
+  // Send my informations other player
+  game.Send(
+    #$48#$00 + #$01#$FF#$FF +
+    client.Data.GameInformation
+  );
+  }
 
   // Lobby player informations
   playerLobby.Send(
@@ -368,7 +361,6 @@ begin
   playerGame.RemovePlayer(client);
   playerLobby.NullGame.AddPlayer(client);
 
-
   {
     // Game lobby info
     // if player count reach 0
@@ -383,6 +375,14 @@ begin
       game.LobbyInformation
     );
 
+  }
+
+  // Lobby player informations
+  {
+  playerLobby.Send(
+    #$46#$00#$03#$01 +
+    client.Data.LobbyInformations
+  );
   }
 
   client.Send(#$4C#$00#$FF#$FF);
@@ -491,11 +491,22 @@ end;
 
 procedure TGameServer.HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
 var
-  action: UInt8;
+  action: TPLAYER_ACTION;
+  subAction: TPLAYER_ACTION_SUB;
   game: TGame;
+  pos: TPlayerPos;
+  res: AnsiString;
+  animationName: AnsiString;
+  gamePlayer: TGamePlayer;
+  test: TPlayerAction;
 begin
   Console.Log('TGameServer.HandlePlayerAction', C_BLUE);
-  if not clientPacket.ReadUInt8(action) then
+
+  Console.Log(Format('ConnectionId : %x', [client.Data.Data.playerInfo1.ConnectionId]));
+
+  res := clientPacket.GetRemainingData;
+
+  if not clientPacket.Read(action, 1) then
   begin
     Console.Log('Failed to read player action', C_RED);
     Exit;
@@ -511,19 +522,117 @@ begin
     end;
   end;
 
-  SendToGame(client, clientPacket.GetRemainingData);
+  gamePlayer := client.Data;
+
+  case action of
+    TPLAYER_ACTION.PLAYER_ACTION_APPEAR: begin
+
+      console.log('Player appear');
+      if not clientPacket.Read(gamePlayer.Action.pos.x, 12) then begin
+        console.log('Failed to read player appear position', C_RED);
+        Exit;
+      end;
+
+      with client.Data.Action do begin
+        console.log(Format('pos : %f, %f, %f', [pos.x, pos.y, pos.z]));
+      end;
+
+    end;
+    TPLAYER_ACTION.PLAYER_ACTION_SUB: begin
+
+      console.log('player sub action');
+
+      if not clientPacket.Read(subAction, 1) then begin
+        console.log('Failed to read sub action', C_RED);
+      end;
+
+      client.Data.Action.lastAction := byte(subAction);
+
+      case subAction of
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_STAND: begin
+          console.log('stand');
+        end;
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SIT: begin
+          console.log('sit');
+        end;
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SLEEP: begin
+          console.log('sleep');
+        end else begin
+          console.log('Unknow sub action : ' + IntToHex(byte(subAction), 2));
+          Exit;
+        end;
+      end;
+    end;
+    TPLAYER_ACTION.PLAYER_ACTION_MOVE: begin
+
+        console.log('player move');
+
+        if not clientPacket.Read(pos.x, 12) then begin
+          console.log('Failed to read player moved position', C_RED);
+          Exit;
+        end;
+
+        client.Data.Action.pos.x := client.Data.Action.pos.x + pos.x;
+        client.Data.Action.pos.y := client.Data.Action.pos.y + pos.y;
+        client.Data.Action.pos.z := pos.z;
+
+        with client.Data.Action do begin
+          console.log(Format('pos : %f, %f, %f', [pos.x, pos.y, pos.z]));
+        end;
+    end;
+    TPLAYER_ACTION.PLAYER_ACTION_ANIMATION: begin
+      console.log('play animation');
+      clientPacket.ReadPStr(animationName);
+      console.log('Animation : ' + animationName);
+    end else begin
+      console.log('Unknow action ' + inttohex(byte(action), 2));
+      Exit;
+    end;
+  end;
+
+  SendToGame(client,
+    #$C4#$00 +
+    Write(client.Data.Data.playerInfo1.ConnectionId, 4) +
+    res
+  );
 end;
 
 procedure TGameServer.HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  playerLobby: TLobby;
 begin
   Console.Log('TGameServer.HandlePlayerJoinMultiplayerGamesList', C_BLUE);
-  client.Send(#$F5#$00);
+
+  try
+    playerLobby := m_lobbies.GetPlayerLobby(client);
+  except
+    on E: Exception do
+    begin
+      Console.Log(E.Message, C_RED);
+      Exit;
+    end;
+  end;
+
+  playerLobby.JoinMultiplayerGamesList(client);
 end;
 
 procedure TGameServer.HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  playerLobby: TLobby;
 begin
   Console.Log('TGameServer.HandlePlayerLeaveMultiplayerGamesList', C_BLUE);
-  client.Send(#$F6#$00);
+
+  try
+    playerLobby := m_lobbies.GetPlayerLobby(client);
+  except
+    on E: Exception do
+    begin
+      Console.Log(E.Message, C_RED);
+      Exit;
+    end;
+  end;
+
+  playerLobby.LeaveMultiplayerGamesList(client);
 end;
 
 procedure TGameServer.HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
@@ -666,7 +775,7 @@ begin
       begin
         buffer := clientPacket.GetRemainingData;
         client.Data.Data.Load(buffer);
-        client.Data.Data.playerInfo1.ConnectionId := client.ID;
+        client.Data.Data.playerInfo1.ConnectionId := client.ID + 20;
 
         client.Send(
           #$44#$00 + #$00 +

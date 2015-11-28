@@ -43,7 +43,6 @@ type
       var m_gameStarted: Boolean;
 
       var m_gameKey: array [0 .. $F] of ansichar;
-
       var m_onUpdateGame: TGameGenericEvent;
 
       procedure generateKey;
@@ -56,14 +55,17 @@ type
 
       constructor Create(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent);
       destructor Destroy; override;
+
       function AddPlayer(player: TGameClient): Boolean;
       function RemovePlayer(player: TGameClient): Boolean;
-      function LobbyInformation: AnsiString;
       function GameInformation: AnsiString;
       function GameResume: AnsiString;
 
       procedure Send(data: AnsiString); overload;
       procedure Send(data: TPangyaBuffer); overload;
+
+      function playersData: AnsiString;
+
   end;
 
 implementation
@@ -81,6 +83,7 @@ end;
 constructor TGame.Create(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent);
 begin
   m_onUpdateGame := TGameGenericEvent.Create;
+
   m_onUpdateGame.Event := onUpdate;
   m_name := name;
   m_password := password;
@@ -99,14 +102,66 @@ begin
 end;
 
 function TGame.AddPlayer(player: TGameClient): Boolean;
+var
+  gamePlayer: TGameClient;
+  playerIndex: integer;
 begin
   if m_players.Count >= m_gameInfo.maxPlayers then
   begin
     raise GameFullException.CreateFmt('Game (%d) is full', [Id]);
   end;
-  m_players.Add(player);
+
+  playerIndex := m_players.Add(player);
   player.Data.Data.playerInfo1.game := m_id;
+
+  if m_id = 0 then
+  begin
+    Exit;
+  end;
+
+  // tmp fix, should create the list of player when a player leave the game
+  player.Data.GameSlot := playerIndex + 1;
+
+  player.Data.Action.clear;
+
   m_onUpdateGame.Trigger(self);
+
+  // my player info to others in game
+  self.Send(
+    #$48#$00 + #$01#$FF#$FF +
+    player.Data.GameInformation
+  );
+
+  // game informations for me
+  player.Send(
+    #$49#$00 + #$00#$00 +
+    self.GameInformation
+  );
+
+  // game settings resume
+  player.Send(
+    #$4A#$00 +
+    #$FF#$FF +
+    self.GameResume
+  );
+
+  // player lobby informations
+  self.Send(
+    #$46#$00 +
+    #$03#$01 +
+    player.Data.LobbyInformations
+  );
+
+  // Other player in game information to me
+  for gamePlayer in m_players do
+  begin
+    player.Send(
+      #$48#$00 + #$07#$FF#$FF +
+      AnsiChar(playerCount) +
+      gamePlayer.Data.GameInformation
+    );
+  end;
+
   Exit(true);
 end;
 
@@ -118,7 +173,19 @@ begin
     Exit(false);
   end;
   player.Data.Data.playerInfo1.game := $FFFF;
+
+  if m_id = 0 then
+  begin
+    Exit;
+  end;
+
+  self.Send(
+    #$48#$00 + #$02 + #$FF#$FF +
+    player.Data.GameInformation(0)
+  );
+
   m_onUpdateGame.Trigger(self);
+
   Exit(true);
 end;
 
@@ -132,7 +199,7 @@ begin
   end;
 end;
 
-function TGame.LobbyInformation: AnsiString;
+function TGame.GameInformation: AnsiString;
 var
   packet: TClientPacket;
   pl: integer;
@@ -192,62 +259,6 @@ begin
   packet.Free;
 end;
 
-function TGame.GameInformation: AnsiString;
-var
-  packet: TClientPacket;
-begin
-  packet := TClientPacket.Create;
-
-  packet.WriteStr(
-    m_name, 27, #$00
-  );
-
-  packet.WriteStr(
-    #$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00
-  );
-
-  packet.WriteUInt8(1); // password
-  packet.WriteUInt8(0); // joinable game flag maybe switched
-
-
-  packet.WriteUInt8(m_gameInfo.maxPlayers);
-  packet.WriteUInt8(UInt8(m_players.Count));
-
-  packet.Write(m_gameKey[0], 16);
-
-  packet.WriteStr(
-    #$00#$1E +
-    AnsiChar(m_gameInfo.holeCount)
-  );
-
-  packet.WriteUInt8(Uint8(m_gameInfo.gameType));
-  packet.WriteUInt16(m_id);
-  packet.WriteUInt8(0); // ??
-  packet.WriteUInt8(m_gameInfo.map);
-  packet.WriteUInt32(m_gameInfo.turnTime);
-  packet.WriteUInt32(m_gameInfo.gameTime);
-
-  packet.WriteStr(
-    #$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$64#$00#$00#$00#$64#$00#$00#$00 +
-    #$00#$00#$00#$00 + // game created by player id
-    #$FF#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00
-  );
-
-  Result := packet.ToStr;
-
-  packet.Free;
-end;
-
 function TGame.GameResume: AnsiString;
 var
   packet: TClientPacket;
@@ -293,6 +304,26 @@ end;
 function TGame.FGetPlayerCount: UInt16;
 begin
   Exit(Uint16(m_players.Count));
+end;
+
+function TGame.playersData: AnsiString;
+var
+  player: TGameClient;
+  clientPacket: TClientPacket;
+  playersCount: integer;
+begin
+  clientPacket := TClientPacket.Create;
+  playersCount := m_players.Count;
+
+  clientPacket.WriteUInt8(playersCount);
+  for player in m_players do
+  begin
+    clientPacket.WriteStr(player.Data.GameInformation);
+    clientPacket.WriteStr(#$00);
+  end;
+
+  Result := clientPacket.ToStr;
+  clientPacket.Free;
 end;
 
 end.

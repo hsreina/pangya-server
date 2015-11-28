@@ -7,10 +7,11 @@ uses
 
 type
   TGeneric = class
-    class function Iff<T>(const expression: Boolean; trueValue: T; falseValue: T): T;
+    class function Iff<T>(const expression: Boolean; trueValue: T; falseValue: T): T; inline;
   end;
 
   TEvent<T> = procedure(enventObject: T) of object;
+  TEvent2<T1, T2> = procedure(enventObject1: T1; eventObject2: T2) of object;
 
 function GetDataFromfile(filePath: string): AnsiString;
 procedure WriteDataToFile(filePath: string; data: AnsiString);

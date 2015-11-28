@@ -3,7 +3,7 @@ unit Client;
 interface
 
 uses
-  ScktComp, ClientPacket, CryptLib, defs, PangyaBuffer;
+  ScktComp, ClientPacket, CryptLib, defs, PangyaBuffer, SysUtils, utils;
 
 type
 
@@ -12,21 +12,23 @@ type
       var m_buffout: TPangyaBuffer;
       var m_socket: TCustomWinSocket;
       var m_key: Byte;
-      var m_data: ClientType;
       var m_cryptLib: TCryptLib;
       function FGetHost: AnsiString;
     public
       constructor Create(Socket: TCustomWinSocket; cryptLib: TCryptLib);
       destructor Destroy; override;
+
       function GetKey: Byte;
       procedure Send(data: TPangyaBuffer); overload;
       procedure Send(data: AnsiString); overload;
       procedure Send(data: AnsiString; encrypt: Boolean); overload;
-      property Data: ClientType read m_data write m_data;
+      function HasUID(playerUID: TPlayerUID): Boolean;
+
       property Host: AnsiString read FGetHost;
+
+      var Data: ClientType;
       var UID: TPlayerUID;
       var ID: integer;
-      function HasUID(playerUID: TPlayerUID): Boolean;
   end;
 
 implementation
@@ -70,6 +72,8 @@ begin
       m_buffout.WriteStr(encrypted);
     end else
     begin
+      //Console.Log(Format('Send to %d %s', [UID.id, UID.login]));
+      //Console.WriteDump(data);
       encrypted := m_cryptLib.ServerEncrypt(data, m_key);
       m_buffout.WriteStr(encrypted);
     end;

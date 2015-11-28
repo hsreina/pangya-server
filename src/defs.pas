@@ -36,9 +36,11 @@ type
   );
 
   TPLAYER_ACTION  = (
+    PLAYER_ACTION_NULL            = $00,
     PLAYER_ACTION_APPEAR          = $04,
     PLAYER_ACTION_SUB             = $05,
-    PLAYER_ACTION_MOVE            = $06
+    PLAYER_ACTION_MOVE            = $06,
+    PLAYER_ACTION_ANIMATION       = $07
   );
 
   TPLAYER_ACTION_SUB = (

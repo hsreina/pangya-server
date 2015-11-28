@@ -125,6 +125,8 @@ begin
 end;
 
 function TConsole.log(data: string; pColor: TColor; bold: boolean): ansistring;
+var
+  logFile: TextFile;
 begin
   with DebugInfo do
   begin
@@ -137,6 +139,12 @@ begin
     SelText := data + C_NL;
   end;
   result := data;
+
+  //AssignFile(logFile, 'log.txt');
+  //Append(logFile);
+  //WriteLn(logFile, data);
+  //CloseFile(logFile);
+
 end;
 
 function TConsole.writeDump(data:ansistring): ansistring;

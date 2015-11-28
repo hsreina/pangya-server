@@ -11,6 +11,7 @@ type
     Base function of the servers like handling clients, receiving and decrypting packet
     and some other basic function to send back message to the game
   }
+
   TServer<ClientType> = class abstract (TLogging)
     private
 
@@ -180,15 +181,26 @@ begin
 end;
 
 procedure TServer<ClientType>.ServerDisconnect(Sender: TObject; Socket: TCustomWinSocket);
+var
+  client: TServerClient<ClientType>;
 begin
   Log('TServer.serverDisconnect', TLogType.TLogType_not);
+  client := GetClientBySocket(Socket);
+  if client = nil then
+  begin
+    Console.Log('Client socket not found', C_RED);
+    Exit;
+  end;
 
+  self.OnClientDisconnect(client);
 end;
 
 procedure TServer<ClientType>.ServerError(Sender: TObject; Socket: TCustomWinSocket; ErrorEvent: TErrorEvent; var ErrorCode: Integer);
 begin
   Log('TServer.serverError', TLogType.TLogType_not);
   errorCode := 0;
+  Socket.Close;
+  Socket.free;
 end;
 
 procedure TServer<ClientType>.OnTimer(Sender: TObject);
@@ -212,6 +224,7 @@ begin
       Exit(client);
     end;
   end;
+  // TODO: Should raise an exception
 end;
 
 function TServer<ClientType>.GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
@@ -260,10 +273,16 @@ begin
 end;
 
 procedure TServer<ClientType>.SendDebugData(data: TPacketData);
+var
+  client: TServerClient<ClientType>;
 begin
-  Console.Log('SendDebugData', C_BLUE);
-  Console.WriteDump(data);
+  //Console.Log('SendDebugData', C_BLUE);
+  //Console.WriteDump(data);
   m_clients.First.Send(data);
+  for client in m_clients do
+  begin
+    client.Send(data);
+  end;
 end;
 
 end.

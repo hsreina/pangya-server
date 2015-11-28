@@ -1,6 +1,7 @@
 program PangyaServer;
 
 uses
+  msvcrtMM in 'msvcrtMM.pas',
   Vcl.Forms,
   MainPas in 'MainPas.pas' {Main},
   ConsolePas in 'ConsolePas.pas' {Console},
@@ -33,7 +34,9 @@ uses
   Game in 'Server\Game\Game.pas',
   GamesList in 'Server\Game\GamesList.pas',
   GameServerExceptions in 'Server\Game\Exceptions\GameServerExceptions.pas',
-  defs in 'defs.pas';
+  defs in 'defs.pas',
+  PlayerAction in 'Server\Game\PlayerAction.pas',
+  PlayerPos in 'Server\Game\PlayerPos.pas';
 
 {$R *.res}
 

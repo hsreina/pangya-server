@@ -2,7 +2,8 @@ unit LoginServer;
 
 interface
 
-uses Client, LoginPlayer, ClientPacket, SyncClient, Server, SyncableServer;
+uses Client, LoginPlayer, ClientPacket, SyncClient, Server, SyncableServer,
+  CryptLib;
 
 type
 
@@ -28,11 +29,23 @@ type
       procedure HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
     public
       procedure Debug;
+      constructor Create(cryptLib: TCryptLib);
+      destructor Destroy; override;
   end;
 
 implementation
 
 uses Logging, PangyaPacketsDef, ConsolePas, SysUtils, defs;
+
+constructor TLoginServer.Create(cryptLib: TCryptLib);
+begin
+  inherited;
+end;
+
+destructor TLoginServer.Destroy;
+begin
+  inherited;
+end;
 
 procedure TLoginServer.Init;
 begin

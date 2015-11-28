@@ -9,6 +9,7 @@ uses
 
 type
   TMain = class(TForm)
+    Button1: TButton;
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -33,7 +34,6 @@ uses ConsolePas, DataChecker, Buffer, utils;
 
 procedure TMain.Button1Click(Sender: TObject);
 begin
-  m_loginServer.Debug;
 end;
 
 procedure TMain.FormDestroy(Sender: TObject);
