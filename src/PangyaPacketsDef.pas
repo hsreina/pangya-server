@@ -31,13 +31,17 @@ type
     CGPID_PLAYER_LEAVE_GAME                 = $000F,
     CGPID_PLAYER_BUY_ITEM                   = $001D,
     CGPID_PLAYER_CHANGE_EQUIP               = $0020,
+    CGPID_PLAYER_REQUEST_IDENTITY           = $0041,
+    CGPID_PLAYER_NOTICE                     = $0057,
     CGPID_PLAYER_ACTION                     = $0063,
     CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST = $0081,
     CGPID_PLAYER_LEAV_MULTIPLAYER_GAME_LIST = $0082,
+    CGPID_PLAYER_GM_COMMAND                 = $008F,
     CGPID_PLAYER_OPEN_RARE_SHOP             = $0098,
     CGPID_PLAYER_UN_00EB                    = $00EB,
     CGPID_PLAYER_OPEN_SCRATCHY_CARD         = $012A,
     CGPID_PLAYER_UN_0140                    = $0140,
+    CPID_PLAYER_SET_ASSIST_MODE             = $0184,
     CGPID_NOTHING                           = $FFFF
   );
 

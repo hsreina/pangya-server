@@ -3,7 +3,7 @@ unit Game;
 interface
 
 uses
-  Generics.Collections, GamePlayer, defs, PangyaBuffer, utils;
+  Generics.Collections, GamePlayer, defs, PangyaBuffer, utils, ClientPacket, SysUtils;
 
 type
 
@@ -29,6 +29,8 @@ type
     public
       procedure Trigger(game: TGame);
       property Event: TGameEvent read m_event write m_event;
+      constructor Create;
+      destructor Destroy; override;
   end;
 
   TGame = class
@@ -66,11 +68,23 @@ type
 
       function playersData: AnsiString;
 
+      procedure HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
+
   end;
 
 implementation
 
-uses GameServerExceptions, ClientPacket, Buffer;
+uses GameServerExceptions, Buffer, ConsolePas;
+
+constructor TGameGenericEvent.Create;
+begin
+  inherited Create;
+end;
+
+destructor TGameGenericEvent.Destroy;
+begin
+  inherited;
+end;
 
 procedure TGameGenericEvent.Trigger(game: TGame);
 begin
@@ -139,7 +153,7 @@ begin
   );
 
   // game settings resume
-  player.Send(
+  self.Send(
     #$4A#$00 +
     #$FF#$FF +
     self.GameResume
@@ -246,8 +260,12 @@ begin
     #$00#$00#$00#$64#$00#$00#$00#$64#$00#$00#$00 +
     #$00#$00#$00#$00 + // game created by player id
     #$FF +
-    #$00#$00#$00#$00 +
-    #$00#$00#$00#$00 + // natural mode
+    #$00#$00#$00#$00
+  );
+
+  packet.WriteUInt32(m_gameInfo.naturalMode);
+
+  packet.WriteStr(
     #$00#$00#$00#$00 +
     #$00#$00#$00#$00 +
     #$00#$00#$00#$00 +
@@ -269,7 +287,7 @@ begin
   packet.WriteUInt8(m_gameInfo.map);
   packet.WriteUInt8(m_gameInfo.holeCount);
   packet.WriteUInt8(UInt8(m_gameInfo.mode));
-  packet.WriteStr(#$00#$00#$00#$00);
+  packet.WriteUInt32(m_gameInfo.naturalMode);
   packet.WriteUInt8(m_gameInfo.maxPlayers);
   packet.WriteStr(#$1E#$00);
   packet.WriteUInt32(m_gameInfo.turnTime);
@@ -324,6 +342,92 @@ begin
 
   Result := clientPacket.ToStr;
   clientPacket.Free;
+end;
+
+procedure TGame.HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  nbOfActions: UInt8;
+  action: UInt8;
+  i: UInt8;
+  tmpStr: AnsiString;
+  tmpUInt8: UInt8;
+  tmpUInt16: UInt16;
+  tmpUInt32: UInt32;
+  gameInfo: TPlayerCreateGameInfo;
+  currentPlayersCount: UInt16;
+begin
+  Console.Log('TGame::HandlePlayerChangeGameSettings', C_BLUE);
+
+  clientPacket.Skip(2);
+
+  if not clientPacket.ReadUInt8(nbOfActions) then
+  begin
+    Console.Log('Failed to read nbOfActions', C_RED);
+    Exit;
+  end;
+
+  gameInfo := m_gameInfo;
+  currentPlayersCount := self.PlayerCount;
+
+  for i := 1 to nbOfActions do begin
+
+    if not clientPacket.ReadUInt8(action) then begin
+      console.log('Failed to read action', C_RED);
+      break;
+    end;
+
+    case action of
+      0: begin
+        clientPacket.ReadPStr(tmpStr);
+        // TODO: Should Check the size maybe
+        m_name := tmpStr;
+      end;
+      1: begin
+        clientPacket.ReadPStr(tmpStr);
+        // TODO: Should Check the size maybe
+        m_password := tmpStr;
+      end;
+      3: begin
+        clientPacket.ReadUInt8(tmpUInt8);
+        gameInfo.map := tmpUInt8;
+      end;
+      4: begin
+        clientPacket.ReadUInt8(tmpUInt8);
+        gameInfo.holeCount := tmpUInt8;
+      end;
+      5: begin
+        clientPacket.ReadUInt8(tmpUInt8);
+        gameInfo.Mode := TGAME_MODE(tmpUInt8);
+      end;
+      6: begin
+        clientPacket.ReadUInt8(tmpUInt8);
+        gameInfo.turnTime := tmpUInt8 * 1000;
+      end;
+      7: begin
+        clientPacket.ReadUInt8(tmpUInt8);
+        if tmpUInt8 > currentPlayersCount then
+        begin
+          gameInfo.maxPlayers := tmpUInt8;
+        end;
+      end;
+      14: begin
+        clientPacket.ReadUInt32(tmpUInt32);
+      end
+      else begin
+        Console.Log(Format('Unknow action %d', [action]));
+      end;
+    end;
+  end;
+
+  self.Send(
+    #$4A#$00 +
+    #$FF#$FF +
+    self.GameResume
+  );
+
+  // Send lobby update
+  self.m_onUpdateGame.Trigger(self);
+
 end;
 
 end.

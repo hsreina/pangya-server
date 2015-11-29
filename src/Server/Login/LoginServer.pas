@@ -251,7 +251,7 @@ end;
 procedure TLoginServer.Sync(const client: TLoginClient; const clientPacket: TClientPacket);
 begin
   self.Log('TLoginServer.Sync', TLogType.TLogType_not);
-  self.Sync(#$01 + #$01#$00 + write(client.UID.id, 4) + writeStr(client.UID.login) + clientPacket.ToStr);
+  self.Sync(#$01 + #$01#$00 + write(client.UID.id, 4) + WritePStr(client.UID.login) + clientPacket.ToStr);
 end;
 
 procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
@@ -269,7 +269,7 @@ begin
   self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
   clientPacket.Log;
   // this code will be send by the client to the game server
-  client.Send(#$03#$00#$00#$00#$00#$00 + WriteStr('1f766c8'))
+  client.Send(#$03#$00#$00#$00#$00#$00 + WritePStr('1f766c8'))
 end;
 
 procedure TLoginServer.Debug;

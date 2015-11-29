@@ -20,6 +20,7 @@ type
       function GetLobbyById(lobbyId: Byte): TLobby;
       function GetPlayerLobby(player: TGameClient): TLobby;
       function GetPlayerGame(player: TGameClient): TGame;
+      procedure Send(data: AnsiString);
       function Build: TPacketData;
   end;
 
@@ -90,6 +91,16 @@ begin
   for lobby in m_lobbies do
   begin
     Result := Result + lobby.Build;
+  end;
+end;
+
+procedure TLobbiesList.Send(data: AnsiString);
+var
+  lobby: TLobby;
+begin
+  for lobby in m_lobbies do
+  begin
+    lobby.Send(data);
   end;
 end;
 

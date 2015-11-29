@@ -2,7 +2,8 @@ unit GameServer;
 
 interface
 
-uses Client, GamePlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib, SyncableServer, PangyaBuffer;
+uses Client, GamePlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib,
+  SyncableServer, PangyaBuffer, PangyaPacketsDef, Lobby, Game;
 
 type
 
@@ -26,21 +27,27 @@ type
 
       function LobbiesList: AnsiString;
 
+      procedure HandleLobbyRequests(const lobby: TLobby; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandleGameRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
+
       procedure HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestIdentity(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerNotice(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerGMCommaand(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerSetAssistMode(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
 
       procedure SendToGame(const client: TGameClient; data: AnsiString); overload;
@@ -55,8 +62,8 @@ type
 
 implementation
 
-uses Logging, PangyaPacketsDef, ConsolePas, Buffer, utils, PacketData, defs,
-        Lobby, PlayerCharacter, Game, GameServerExceptions, PlayerPos,
+uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
+        PlayerCharacter, GameServerExceptions, PlayerPos,
   PlayerAction;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
@@ -95,7 +102,7 @@ begin
     #$00#$16#$00#$00#$3F#$00#$01#$01 +
     AnsiChar(client.GetKey()) +
     // no clue about that.
-    WriteStr(client.Host),
+    WritePStr(client.Host),
     false
   );
 end;
@@ -132,7 +139,7 @@ end;
 procedure TGameServer.Sync(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   self.Log('TGameServer.Sync', TLogType.TLogType_not);
-  self.Sync(#$02 + #$01#$00 + write(client.UID.id, 4) + writeStr(client.UID.login) + clientPacket.ToStr);
+  self.Sync(#$02 + #$01#$00 + write(client.UID.id, 4) + writePStr(client.UID.login) + clientPacket.ToStr);
 end;
 
 procedure TGameServer.HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
@@ -322,15 +329,6 @@ begin
 
 end;
 
-procedure TgameServer.HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
-var
-  playerLobby: TLobby;
-  playergame: TGame;
-begin
-  Console.Log('TGameServer.HandlePlayerChangeGameSettings', C_BLUE);
-
-end;
-
 procedure TgameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
 var
   playergame: TGame;
@@ -459,6 +457,38 @@ begin
     self.Write(client.Data.Cookies, 8)
   );
 
+end;
+
+procedure TGameServer.HandlePlayerRequestIdentity(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  mode: UInt32;
+  playerName: AnsiString;
+begin
+  Console.Log('TGameServer.HandlePlayerRequestIdentity', C_BLUE);
+  clientPacket.ReadUInt32(mode);
+  clientPacket.ReadPStr(playerName);
+
+  // TODO: should check if player can really do that
+  client.Send(
+    #$9A#$00 +
+    Write(mode, 4)
+  );
+
+end;
+
+procedure TGameServer.HandlePlayerNotice(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  notice: AnsiString;
+begin
+  Console.Log('TGameServer.HandlePlayerNotice', C_BLUE);
+  // TODO: should check if the player can do that
+  if clientPacket.ReadPStr(notice) then
+  begin
+    m_lobbies.Send(
+      #$41#$00 +
+      WritePStr(notice)
+    );
+  end;
 end;
 
 procedure TGameServer.HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
@@ -641,6 +671,45 @@ begin
   client.Send(#$0B#$01#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandlePlayerGMCommaand(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  command: UInt16;
+  tmpUInt32: UInt32;
+  tmpUInt16: UInt16;
+begin
+  Console.Log('TGameServer.HandlePlayerGMCommaand', C_BLUE);
+  if not clientPacket.ReadUInt16(command) then
+  begin
+    Console.Log(Format('Unknow Command %d', [command]), C_RED);
+
+    case command of
+      3: begin // visible (on|off)
+
+      end;
+      4: begin // whisper (on|off)
+
+      end;
+      5: begin // channel (on|off)
+
+      end;
+      $E: begin // wind (speed - dir)
+
+      end;
+      $A: begin // kick
+        if (clientPacket.ReadUInt32(tmpUInt32)) then
+        begin
+
+        end;
+      end;
+      $F: begin // weather (fine|rain|snow|cloud)
+
+      end;
+    end;
+
+    Exit;
+  end;
+end;
+
 procedure TGameServer.HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   Console.Log('TGameServer.HandlePlayerUnknow0140', C_BLUE);
@@ -658,16 +727,139 @@ begin
   client.Send(#$EB#$01#$00#$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandlePlayerSetAssistMode(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.log('TGameServer.HandlePlayerSetAssistMode');
+
+  client.Send(
+    #$16#$02 +
+    #$D9#$C2#$53#$56 + // seem to increase
+    #$01#$00#$00#$00#$02#$16#$00#$E0#$1B#$12 +
+    #$49#$76#$06#$00#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$02#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(
+    #$6A#$02 + #$00#$00#$00#$00
+  );
+end;
+
 procedure TGameServer.HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   self.Log('TGameServer.HandlePlayerUnknow0140', TLogType_not);
   client.Send(#$0E#$02#$00#$00#$00#$00#$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandleLobbyRequests(const lobby: TLobby; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
+var
+  playerGame: TGame;
+begin
+  case packetId of
+    CGPID_PLAYER_MESSAGE:
+    begin
+      self.HandlePlayerSendMessage(client, clientPacket);
+    end;
+    CGPID_PLAYER_CREATE_GAME:
+    begin
+      self.HandlePlayerCreateGame(client, clientPacket);
+    end;
+    CGPID_PLAYER_JOIN_GAME:
+    begin
+      self.HandlePlayerJoinGame(client, clientPacket);
+    end;
+    CGPID_PLAYER_LEAVE_GAME:
+    begin
+      self.HandlePlayerLeaveGame(client, clientPacket);
+    end;
+    CGPID_PLAYER_BUY_ITEM:
+    begin
+      self.HandlePlayerBuyItem(client, clientPacket);
+    end;
+    CGPID_PLAYER_CHANGE_EQUIP:
+    begin
+      self.HandlePlayerChangeEquipment(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_IDENTITY:
+    begin
+      self.HandlePlayerRequestIdentity(client, clientPacket);
+    end;
+    CGPID_PLAYER_NOTICE:
+    begin
+      self.HandlePlayerNotice(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION:
+    begin
+      self.HandlePlayerAction(client, clientPacket);
+    end;
+    CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST:
+    begin
+      self.HandlePlayerJoinMultiplayerGamesList(client, clientPacket);
+    end;
+    CGPID_PLAYER_LEAV_MULTIPLAYER_GAME_LIST:
+    begin
+      self.HandlePlayerLeaveMultiplayerGamesList(client, clientPacket);
+    end;
+    CGPID_PLAYER_GM_COMMAND:
+    begin
+      self.HandlePlayerGMCommaand(client, clientPacket);
+    end;
+    CGPID_PLAYER_OPEN_RARE_SHOP:
+    begin
+      self.HandlePlayerOpenRareShop(client, clientPacket);
+    end;
+    CGPID_PLAYER_UN_00EB:
+    begin
+      self.HandlePlayerUnknow00EB(client, clientPacket);
+    end;
+    CGPID_PLAYER_OPEN_SCRATCHY_CARD:
+    begin
+      self.HandlePlayerOpenScratchyCard(client, clientPacket);
+    end;
+    CGPID_PLAYER_UN_0140:
+    begin
+      self.HandlePlayerUnknow0140(client, clientPacket);
+    end
+    else begin
+      try
+        playerGame := lobby.GetPlayerGame(client);
+        self.HandleGameRequests(playerGame, packetId, client, clientPacket);
+      except
+        on e: Exception do
+        begin
+          Console.Log(e.Message, C_RED);
+          Exit;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure TGameServer.HandleGameRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  case packetId of
+    CGPID_PLAYER_CHANGE_GAME_SETTINGS:
+    begin
+      game.HandlePlayerChangeGameSettings(client, clientPacket);
+    end;
+    CPID_PLAYER_SET_ASSIST_MODE:
+    begin
+      self.HandlePlayerSetAssistMode(client, clientPacket);
+    end
+    else begin
+      self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+    end;
+  end;
+end;
+
 procedure TGameServer.OnReceiveClientData(const client: TGameClient; const clientPacket: TClientPacket);
 var
   player: TGamePlayer;
   packetId: TCGPID;
+  playerLobby: TLobby;
 begin
   self.Log('TGameServer.OnReceiveClientData', TLogType_not);
   clientPacket.Log;
@@ -680,69 +872,22 @@ begin
       begin
         self.HandlePlayerLogin(client, clientPacket);
       end;
-      CGPID_PLAYER_MESSAGE:
-      begin
-        self.HandlePlayerSendMessage(client, clientPacket);
-      end;
       CGPID_PLAYER_JOIN_LOBBY:
       begin
         self.HandlePlayerJoinLobby(client, clientPacket);
       end;
-      CGPID_PLAYER_CREATE_GAME:
-      begin
-        self.HandlePlayerCreateGame(client, clientPacket);
-      end;
-      CGPID_PLAYER_JOIN_GAME:
-      begin
-        self.HandlePlayerJoinGame(client, clientPacket);
-      end;
-      CGPID_PLAYER_CHANGE_GAME_SETTINGS:
-      begin
-        self.HandlePlayerChangeGameSettings(client, clientPacket);
-      end;
-      CGPID_PLAYER_LEAVE_GAME:
-      begin
-        self.HandlePlayerLeaveGame(client, clientPacket);
-      end;
-      CGPID_PLAYER_BUY_ITEM:
-      begin
-        self.HandlePlayerBuyItem(client, clientPacket);
-      end;
-      CGPID_PLAYER_CHANGE_EQUIP:
-      begin
-        self.HandlePlayerChangeEquipment(client, clientPacket);
-      end;
-      CGPID_PLAYER_ACTION:
-      begin
-        self.HandlePlayerAction(client, clientPacket);
-      end;
-      CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST:
-      begin
-        self.HandlePlayerJoinMultiplayerGamesList(client, clientPacket);
-      end;
-      CGPID_PLAYER_LEAV_MULTIPLAYER_GAME_LIST:
-      begin
-        self.HandlePlayerLeaveMultiplayerGamesList(client, clientPacket);
-      end;
-      CGPID_PLAYER_OPEN_RARE_SHOP:
-      begin
-        self.HandlePlayerOpenRareShop(client, clientPacket);
-      end;
-      CGPID_PLAYER_UN_00EB:
-      begin
-        self.HandlePlayerUnknow00EB(client, clientPacket);
-      end;
-      CGPID_PLAYER_OPEN_SCRATCHY_CARD:
-      begin
-        self.HandlePlayerOpenScratchyCard(client, clientPacket);
-      end;
-      CGPID_PLAYER_UN_0140:
-      begin
-        self.HandlePlayerUnknow0140(client, clientPacket);
-      end
       else
       begin
-        self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+        try
+          playerLobby := m_lobbies.GetPlayerLobby(client);
+          self.HandleLobbyRequests(playerLobby, packetId, client, clientPacket);
+        except
+          on e: Exception do
+          begin
+            Console.Log(e.Message, C_RED);
+            Exit;
+          end;
+        end;
       end;
     end;
   end;
@@ -779,8 +924,8 @@ begin
 
         client.Send(
           #$44#$00 + #$00 +
-          WriteStr('824.00') +
-          WriteStr(ExtractFilename(ParamStr(0))) +
+          WritePStr('824.00') +
+          WritePStr(ExtractFilename(ParamStr(0))) +
           client.Data.Data.ToPacketData
         );
       end;

@@ -85,13 +85,13 @@ end;
 procedure TSyncServer.SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
 begin
   self.Log('TSyncServer.SendToGame', TLogType_not);
-  client.Send(#$01#$00 + Write(playerUID.id, 4) + WriteStr(playerUID.login) + data);
+  client.Send(#$01#$00 + Write(playerUID.id, 4) + WritePStr(playerUID.login) + data);
 end;
 
 procedure TSyncServer.PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
 begin
   self.Log('TSyncServer.PlayerAction', TLogType_not);
-  client.Send(#$02#$00 + Write(playerUID.id, 4) + WriteStr(playerUID.login) + data);
+  client.Send(#$02#$00 + Write(playerUID.id, 4) + WritePStr(playerUID.login) + data);
 end;
 
 procedure TSyncServer.HandlePlayerSelectCharacter(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
@@ -148,7 +148,7 @@ begin
 
   if m_database.NicknameAvailable(nickname) then
   begin
-    self.SendToGame(client, playerUID, #$0E#$00#$00#$00#$00#$00 + WriteStr(nickname));
+    self.SendToGame(client, playerUID, #$0E#$00#$00#$00#$00#$00 + WritePStr(nickname));
   end else
   begin
     self.SendToGame(client, playerUID, #$0E#$00#$0B#$00#$00#$00#$21#$D2#$4D#$00);
@@ -278,7 +278,7 @@ begin
 
   m_database.SetNickname(playerUID.id, nickname);
 
-  self.SendToGame(client, playerUID, #$06#$00 + WriteStr(nickname));
+  self.SendToGame(client, playerUID, #$06#$00 + WritePStr(nickname));
 
   LoginGamePlayer(client, playerUID);
 end;
@@ -300,7 +300,7 @@ begin
     Exit;
   end;
 
-  self.SendToGame(client, playerUID, #$10#$00 + WriteStr('178d22e'));
+  self.SendToGame(client, playerUID, #$10#$00 + WritePStr('178d22e'));
 
   self.PlayerAction(client, playerUID, #$01#$00);
 end;

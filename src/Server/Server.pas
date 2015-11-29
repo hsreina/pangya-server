@@ -43,7 +43,7 @@ type
       function GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
 
       function Write(const source; const count: UInt32): AnsiString;
-      function WriteStr(str: AnsiString): AnsiString;
+      function WritePStr(const str: AnsiString): AnsiString;
       function FillStr(data: AnsiString; size: UInt32; withWhat: AnsiChar): AnsiString;
 
       function Deserialize(value: UInt32): UInt32;
@@ -246,7 +246,7 @@ begin
   move(source, result[1], count);
 end;
 
-function TServer<ClientType>.WriteStr(str: AnsiString): AnsiString;
+function TServer<ClientType>.WritePStr(const str: AnsiString): AnsiString;
 var
   size: UInt32;
 begin
