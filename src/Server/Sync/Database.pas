@@ -8,7 +8,7 @@ uses
   FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, Data.DB,
   FireDAC.Comp.Client, FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteDef,
   FireDAC.Phys.SQLite, FireDAC.ConsoleUI.Wait, FireDac.Dapt, sysUtils,
-  PacketData, PlayerCharacters, Classes, PlayerData;
+  PacketData, PlayerCharacters, Classes, PlayerData, PlayerItems, PlayerCaddies;
 
 type
   TDatabase = class
@@ -30,6 +30,12 @@ type
 
       procedure SavePlayerCharacters(playerId: integer; playerCharacters: TPlayerCharacters);
       function GetPlayerCharacters(playerId: integer): AnsiString;
+
+      procedure SavePlayerItems(playerId: integer; playerItems: TPlayerItems);
+      function GetPlayerItems(playerId: integer): AnsiString;
+
+      procedure SavePlayerCaddies(playerId: integer; playerCaddies: TPlayerCaddies);
+      function GetPlayerCaddies(playerId: integer): AnsiString;
 
       procedure SavePlayerMainSave(playerId: integer; playerData: TPlayerData);
       function GetPlayerMainSave(playerid: integer): AnsiString;
@@ -83,10 +89,18 @@ begin
     m_connection.ExecSQL(
       'CREATE TABLE IF NOT EXISTS "player" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , "login" varchar(16) NOT NULL, "password" varchar(32) NOT NULL, "nickname" varchar(16), "cookies" INTEGER NOT NULL  DEFAULT 0, "data" BLOB NOT NULL);'
     );
+
     m_connection.ExecSQL(
       'CREATE TABLE IF NOT EXISTS "character" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);'
     );
-    //m_connection.ExecSQL('INSERT INTO "player" ("login","password","nickname") VALUES ("hsreina", "5F4DCC3B5AA765D61D8327DEB882CF99", "hsreina");');
+
+    m_connection.ExecSQL(
+      'CREATE TABLE IF NOT EXISTS "items" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);'
+    );
+
+    m_connection.ExecSQL(
+      'CREATE TABLE IF NOT EXISTS "caddies" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);'
+    );
 
   except
     on E: EDatabaseError do
@@ -306,6 +320,82 @@ begin
 
     Result := m_connection.GetLastAutoGenValue('player');
 
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+
+procedure TDatabase.SavePlayerItems(playerId: integer; playerItems: TPlayerItems);
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'INSERT OR REPLACE INTO "items" ("player_id", "data") VALUES (:player_id, :data)';
+    query.ParamByName('data').AsBlob := playerItems.ToPacketData;
+    query.ParamByName('player_id').AsInteger := playerId;
+    query.ExecSQL;
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+function TDatabase.GetPlayerItems(playerId: integer): AnsiString;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT "data" FROM "items" WHERE "player_id" = :player_id LIMIT 1;';
+    query.ParamByName('player_id').AsInteger := playerId;
+    query.Open();
+    if query.RowsAffected = 1 then
+    begin
+      Result := query.FieldByName('data').AsString;
+    end;
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+
+procedure TDatabase.SavePlayerCaddies(playerId: integer; playerCaddies: TPlayerCaddies);
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'INSERT OR REPLACE INTO "caddies" ("player_id", "data") VALUES (:player_id, :data)';
+    query.ParamByName('data').AsBlob := playerCaddies.ToPacketData;
+    query.ParamByName('player_id').AsInteger := playerId;
+    query.ExecSQL;
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+function TDatabase.GetPlayerCaddies(playerId: integer): AnsiString;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT "data" FROM "caddies" WHERE "player_id" = :player_id LIMIT 1;';
+    query.ParamByName('player_id').AsInteger := playerId;
+    query.Open();
+    if query.RowsAffected = 1 then
+    begin
+      Result := query.FieldByName('data').AsString;
+    end;
   finally
     query.Close;
     query.DisposeOf;

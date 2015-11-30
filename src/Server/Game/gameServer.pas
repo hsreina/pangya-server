@@ -2,14 +2,14 @@ unit GameServer;
 
 interface
 
-uses Client, GamePlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib,
+uses Client, GameServerPlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib,
   SyncableServer, PangyaBuffer, PangyaPacketsDef, Lobby, Game;
 
 type
 
-  TGameClient = TClient<TGamePlayer>;
+  TGameClient = TClient<TGameServerPlayer>;
 
-  TGameServer = class (TSyncableServer<TGamePlayer>)
+  TGameServer = class (TSyncableServer<TGameServerPlayer>)
     protected
     private
       procedure Init; override;
@@ -38,6 +38,7 @@ type
       procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestIdentity(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerUpgrade(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerNotice(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
@@ -93,10 +94,10 @@ end;
 
 procedure TGameServer.OnClientConnect(const client: TGameClient);
 var
-  player: TGamePlayer;
+  player: TGameServerPlayer;
 begin
   self.Log('TGameServer.OnConnectClient', TLogType_not);
-  player := TGamePlayer.Create;
+  player := TGameServerPlayer.Create;
   client.Data := player;
   client.Send(
     #$00#$16#$00#$00#$3F#$00#$01#$01 +
@@ -109,7 +110,7 @@ end;
 
 procedure TGameServer.OnClientDisconnect(const client: TGameClient);
 var
-  player: TGamePlayer;
+  player: TGameServerPlayer;
   lobby: TLobby;
 begin
   self.Log('TGameServer.OnDisconnectClient', TLogType_not);
@@ -444,10 +445,11 @@ begin
     #$00#$00#$00#$00#$00#$00#$00#$00
   );
 
+  // Pangs and cookies info
   client.Send(
     #$C8#$00 +
     self.Write(client.Data.data.playerInfo2.pangs, 8) +
-    #$C4#$09#$00#$00#$00#$00#$00#$00
+    self.Write(client.Data.Cookies, 8)
   );
 
   // Pangs and cookies info
@@ -472,6 +474,69 @@ begin
   client.Send(
     #$9A#$00 +
     Write(mode, 4)
+  );
+
+end;
+
+procedure TGameServer.HandlePlayerUpgrade(const client: TGameClient; const clientPacket: TClientPacket);
+type
+  TPacketHeader = packed record
+    action: UInt8;
+    upType: UInt8;
+    itemId: UInt8;
+  end;
+var
+  header: TPacketHeader;
+  actionType: UInt8;
+begin
+  Console.Log('TGameServer.HandlePlayerNotice', C_BLUE);
+
+  if not clientPacket.Read(header, SizeOf(TPacketHeader)) then
+  begin
+    Console.Log('Failed to read header', C_RED);
+    Exit;
+  end;
+
+  actionType := 0;
+
+  case header.action of
+    0: // character upgrade
+    begin  
+      actionType := 1;
+    end;
+    1: // club upgrade
+    begin 
+      actionType := 1;
+    end;
+    2: // charcater downgrade
+    begin
+      actionType := 2;
+    end;
+    3: // club downgrade
+    begin
+      actionType := 3;
+    end;
+    else begin
+      Console.Log('Unknow action');
+    end;
+  end;
+  
+
+  // upgrade result
+  client.Send(
+    #$A5#$00 +
+    AnsiChar(actionType) + // upgrade type (upgrade|downgrade)
+    AnsiChar(header.action) +
+    AnsiChar(header.upType) +
+    Write(header.itemId, 4) + // item id
+    #$A4#$06#$00#$00#$00#$00#$00#$00
+  );
+
+  // Pangs and cookies info
+  client.Send(
+    #$C8#$00 +
+    self.Write(client.Data.data.playerInfo2.pangs, 8) +
+    self.Write(client.Data.Cookies, 8)
   );
 
 end;
@@ -527,7 +592,7 @@ var
   pos: TPlayerPos;
   res: AnsiString;
   animationName: AnsiString;
-  gamePlayer: TGamePlayer;
+  gamePlayer: TGameServerPlayer;
   test: TPlayerAction;
 begin
   Console.Log('TGameServer.HandlePlayerAction', C_BLUE);
@@ -787,6 +852,10 @@ begin
     begin
       self.HandlePlayerRequestIdentity(client, clientPacket);
     end;
+    CGPID_PLAYER_UPGRADE:
+    begin
+      self.HandlePlayerUpgrade(client, clientPacket);
+    end;
     CGPID_PLAYER_NOTICE:
     begin
       self.HandlePlayerNotice(client, clientPacket);
@@ -848,6 +917,26 @@ begin
     CPID_PLAYER_SET_ASSIST_MODE:
     begin
       self.HandlePlayerSetAssistMode(client, clientPacket);
+    end;
+    CGPID_PLAYER_READY:
+    begin
+      game.HandlePlayerReady(client, clientPacket);
+    end;
+    CGPID_PLAYER_START_GAME:
+    begin
+      game.HandlePlayerStartGame(client, clientPacket);
+    end;
+    CGPID_PLAYER_LOADING_INFO:
+    begin
+      game.HandlePlayerLoadingInfo(client, clientPacket);
+    end;
+    CGPID_PLAYER_LOAD_OK:
+    begin
+      game.HandlePlayerLoadOk(client, clientPacket);
+    end;
+    CGPID_PLAYER_HOLE_INFORMATIONS:
+    begin
+      game.HandlePlayerHoleInformations(client, clientPacket);
     end
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
@@ -857,7 +946,7 @@ end;
 
 procedure TGameServer.OnReceiveClientData(const client: TGameClient; const clientPacket: TClientPacket);
 var
-  player: TGamePlayer;
+  player: TGameServerPlayer;
   packetId: TCGPID;
   playerLobby: TLobby;
 begin
@@ -921,9 +1010,9 @@ begin
         buffer := clientPacket.GetRemainingData;
         client.Data.Data.Load(buffer);
         client.Data.Data.playerInfo1.ConnectionId := client.ID + 20;
-
         client.Send(
-          #$44#$00 + #$00 +
+          WriteHeader(SGPID_PLAYER_MAIN_DATA) +
+          #$00 +
           WritePStr('824.00') +
           WritePStr(ExtractFilename(ParamStr(0))) +
           client.Data.Data.ToPacketData
@@ -935,10 +1024,30 @@ begin
         client.Data.Characters.Load(clientPacket.GetRemainingData);
         Console.WriteDump(client.Data.Characters.ToPacketData);
         client.Send(
-          #$70#$00 +
+          WriteHeader(SGPID_PLAYER_CHARACTERS_DATA) +
           client.Data.Characters.ToPacketData
         );
-      end
+      end;
+      SSAPID_PLAYER_ITEMS:
+      begin
+        Console.Log('Items');
+        client.Data.Items.Load(clientPacket.GetRemainingData);
+        Console.WriteDump(client.Data.items.ToPacketData);
+        client.Send(
+          WriteHeader(SGPID_PLAYER_ITEMS_DATA) +
+          client.Data.items.ToPacketData
+        );
+      end;
+      SSAPID_PLAYER_CADDIES:
+      begin
+        Console.Log('Caddies');
+        client.Data.Caddies.Load(clientPacket.GetRemainingData);
+        Console.WriteDump(client.Data.Caddies.ToPacketData);
+        client.Send(
+          WriteHeader(SGPID_PLAYER_CADDIES_DATA) +
+          client.Data.Caddies.ToPacketData
+        );
+      end;
       else
       begin
         self.Log(Format('Unknow action Id %x', [Word(actionId)]), TLogType_err);

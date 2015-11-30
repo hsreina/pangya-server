@@ -28,10 +28,16 @@ type
     CGPID_PLAYER_CREATE_GAME                = $0008,
     CGPID_PLAYER_JOIN_GAME                  = $0009,
     CGPID_PLAYER_CHANGE_GAME_SETTINGS       = $000A,
+    CGPID_PLAYER_READY                      = $000D,
+    CGPID_PLAYER_START_GAME                 = $000E,
     CGPID_PLAYER_LEAVE_GAME                 = $000F,
+    CGPID_PLAYER_LOAD_OK                    = $0011,
+    CGPID_PLAYER_HOLE_INFORMATIONS          = $001A,
     CGPID_PLAYER_BUY_ITEM                   = $001D,
     CGPID_PLAYER_CHANGE_EQUIP               = $0020,
     CGPID_PLAYER_REQUEST_IDENTITY           = $0041,
+    CGPID_PLAYER_LOADING_INFO               = $0048,
+    CGPID_PLAYER_UPGRADE                    = $004B,
     CGPID_PLAYER_NOTICE                     = $0057,
     CGPID_PLAYER_ACTION                     = $0063,
     CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST = $0081,
@@ -46,7 +52,11 @@ type
   );
 
   TSGPID = (
-    SGPID_PLAYER_MAIN_DATA                  = $0070,
+    SGPID_PLAYER_MAIN_DATA                  = $0044,
+    SGPID_PLAYER_CHARACTERS_DATA            = $0070,
+    SGPID_PLAYER_CADDIES_DATA               = $0071,
+    SGPID_PLAYER_EQUIP_DATA                 = $0072,
+    SGPID_PLAYER_ITEMS_DATA                 = $0073,
     SGPID_NOTHING                           = $FFFF
   );
 
@@ -57,19 +67,22 @@ type
     SSPID_NOTHING                     = $FFFF
   );
 
-
   // Action packet with players
   TSSAPID = (
     SSAPID_SEND_SERVER_LIST           = $0001, // Send the list of game server
     SSAPID_SEND_LOBBIES_LIST          = $0002, // Send the list of lobbies
     SSAPID_PLAYER_MAIN_SAVE           = $0003,
     SSAPID_PLAYER_CHARACTERS          = $0004,
+    SSAPID_PLAYER_ITEMS               = $0005,
+    SSAPID_PLAYER_CADDIES             = $0006,
     SSAPID_NOTHING                    = $FFFF
   );
 
 function WriteAction(actionId: TSGPID): AnsiString; overload;
 function WriteAction(actionId: TSSPID): AnsiString; overload;
 function WriteAction(actionId: TSSAPID): AnsiString; overload;
+
+function WriteHeader(id: TSGPID): AnsiString; overload;
 
 implementation
 
@@ -89,6 +102,12 @@ function WriteAction(actionId: TSSAPID): AnsiString;
 begin
   setLength(result, 2);
   move(actionId, result[1], 2);
+end;
+
+function WriteHeader(id: TSGPID): AnsiString; overload;
+begin
+  setLength(result, 2);
+  move(id, result[1], 2);
 end;
 
 end.

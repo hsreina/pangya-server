@@ -3,7 +3,7 @@ unit Game;
 interface
 
 uses
-  Generics.Collections, GamePlayer, defs, PangyaBuffer, utils, ClientPacket, SysUtils;
+  Generics.Collections, GameServerPlayer, defs, PangyaBuffer, utils, ClientPacket, SysUtils;
 
 type
 
@@ -68,6 +68,11 @@ type
 
       function playersData: AnsiString;
 
+      procedure HandlePlayerLoadingInfo(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerHoleInformations(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerLoadOk(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerReady(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerStartGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
 
   end;
@@ -344,6 +349,129 @@ begin
   clientPacket.Free;
 end;
 
+procedure TGame.HandlePlayerLoadingInfo(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  progress: UInt8;
+begin
+  Console.Log('TGame.HandlePlayerLoadingInfo', C_BLUE);
+  clientPacket.ReadUInt8(progress);
+
+  console.Log(Format('percent loaded: %d', [progress * 10]));
+end;
+
+procedure TGame.HandlePlayerHoleInformations(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGame.HandlePlayerHoleInformations', C_BLUE);
+  Console.Log('Should do that', C_ORANGE);
+end;
+
+procedure TGame.HandlePlayerLoadOk(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  reply: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerLoadOk', C_BLUE);
+
+  // Weather informations
+  client.Send(#$9E#$00 + #$00#$00#$00);
+
+  // Wind informations
+  client.Send(#$5B#$00 + #$02#$00#$E4#$02#$01);
+
+  reply := TClientPacket.Create;
+
+  reply.WriteStr(#$53#$00);
+  reply.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
+
+  // Who play
+  client.Send(reply);
+
+  reply.Free;
+end;
+
+procedure TGame.HandlePlayerReady(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  status: UInt8;
+  connectionId: UInt32;
+  reply: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerReady', C_BLUE);
+
+  clientPacket.ReadUInt8(status);
+
+  reply := TClientPacket.Create;
+
+  reply.WriteStr(#$78#$00);
+  reply.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
+  reply.WriteUInt8(status);
+
+  self.Send(reply);
+
+  reply.Free
+
+end;
+
+procedure TGame.HandlePlayerStartGame(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  result: TClientPacket;
+  player: TGameClient;
+begin
+  Console.Log('TGame.HandlePlayerStartGame', C_BLUE);
+
+  self.Send(#$77#$00#$64#$00#$00#$00);
+
+  result := TClientPacket.Create;
+
+  result.WriteStr(#$76#$00 + #$00);
+  result.WriteUInt8(UInt8(PlayerCount));
+
+  for player in m_players do
+  begin
+    result.WriteStr(
+      player.Data.Data.Debug1
+    )
+  end;
+
+  self.Send(result);
+
+  self.Send(
+    #$52#$00#$0A#$00#$00#$03#$00#$00#$00#$00#$40#$9C#$00#$00#$00#$00 +
+    #$00#$00#$51#$02#$50#$0B#$00#$0A#$01#$54#$37#$80#$D6#$01#$0A#$02 +
+    #$D4#$6F#$64#$B2#$01#$0A#$03#$53#$A9#$6C#$80#$02#$0A#$04#$E1#$0F +
+    #$8D#$B2#$01#$0A#$05#$31#$2F#$E3#$69#$02#$0A#$06#$E1#$3A#$A7#$30 +
+    #$00#$0A#$07#$6E#$1A#$C9#$28#$02#$0A#$08#$2E#$B9#$C1#$79#$02#$0A +
+    #$09#$3C#$4A#$E9#$34#$02#$0A#$0A#$6A#$8E#$C8#$F6#$01#$0A#$0B#$67 +
+    #$D7#$71#$76#$00#$0A#$0C#$BF#$C9#$6F#$D7#$01#$0A#$0D#$7B#$48#$CD +
+    #$23#$00#$0A#$0E#$CF#$D7#$EC#$CB#$00#$0A#$0F#$B6#$3B#$24#$D5#$01 +
+    #$0A#$10#$6F#$E7#$C6#$53#$02#$0A#$11#$81#$D8#$0E#$73#$00#$0A#$12 +
+    #$D6#$35#$00#$00#$04#$00#$00#$00#$00#$01#$17#$80#$91#$00#$00#$00 +
+    #$00#$0A#$00#$00#$00#$01#$00#$1F#$3A#$8B#$2C#$68#$C3#$C5#$A0#$0A +
+    #$42#$EE#$7C#$81#$42#$03#$00#$00#$00#$00#$00#$00#$00#$6F#$AC#$80 +
+    #$91#$00#$00#$00#$00#$0A#$00#$00#$00#$01#$00#$1F#$3A#$39#$04#$8E +
+    #$C3#$60#$E5#$F0#$41#$7D#$3F#$D4#$C1#$03#$00#$00#$00#$00#$00#$00 +
+    #$00#$B0#$F2#$80#$91#$00#$00#$00#$00#$0A#$00#$00#$00#$01#$00#$1F +
+    #$3A#$91#$6D#$87#$C3#$5C#$8F#$F6#$41#$42#$60#$0D#$41#$03#$00#$00 +
+    #$00#$00#$00#$00#$00#$38#$7B#$81#$91#$00#$00#$00#$00#$0A#$00#$00 +
+    #$00#$01#$00#$1F#$3A#$66#$86#$54#$C3#$D1#$22#$FE#$41#$58#$39#$CA +
+    #$41#$03#$00#$00#$00#$02#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$1F#$3A#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$04#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$1F#$3A#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$04#$00#$00#$00#$04#$00 +
+    #$00#$00#$00#$12#$7B#$99#$FF#$00#$00#$00#$00#$0A#$00#$00#$00#$03 +
+    #$02#$1F#$3A#$4A#$5C#$EE#$43#$C9#$F6#$70#$42#$6F#$72#$04#$44#$03 +
+    #$00#$00#$00#$00#$00#$00#$00#$44#$59#$9A#$FF#$00#$00#$00#$00#$0A +
+    #$00#$00#$00#$03#$02#$1F#$3A#$17#$79#$81#$C3#$C7#$CB#$0E#$42#$7B +
+    #$14#$BA#$40#$03#$00#$00#$00#$00#$00#$00#$00#$37#$BF#$9A#$FF#$00 +
+    #$00#$00#$00#$0A#$00#$00#$00#$03#$02#$1F#$3A#$62#$00#$E7#$43#$AA +
+    #$F1#$7E#$42#$9C#$C4#$E8#$43#$03#$00#$00#$00#$00#$00#$00#$00#$F4 +
+    #$41#$9B#$FF#$00#$00#$00#$00#$0A#$00#$00#$00#$03#$02#$1F#$3A#$00 +
+    #$60#$DC#$43#$44#$0B#$72#$42#$19#$E4#$F0#$43#$03#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  result.Free;
+end;
+
 procedure TGame.HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
 var
   nbOfActions: UInt8;
@@ -356,7 +484,7 @@ var
   gameInfo: TPlayerCreateGameInfo;
   currentPlayersCount: UInt16;
 begin
-  Console.Log('TGame::HandlePlayerChangeGameSettings', C_BLUE);
+  Console.Log('TGame.HandlePlayerChangeGameSettings', C_BLUE);
 
   clientPacket.Skip(2);
 

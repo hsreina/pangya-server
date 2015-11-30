@@ -35,6 +35,8 @@ type
       procedure LoginGamePlayer(const client: TSyncClient; const playerUID: TPlayerUID);
       function CreatePlayer(login: AnsiString; password: AnsiString): integer;
 
+      procedure InitPlayerData(playerId: integer);
+
       procedure HandleGamePlayerLogin(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
 
 
@@ -47,7 +49,7 @@ type
 implementation
 
 uses Logging, PangyaPacketsDef, ConsolePas, PlayerCharacters, PlayerCharacter,
-  PacketData, utils, PlayerData;
+  PacketData, utils, PlayerData, PlayerItems, PlayerItem, PlayerCaddies;
 
 constructor TSyncServer.Create(cryptLib: TCryptLib);
 begin
@@ -179,19 +181,71 @@ begin
       self.SendToGame(client, playerUID, #$01#$00#$E2#$72#$D2#$4D#$00#$00#$00);
       Exit;
     end;
+    self.InitPlayerData(userId);
   end;
 
   playerUID.SetId(userId);
   self.LoginGamePlayer(client, playerUID);
 end;
 
+
+// TODO: make it better
+{
+  this code create the initial player save data.
+  should be enough to start basic gameplay
+}
+procedure TSyncServer.InitPlayerData(playerId: integer);
+var
+  items: TPlayerItems;
+  caddies: TPlayerCaddies;
+  item: TPlayerItem;
+  playerData: TPlayerData;
+begin
+  items := TPlayerItems.Create;
+  caddies := TPlayerCaddies.Create;
+
+  playerData.Load(m_database.GetPlayerMainSave(playerId));
+
+  // basic club
+  item := items.Add;
+  item.SetIffId($10000000);
+  item.SetId(playerId + $1);
+
+  // basic aztec
+  item := items.Add;
+  item.SetIffId($14000000);
+  item.SetId(playerId + $2);
+
+  m_database.SavePlayerItems(playerId, items);
+  m_database.SavePlayerCaddies(playerId, caddies);
+
+  with playerData.witems do
+  begin
+    clubSetId := playerId + $1;
+    aztecIffId := $14000000;
+  end;
+
+  with playerData.equipedClub do
+  begin
+    IffId := $10000000;
+    Id := playerId + $1;
+  end;
+
+  m_database.SavePlayerMainSave(playerid, playerData);
+
+  items.Free;
+  caddies.Free;
+end;
+
 function TSyncServer.CreatePlayer(login: AnsiString; password: AnsiString): integer;
 var
   playerData: TPlayerData;
 begin
+
   playerData.Clear;
   playerData.SetLogin(login);
-  Exit(m_database.CreatePlayer(login, password, playerData));
+
+  Result := m_database.CreatePlayer(login, password, playerData);
 end;
 
 procedure TSyncServer.HandleGamePlayerLogin(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
@@ -248,11 +302,25 @@ begin
     WriteAction(SSAPID_PLAYER_MAIN_SAVE) + playerData.ToPacketData
   );
 
+  // player items
+  self.PlayerAction(
+    client,
+    playerUID,
+    WriteAction(SSAPID_PLAYER_ITEMS) + m_database.GetPlayerItems(playerUID.id)
+  );
+
   // player characters
   self.PlayerAction(
     client,
     playerUID,
     WriteAction(SSAPID_PLAYER_CHARACTERS) + m_database.GetPlayerCharacters(playerUID.id)
+  );
+
+  // player caddies
+  self.PlayerAction(
+    client,
+    playerUID,
+    WriteAction(SSAPID_PLAYER_CADDIES) + m_database.GetPlayerCaddies(playerUID.id)
   );
 
   cookies := 99999999;

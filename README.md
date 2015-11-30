@@ -3,8 +3,8 @@ Welcome to pangya-server an emulation server for Pangya FreshUp.
 The server is as always, an experiment on trying to code strange things. And hope someone will try to work on it instead of begging for release.
 
 # What is working?
--You can login and select your 1st character and go to training for now
--Create a chatroom walk and talk in it.
+    You can login and select your 1st character and go to training for now
+    Create a chatroom walk and talk in it.
 
 # How to compile?
 I created the project with Delphi XE8, you should be able to open the project with the same version or above and compile it.

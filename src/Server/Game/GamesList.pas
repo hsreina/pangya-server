@@ -3,7 +3,7 @@ unit GamesList;
 interface
 
 uses
-  Generics.Collections, Game, GamePlayer;
+  Generics.Collections, Game, GameServerPlayer;
 
 type
 
@@ -20,7 +20,7 @@ type
       constructor Create;
       destructor Destroy; override;
       function GetGameById(gameId: Byte): TGame;
-      function getPlayerGame(player: TGamePlayer): TGame;
+      function getPlayerGame(player: TGameServerPlayer): TGame;
       function CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent): TGame;
       procedure DestroyGame(game: Tgame);
 
@@ -102,7 +102,7 @@ begin
   Exit(nil);
 end;
 
-function TGamesList.getPlayerGame(player: TGamePlayer): TGame;
+function TGamesList.getPlayerGame(player: TGameServerPlayer): TGame;
 begin
   Exit(self.GetGameById(player.Data.playerInfo1.game));
 end;

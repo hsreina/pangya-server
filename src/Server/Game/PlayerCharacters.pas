@@ -5,6 +5,7 @@ interface
 uses PlayerCharacter, Generics.Collections, PacketData, ClientPacket;
 
 type
+
   TPlayerCharacters = class
     private
       m_characters: TList<TPlayerCharacter>;

@@ -2,7 +2,7 @@ unit Lobby;
 
 interface
 
-uses PacketData, GamePlayer, Generics.Collections, GamesList, Game, PangyaBuffer;
+uses PacketData, GameServerPlayer, Generics.Collections, GamesList, Game, PangyaBuffer;
 
 type
 

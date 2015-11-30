@@ -1,18 +1,21 @@
-unit GamePlayer;
+unit GameServerPlayer;
 
 interface
 
-uses PlayerData, PlayerCharacters, Client, PlayerAction;
+uses PlayerData, PlayerCharacters, Client, PlayerAction, PlayerItems,
+  PlayerCaddies;
 
 type
 
-  TGamePlayer = class;
+  TGameServerPlayer = class;
 
-  TGamePlayer = class
+  TGameServerPlayer = class
     private
       var m_lobby: UInt8;
       var m_data: TPlayerData;
       var m_characters: TPlayerCharacters;
+      var m_caddies: TPlayerCaddies;
+      var m_items: TPlayerItems;
       function FGetPlayerData: PPlayerData;
     public
       var Cookies: UInt64;
@@ -24,7 +27,10 @@ type
 
       property Lobby: Uint8 read m_lobby write m_lobby;
       property Data: PPlayerData read FGetPlayerData;
+
       property Characters: TPlayerCharacters read m_characters;
+      property Items: TPlayerItems read m_items;
+      property Caddies: TPlayerCaddies read m_caddies;
 
       var GameSlot: UInt8;
       var InGameList: Boolean;
@@ -33,37 +39,41 @@ type
       destructor Destroy; override;
   end;
 
-  TGameClient = TClient<TGamePlayer>;
+  TGameClient = TClient<TGameServerPlayer>;
 
 implementation
 
 uses ClientPacket, PlayerCharacter;
 
-constructor TGamePlayer.Create;
+constructor TGameServerPlayer.Create;
 begin
   inherited;
   m_characters := TPlayerCharacters.Create;
+  m_items := TPlayerItems.Create;
+  m_caddies := TPlayerCaddies.Create;
   m_lobby := $FF;
   InGameList := false;
 end;
 
-destructor TGamePlayer.Destroy;
+destructor TGameServerPlayer.Destroy;
 begin
   inherited;
   m_characters.Free;
+  m_items.Free;
+  m_caddies.Free;
 end;
 
-function TGamePlayer.FGetPlayerData;
+function TGameServerPlayer.FGetPlayerData;
 begin
   Exit(@m_data);
 end;
 
-function TGamePlayer.GameInformation: AnsiString;
+function TGameServerPlayer.GameInformation: AnsiString;
 begin
   Exit(GameInformation(1));
 end;
 
-function TGamePlayer.GameInformation(level: UInt8): AnsiString;
+function TGameServerPlayer.GameInformation(level: UInt8): AnsiString;
 var
   packet: TClientPacket;
 begin
@@ -138,7 +148,7 @@ begin
   packet.free;
 end;
 
-function TGamePlayer.LobbyInformations: AnsiString;
+function TGameServerPlayer.LobbyInformations: AnsiString;
 var
   packet: TClientPacket;
   tmpGameId: UInt16;

@@ -3,7 +3,7 @@ unit LobbiesList;
 interface
 
 uses
-  Generics.Collections, Lobby, PacketData, GamePlayer, Game;
+  Generics.Collections, Lobby, PacketData, GameServerPlayer, Game;
 
 type
 

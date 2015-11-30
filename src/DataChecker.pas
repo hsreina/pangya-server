@@ -10,18 +10,25 @@ type
 implementation
 
 uses
-  PlayerCharacter, System.SysUtils, PlayerData;
+  PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData;
 
 procedure TDataChecker.Validate;
 const
-  playerCharacterSize = SizeOf(TPlayerCharacterData);
+  playerCharacterDataSize = SizeOf(TPlayerCharacterData);
   playerDataSize = SizeOf(TPlayerData);
   playerInfo2Size = SizeOf(TPlayerInfo2);
   playerEqipedItemsSize = SizeOf(TPlayerEquipedItems);
+  playerClubDataSize = SizeOf(TPlayerClubData);
 begin
-  if not (playerCharacterSize = $201) then
+
+  if not (playerClubDataSize = $1C) then
   begin
-    raise Exception.CreateFmt('TPlayerCharacter Invalid Size (%x)', [playerCharacterSize]);
+    raise Exception.CreateFmt('TPlayerClubData Invalid Size (%x)', [playerClubDataSize]);
+  end;
+
+  if not (playerCharacterDataSize = $201) then
+  begin
+    raise Exception.CreateFmt('TPlayerCharacter Invalid Size (%x)', [playerCharacterDataSize]);
   end;
 
   if not (playerDataSize = $30C5) then
