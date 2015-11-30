@@ -21,7 +21,7 @@ uses
   SyncUser in 'Server\Sync\SyncUser.pas',
   Database in 'Server\Sync\Database.pas',
   PacketData in 'Server\PacketData.pas',
-  GamePlayer in 'Server\Game\GamePlayer.pas',
+  GameServerPlayer in 'Server\Game\GameServerPlayer.pas',
   gameServer in 'Server\Game\gameServer.pas',
   LobbiesList in 'Server\Game\LobbiesList.pas',
   Lobby in 'Server\Game\Lobby.pas',
@@ -36,7 +36,14 @@ uses
   GameServerExceptions in 'Server\Game\Exceptions\GameServerExceptions.pas',
   defs in 'defs.pas',
   PlayerAction in 'Server\Game\PlayerAction.pas',
-  PlayerPos in 'Server\Game\PlayerPos.pas';
+  PlayerPos in 'Server\Game\PlayerPos.pas',
+  PlayerItems in 'Server\Game\PlayerItems.pas',
+  PlayerItem in 'Server\Game\PlayerItem.pas',
+  PlayerGenericData in 'Server\Game\PlayerGenericData.pas',
+  PlayerGenericDataList in 'Server\Game\PlayerGenericDataList.pas',
+  PlayerClubData in 'Server\Game\PlayerClubData.pas',
+  PlayerCaddies in 'Server\Game\PlayerCaddies.pas',
+  PlayerCaddie in 'Server\Game\PlayerCaddie.pas';
 
 {$R *.res}
 
