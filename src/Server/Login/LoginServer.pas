@@ -269,7 +269,7 @@ begin
   self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
   clientPacket.Log;
   // this code will be send by the client to the game server
-  client.Send(#$03#$00#$00#$00#$00#$00 + WritePStr('1f766c8'))
+  client.Send(#$03#$00#$00#$00#$00#$00 + WritePStr('1f766c8'));
 end;
 
 procedure TLoginServer.Debug;

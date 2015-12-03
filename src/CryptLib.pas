@@ -16,6 +16,7 @@ type
   TPangyaClientDecrypt = function(data: pansichar; size: integer; key: byte): header; cdecl;
   TPangyaClientEncrypt = function(data: pansichar; size: integer; key: byte; packetid: byte): header; cdecl;
   TPangyaServerEncrypt = function(data: pansichar; size: integer; key: byte): header; cdecl;
+  TPangyaServerDecrypt = function(data: pansichar; size: integer; key: byte): header; cdecl;
   TPangyaDeserialize = function(value: UInt32): UInt32; cdecl;
 
   TCryptLib = class
@@ -23,12 +24,14 @@ type
       var m_pangyaClientDecrypt: TPangyaClientDecrypt;
       var m_pangyaClientEncrypt: TPangyaClientEncrypt;
       var m_pangyaServerEncrypt: TPangyaServerEncrypt;
+      var m_pangyaServerDecrypt: TPangyaServerDecrypt;
       var m_deserialize: TPangyaDeserialize;
       var m_init_ok: Boolean;
     public
       function ClientDecrypt(data: AnsiString; key:Byte): AnsiString;
       function ClientEncrypt(data: AnsiString; key:Byte; packetid: byte): AnsiString;
       function ServerEncrypt(data: AnsiString; key:Byte): AnsiString;
+      function ServerDecrypt(data: ansistring; key: byte): ansistring;
       function Deserialize(value: UInt32): UInt32;
       function Init: Boolean;
       constructor Create;
@@ -65,6 +68,16 @@ begin
   move(head.data[0], result[1], head.size);
 end;
 
+function TCryptLib.ServerDecrypt(data: ansistring; key: byte): ansistring;
+var
+  head: header;
+begin
+  head :=
+    m_pangyaServerDecrypt(pansichar(data), length(data), key);
+  setLength(result, head.size);
+  move(head.data[0], result[1], head.size);
+end;
+
 function TCryptLib.Init;
 var
   hInst: THandle;
@@ -97,6 +110,12 @@ begin
 
   m_pangyaServerEncrypt := GetProcAddress(hInst, '_pangya_server_encrypt');
   if @m_pangyaServerEncrypt = nil then
+  begin
+    Exit(False);
+  end;
+
+  m_pangyaServerDecrypt := GetProcAddress(hInst, '_pangya_server_decrypt');
+  if @m_pangyaServerDecrypt = nil then
   begin
     Exit(False);
   end;

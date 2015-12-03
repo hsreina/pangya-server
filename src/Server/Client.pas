@@ -24,6 +24,8 @@ type
       procedure Send(data: AnsiString; encrypt: Boolean); overload;
       function HasUID(playerUID: TPlayerUID): Boolean;
 
+      procedure Disconnect;
+
       property Host: AnsiString read FGetHost;
 
       var Data: ClientType;
@@ -113,6 +115,11 @@ begin
   end;
 
   Exit(playerUID.id = UID.id);
+end;
+
+procedure TClient<ClientType>.Disconnect;
+begin
+  m_socket.Close;
 end;
 
 end.

@@ -16,7 +16,13 @@ type
   );
 
   TSLPID = (
+    SPID_LOGIN                              = $0001,
     SPID_SERVERS_LIST                       = $0002,
+    SPID_PLAYER_SECURITY2                   = $0003,
+    SPID_UN_0009                            = $0009,
+    SPID_PLAYER_SECURITY1                   = $0010,
+    SPID_GG_CHECK                           = $0040,
+    SPID_LOBBIES_LIST                       = $004D,
     SPID_NOTHING                            = $FFFF
   );
 
@@ -81,6 +87,7 @@ type
 function WriteAction(actionId: TSGPID): AnsiString; overload;
 function WriteAction(actionId: TSSPID): AnsiString; overload;
 function WriteAction(actionId: TSSAPID): AnsiString; overload;
+function WriteAction(actionId: TCGPID): AnsiString; overload;
 
 function WriteHeader(id: TSGPID): AnsiString; overload;
 
@@ -99,6 +106,12 @@ begin
 end;
 
 function WriteAction(actionId: TSSAPID): AnsiString;
+begin
+  setLength(result, 2);
+  move(actionId, result[1], 2);
+end;
+
+function WriteAction(actionId: TCGPID): AnsiString;
 begin
   setLength(result, 2);
   move(actionId, result[1], 2);

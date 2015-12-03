@@ -173,6 +173,10 @@ begin
 
   userId := m_database.DoLogin(login, md5Password);
 
+  // player already in use, would you like do DC
+  // server : 01 00 E2 F3 D1 4D 00 00  00
+  // client : 04 00
+
   if 0 = userId then
   begin
     userId := CreatePlayer(login, md5Password);
@@ -288,6 +292,13 @@ begin
 
   ClientPacket.ReadPStr(checkb);
   self.Log(Format('Check b  : %s', [checkb]));
+
+  // we'll store that in the db or in memory one day
+  if not (checkA = '178d22e') or not (checkb = '1f766c8') then
+  begin
+    client.Disconnect;
+    Exit;
+  end;
 
   playerData.Load(m_database.GetPlayerMainSave(playerId));
 
