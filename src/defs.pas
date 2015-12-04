@@ -49,6 +49,30 @@ type
     PLAYER_ACTION_SUB_SLEEP       = $02
   );
 
+  TSHOT_TYPE = (
+    SHOT_TYPE_NORMAL = $02,
+    SHOT_TYPE_OB     = $03,
+    SHOT_TYPE_INHOLE = $04,
+    SHOT_TYPE_UNKNOW = $FF
+  );
+
+  TCLUB_TYPE = (
+    CLUB_TYPE_1W = 0,
+    CLUB_TYPE_2W,
+    CLUB_TYPE_3W,
+    CLUB_TYPE_2L,
+    CLUB_TYPE_3L,
+    CLUB_TYPE_4L,
+    CLUB_TYPE_5L,
+    CLUB_TYPE_6L,
+    CLUB_TYPE_7L,
+    CLUB_TYPE_8L,
+    CLUB_TYPE_9L,
+    CLUB_TYPE_PW,
+    CLUB_TYPE_SW,
+    CLUB_TYPE_PT
+  );
+
 implementation
 
 procedure TPlayerUID.SetId(id: Integer);

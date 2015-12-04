@@ -35,6 +35,10 @@ type
       var GameSlot: UInt8;
       var InGameList: Boolean;
 
+      var LoadComplete: Boolean;
+      var ShotReady: Boolean;
+      var ShotSync: Boolean;
+
       constructor Create;
       destructor Destroy; override;
   end;

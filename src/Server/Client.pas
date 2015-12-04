@@ -74,8 +74,8 @@ begin
       m_buffout.WriteStr(encrypted);
     end else
     begin
-      Console.Log(Format('Send to %d %s', [UID.id, UID.login]));
-      Console.WriteDump(data);
+      //Console.Log(Format('Send to %d %s', [UID.id, UID.login]));
+      //Console.WriteDump(data);
       encrypted := m_cryptLib.ServerEncrypt(data, m_key);
       m_buffout.WriteStr(encrypted);
     end;

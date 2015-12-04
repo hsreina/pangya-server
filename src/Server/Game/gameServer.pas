@@ -937,6 +937,34 @@ begin
     CGPID_PLAYER_HOLE_INFORMATIONS:
     begin
       game.HandlePlayerHoleInformations(client, clientPacket);
+    end;
+    CGPID_PLAYER_1ST_SHOT_READY:
+    begin
+      game.HandlePlayer1stShotReady(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION_SHOT:
+    begin
+      game.HandlePlayerActionShot(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION_ROTATE:
+    begin
+      game.HandlePlayerActionRotate(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION_HIT:
+    begin
+      game.HandlePlayerActionHit(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION_CHANGE_CLUB:
+    begin
+      game.HandlePlayerActionChangeClub(client, clientPacket);
+    end;
+    CGPID_PLAYER_SHOTDATA:
+    begin
+      game.HandlePlayerShotData(client, clientPacket);
+    end;
+    CGPID_PLAYER_SHOT_SYNC:
+    begin
+      game.HandlePlayerShotSync(client, clientPacket);
     end
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);

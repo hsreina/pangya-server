@@ -43,7 +43,10 @@ uses
   PlayerGenericDataList in 'Server\Game\PlayerGenericDataList.pas',
   PlayerClubData in 'Server\Game\PlayerClubData.pas',
   PlayerCaddies in 'Server\Game\PlayerCaddies.pas',
-  PlayerCaddie in 'Server\Game\PlayerCaddie.pas';
+  PlayerCaddie in 'Server\Game\PlayerCaddie.pas',
+  GameHoleInfo in 'Server\Game\GameHoleInfo.pas',
+  WindInformation in 'Server\Game\WindInformation.pas',
+  ShotData in 'ShotData.pas';
 
 {$R *.res}
 

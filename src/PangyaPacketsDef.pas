@@ -38,9 +38,16 @@ type
     CGPID_PLAYER_START_GAME                 = $000E,
     CGPID_PLAYER_LEAVE_GAME                 = $000F,
     CGPID_PLAYER_LOAD_OK                    = $0011,
+    CGPID_PLAYER_ACTION_SHOT                = $0012,
+    CGPID_PLAYER_ACTION_ROTATE              = $0013,
+    CGPID_PLAYER_ACTION_HIT                 = $0014,
+    CGPID_PLAYER_ACTION_CHANGE_CLUB         = $0016,
     CGPID_PLAYER_HOLE_INFORMATIONS          = $001A,
+    CGPID_PLAYER_SHOTDATA                   = $001B,
+    CGPID_PLAYER_SHOT_SYNC                  = $001C,
     CGPID_PLAYER_BUY_ITEM                   = $001D,
     CGPID_PLAYER_CHANGE_EQUIP               = $0020,
+    CGPID_PLAYER_1ST_SHOT_READY             = $0034,
     CGPID_PLAYER_REQUEST_IDENTITY           = $0041,
     CGPID_PLAYER_LOADING_INFO               = $0048,
     CGPID_PLAYER_UPGRADE                    = $004B,
@@ -59,10 +66,16 @@ type
 
   TSGPID = (
     SGPID_PLAYER_MAIN_DATA                  = $0044,
+    SGPID_PLAYER_ACTION_SHOT                = $0055,
+    SGPID_PLAYER_ACTION_ROTATE              = $0056,
+    SGPID_PLAYER_ACTION_CHANGE_CLUB         = $0059,
+    SGPID_PLAYER_NEXT                       = $0063,
     SGPID_PLAYER_CHARACTERS_DATA            = $0070,
     SGPID_PLAYER_CADDIES_DATA               = $0071,
     SGPID_PLAYER_EQUIP_DATA                 = $0072,
     SGPID_PLAYER_ITEMS_DATA                 = $0073,
+    SGPID_PLAYER_1ST_SHOT_READY             = $0090,
+    SGPID_PLAYER_LOADING_INFO               = $00A3,
     SGPID_NOTHING                           = $FFFF
   );
 
