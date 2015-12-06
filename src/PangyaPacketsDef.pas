@@ -47,6 +47,7 @@ type
     CGPID_PLAYER_SHOT_SYNC                  = $001C,
     CGPID_PLAYER_BUY_ITEM                   = $001D,
     CGPID_PLAYER_CHANGE_EQUIP               = $0020,
+    CGPID_PLAYER_HOLE_COMPLETE              = $0031,
     CGPID_PLAYER_1ST_SHOT_READY             = $0034,
     CGPID_PLAYER_REQUEST_IDENTITY           = $0041,
     CGPID_PLAYER_LOADING_INFO               = $0048,
@@ -66,6 +67,7 @@ type
 
   TSGPID = (
     SGPID_PLAYER_MAIN_DATA                  = $0044,
+    SGPID_GAME_PLAY_INFO                    = $0052,
     SGPID_PLAYER_ACTION_SHOT                = $0055,
     SGPID_PLAYER_ACTION_ROTATE              = $0056,
     SGPID_PLAYER_ACTION_CHANGE_CLUB         = $0059,

@@ -38,18 +38,14 @@ type
     private
       var m_id: UInt16;
       var m_players: TList<TGameClient>;
-
       var m_name: AnsiString;
       var m_password: AnsiString;
       var m_gameInfo: TPlayerCreateGameInfo;
       var m_artifact: UInt32;
       var m_gameStarted: Boolean;
       var m_rain_drop_ratio: UInt8;
-
       var m_gameKey: array [0 .. $F] of ansichar;
-
       var m_game_holes: TList<TGameHoleInfo>;
-
       var m_onUpdateGame: TGameGenericEvent;
 
       procedure generateKey;
@@ -58,6 +54,7 @@ type
       procedure RandomizeWeather;
       procedure RandomizeWind;
       procedure DecryptShot(data: PansiChar; size: UInt32);
+      procedure InitGameHoles;
 
     public
       property Id: UInt16 read m_id write m_id;
@@ -90,6 +87,7 @@ type
       procedure HandlePlayerActionChangeClub(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerShotData(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerShotSync(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlerPlayerHoleComplete(const client: TGameClient; const clientPacket: TClientPacket);
 
   end;
 
@@ -476,27 +474,28 @@ begin
   self.Send(reply);
 
   reply.Free
-
 end;
 
 procedure TGame.HandlePlayerStartGame(const client: TGameClient; const clientPacket: TClientPacket);
 var
-  result: TClientPacket;
+  res: TClientPacket;
   player: TGameClient;
+  gameHoleInfo: TGameHoleInfo;
 begin
   Console.Log('TGame.HandlePlayerStartGame', C_BLUE);
 
   m_gameStarted := true;
 
-  self.Send(#$77#$00#$64#$00#$00#$00);
+  self.Send(#$77#$00 + #$64#$00#$00#$00); // ??
 
-  result := TClientPacket.Create;
+  res := TClientPacket.Create;
 
-  result.WriteStr(#$76#$00 + #$00);
-  result.WriteUInt8(UInt8(PlayerCount));
+  res.WriteStr(#$76#$00 + #$00);
+  res.WriteUInt8(UInt8(PlayerCount));
 
   self.RandomizeWeather;
   self.RandomizeWind;
+  self.InitGameHoles;
 
   for player in m_players do
   begin
@@ -506,23 +505,35 @@ begin
       ShotReady := false;
       LoadComplete := false;
       ShotSync := false;
-      result.WriteStr(Data.Debug1);
+      res.WriteStr(Data.Debug1);
     end;
 
   end;
 
-  self.Send(result);
+  self.Send(res);
 
-  self.Send(
-    #$52#$00#$14#$00#$00#$03#$00#$00#$00#$00#$40#$9C#$00#$00#$00#$00 +
-    #$00#$00#$DA#$09#$FA#$2A#$00#$14#$01#$1C#$31#$67#$C7#$01#$14#$02 +
-    #$CE#$72#$3C#$58#$00#$14#$03#$00#$D7#$F9#$18#$02#$14#$04#$91#$4F +
-    #$E0#$C2#$00#$14#$05#$3D#$EE#$A5#$75#$02#$14#$06#$8B#$B7#$14#$EE +
-    #$01#$14#$07#$6E#$63#$89#$7A#$00#$14#$08#$64#$52#$DB#$0A#$00#$14 +
-    #$09#$4D#$89#$18#$7D#$00#$14#$0A#$62#$6E#$B1#$5D#$01#$14#$0B#$2D +
-    #$20#$30#$C7#$00#$14#$0C#$23#$D8#$17#$AD#$00#$14#$0D#$5F#$8F#$32 +
-    #$95#$02#$14#$0E#$37#$CC#$A2#$18#$01#$14#$0F#$BE#$6C#$9E#$DF#$01 +
-    #$14#$10#$13#$E8#$A1#$10#$02#$14#$11#$47#$CF#$27#$F9#$02#$14#$12 +
+  res.Clear;
+
+  res.WriteStr(WriteAction(SGPID_GAME_PLAY_INFO));
+  res.WriteUInt8(self.m_gameInfo.map);
+  res.WriteStr(#$00#$00);
+  res.WriteUInt8(self.m_gameInfo.holeCount);
+  res.WriteStr(#$00#$00#$00#$00);
+  res.WriteInt32(self.m_gameInfo.turnTime);
+  res.WriteInt32(self.m_gameInfo.gameTime);
+
+  // Holes informations
+  for gameHoleInfo in self.m_game_holes do
+  begin
+    res.WriteStr(
+      #$DA#$09#$FA#$2A#$00
+    );
+    res.WriteUInt8(gameHoleInfo.Map);
+    res.WriteUInt8(gameHoleInfo.Hole);
+  end;
+
+  // Coins info
+  res.WriteStr(
     #$E5#$09#$00#$00#$05#$01#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$41#$31#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$04#$00#$00#$00#$00#$00#$00#$00#$68#$12#$C4 +
@@ -556,7 +567,9 @@ begin
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
   );
 
-  result.Free;
+  self.Send(res);
+
+  res.Free;
 end;
 
 procedure TGame.HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
@@ -640,7 +653,6 @@ end;
 
 procedure TGame.TriggerGameUpdated;
 begin
-
   // game update
   self.Send(
     #$4A#$00 +
@@ -650,7 +662,6 @@ begin
 
   // Send lobby update
   self.m_onUpdateGame.Trigger(self);
-
 end;
 
 procedure TGame.RandomizeWeather;
@@ -815,6 +826,8 @@ var
 begin
   console.Log('TGame.HandlePlayerShotData', C_BLUE);
 
+  client.Data.ShotSync := false;
+
   clientPacket.Read(data, SizeOf(TShotData));
   DecryptShot(@data, SizeOf(TShotData));
 
@@ -836,7 +849,7 @@ begin
 
   for player in m_players do
   begin
-    if player.Data.LoadComplete then
+    if player.Data.ShotSync then
     begin
       Inc(numberOfPlayerRdy)
     end;
@@ -860,6 +873,26 @@ begin
   self.Send(res);
 
   res.Free;
+end;
+
+procedure TGame.HandlerPlayerHoleComplete(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGame.HandlerPlayerHoleComplete', C_BLUE);
+
+end;
+
+procedure TGame.InitGameHoles;
+var
+  gameHoleInfo: TGameHoleInfo;
+  hole: UInt8;
+begin
+  hole := 1;
+  for gameHoleInfo in self.m_game_holes do
+  begin
+    gameHoleInfo.Hole := hole;
+    gameHoleInfo.Map := self.m_gameInfo.map;
+    inc(hole);
+  end;
 end;
 
 end.

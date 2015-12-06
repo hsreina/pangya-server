@@ -965,6 +965,10 @@ begin
     CGPID_PLAYER_SHOT_SYNC:
     begin
       game.HandlePlayerShotSync(client, clientPacket);
+    end;
+    CGPID_PLAYER_HOLE_COMPLETE:
+    begin
+      game.HandlerPlayerHoleComplete(client, clientPacket);
     end
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
