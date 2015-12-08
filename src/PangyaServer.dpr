@@ -36,7 +36,6 @@ uses
   GameServerExceptions in 'Server\Game\Exceptions\GameServerExceptions.pas',
   defs in 'defs.pas',
   PlayerAction in 'Server\Game\PlayerAction.pas',
-  PlayerPos in 'Server\Game\PlayerPos.pas',
   PlayerItems in 'Server\Game\PlayerItems.pas',
   PlayerItem in 'Server\Game\PlayerItem.pas',
   PlayerGenericData in 'Server\Game\PlayerGenericData.pas',
@@ -46,7 +45,8 @@ uses
   PlayerCaddie in 'Server\Game\PlayerCaddie.pas',
   GameHoleInfo in 'Server\Game\GameHoleInfo.pas',
   WindInformation in 'Server\Game\WindInformation.pas',
-  ShotData in 'ShotData.pas';
+  ShotData in 'ShotData.pas',
+  Vector3 in 'Vector3.pas';
 
 {$R *.res}
 

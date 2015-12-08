@@ -4,7 +4,7 @@ interface
 
 uses
   Generics.Collections, GameServerPlayer, defs, PangyaBuffer, utils, ClientPacket, SysUtils,
-  GameHoleInfo;
+  GameHoleInfo, Vector3;
 
 type
 
@@ -46,7 +46,11 @@ type
       var m_rain_drop_ratio: UInt8;
       var m_gameKey: array [0 .. $F] of ansichar;
       var m_game_holes: TList<TGameHoleInfo>;
+      var m_currentHole: UInt8;
       var m_onUpdateGame: TGameGenericEvent;
+
+      var m_currentHolePos: TVector3;
+      var m_holeComplete: Boolean;
 
       procedure generateKey;
       function FGetPlayerCount: UInt16;
@@ -55,6 +59,7 @@ type
       procedure RandomizeWind;
       procedure DecryptShot(data: PansiChar; size: UInt32);
       procedure InitGameHoles;
+      procedure GoToNextHole;
 
     public
       property Id: UInt16 read m_id write m_id;
@@ -172,7 +177,7 @@ begin
   end;
 
   // tmp fix, should create the list of player when a player leave the game
-  player.Data.GameSlot := playerIndex + 1;
+  player.Data.gameInfo.GameSlot := playerIndex + 1;
 
   player.Data.Action.clear;
 
@@ -407,9 +412,23 @@ begin
 end;
 
 procedure TGame.HandlePlayerHoleInformations(const client: TGameClient; const clientPacket: TClientPacket);
+type
+  TData = packed record
+    un1: array [0..9] of AnsiChar;
+    a, b, // start pos?
+    x, z: Single; // hole position
+  end;
+var
+  data: TData;
 begin
+  // Should validate this between players
   Console.Log('TGame.HandlePlayerHoleInformations', C_BLUE);
   Console.Log('Should do that', C_ORANGE);
+  clientPacket.Read(data, sizeOf(TData));
+  Console.Log(Format('a: %f, b: %f, c:%f, d: %f', [data.a, data.b, data.x, data.z]), C_RED);
+
+  m_currentHolePos.x := data.x;
+  m_currentHolePos.z := data.z;
 end;
 
 procedure TGame.HandlePlayerLoadOk(const client: TGameClient; const clientPacket: TClientPacket);
@@ -423,13 +442,21 @@ begin
   AllPlayersReady := false;
   numberOfPlayerRdy := 0;
 
-  client.Data.LoadComplete := true;
+  with client.Data.gameInfo do
+  begin
+    LoadComplete := true;
+    Holedistance := 99999999;
+    HoleComplete := false;
+  end;
 
   for player in m_players do
   begin
-    if player.Data.LoadComplete then
+    with player.Data.gameInfo do
     begin
-      Inc(numberOfPlayerRdy)
+      if LoadComplete then
+      begin
+        Inc(numberOfPlayerRdy)
+      end;
     end;
   end;
 
@@ -437,6 +464,8 @@ begin
   begin
     Exit;
   end;
+
+  m_holeComplete := false;
 
   // Weather informations
   self.Send(#$9E#$00 + #$00#$00#$00);
@@ -453,6 +482,40 @@ begin
   self.Send(reply);
 
   reply.Free;
+
+  self.Send(
+    #$15#$01#$0D#$00#$57#$5F#$42#$49#$47#$42#$4F#$4E#$47#$44#$41#$52 +
+    #$49#$01#$00#$00#$01#$02#$00#$00#$02#$02#$00#$00#$01#$00#$00#$01 +
+    #$03#$01#$00#$00#$02#$00#$01#$00#$01#$01#$02#$02#$00#$01#$02#$01 +
+    #$00#$00#$00#$00#$02#$00#$01#$01#$00#$00#$00#$02#$03#$01#$00#$00 +
+    #$03#$02#$00#$01#$01#$01#$01#$01#$01#$00#$02#$00#$03#$01#$00#$00 +
+    #$01#$00#$00#$01#$00#$02#$00#$01#$00#$00#$00#$02#$00#$02#$00#$01 +
+    #$00#$01#$00#$01#$00#$00#$03#$02#$01#$01#$00#$00#$00#$00#$01#$00 +
+    #$00#$00#$01#$00#$00
+  );
+
+  self.Send(
+    #$15#$01#$0D#$00#$52#$5F#$42#$49#$47#$42#$4F#$4E#$47#$44#$41#$52 +
+    #$49#$00#$00#$01#$02#$01#$01#$00#$01#$02#$02#$01#$02#$00#$00#$00 +
+    #$01#$02#$02#$02#$00#$01#$00#$00#$00#$00#$02#$02#$01#$02#$00#$00 +
+    #$00#$00#$00#$02#$00#$00#$02#$00#$00#$00#$00#$00#$00#$00#$01#$00 +
+    #$02#$00#$01#$01#$00#$00#$01#$02#$00#$02#$02#$00#$00#$01#$01#$01 +
+    #$00#$03#$02#$00#$02#$01#$00#$00#$00#$02#$02#$00#$02#$02#$00#$02 +
+    #$00#$02#$02#$02#$01#$00#$01#$00#$00#$00#$00#$00#$02#$00#$02#$02 +
+    #$01#$00#$02#$00#$01
+  );
+
+  self.Send(
+    #$15#$01#$0F#$00#$43#$4C#$55#$42#$53#$45#$54#$5F#$4D#$49#$52#$41 +
+    #$43#$4C#$45#$01#$01#$02#$03#$01#$02#$01#$01#$01#$02#$02#$01#$03 +
+    #$01#$03#$03#$01#$01#$01#$01#$02#$01#$03#$02#$01#$02#$03#$03#$01 +
+    #$03#$01#$02#$01#$03#$02#$03#$02#$02#$03#$02#$03#$02#$03#$03#$03 +
+    #$02#$03#$03#$02#$02#$01#$01#$02#$02#$02#$02#$01#$03#$03#$03#$03 +
+    #$01#$03#$02#$01#$01#$03#$02#$01#$01#$02#$02#$02#$01#$01#$03#$03 +
+    #$02#$02#$03#$03#$01#$02#$03#$02#$01#$01#$01#$02#$03#$03#$02#$02 +
+    #$02#$03#$01#$01#$03#$02#$03
+  );
+
 end;
 
 procedure TGame.HandlePlayerReady(const client: TGameClient; const clientPacket: TClientPacket);
@@ -493,21 +556,20 @@ begin
   res.WriteStr(#$76#$00 + #$00);
   res.WriteUInt8(UInt8(PlayerCount));
 
+  m_currentHole := 0;
   self.RandomizeWeather;
   self.RandomizeWind;
   self.InitGameHoles;
 
   for player in m_players do
   begin
-
     with player.Data do
     begin
-      ShotReady := false;
-      LoadComplete := false;
-      ShotSync := false;
+      gameInfo.ShotReady := false;
+      gameInfo.LoadComplete := false;
+      gameInfo.ShotSync := false;
       res.WriteStr(Data.Debug1);
     end;
-
   end;
 
   self.Send(res);
@@ -711,7 +773,7 @@ begin
 
   for player in m_players do
   begin
-    if player.Data.LoadComplete then
+    if player.Data.gameInfo.LoadComplete then
     begin
       Inc(numberOfPlayerRdy)
     end;
@@ -740,6 +802,9 @@ var
   res: TClientPacket;
 begin
   Console.Log('TGame.HandlePlayerActionShot', C_BLUE);
+
+  clientPacket.Log;
+
   clientPacket.ReadUInt16(shotType);
 
   res := TClientPacket.Create;
@@ -755,6 +820,8 @@ begin
     clientPacket.Read(shotInfo.un2, SizeOf(TInfo2));
     res.Write(shotInfo.un2, SizeOf(TInfo2));
   end;
+
+  res.Log;
 
   self.Send(res);
 
@@ -821,35 +888,40 @@ end;
 
 procedure TGame.HandlePlayerShotData(const client: TGameClient; const clientPacket: TClientPacket);
 var
-  data: TShotData;
-  tmp: AnsiString;
+  shotData: TShotData;
 begin
   console.Log('TGame.HandlePlayerShotData', C_BLUE);
 
-  client.Data.ShotSync := false;
+  client.Data.gameInfo.ShotSync := false;
 
-  clientPacket.Read(data, SizeOf(TShotData));
-  DecryptShot(@data, SizeOf(TShotData));
+  clientPacket.Read(shotData, SizeOf(TShotData));
+  DecryptShot(@shotData, SizeOf(TShotData));
 
-  setLength(tmp, SizeOf(TShotData));
-  move(data, tmp[1], SizeOf(TShotData));
-  Console.WriteDump(tmp);
+  if not (client.Data.Data.playerInfo1.ConnectionId = shotData.connectionId) then
+  begin
+    Exit;
+  end;
 
+  client.Data.GameInfo.holedistance :=
+    abs(sqrt(sqr(m_currentHolePos.x - shotData.pos.x) + sqr(m_currentHolePos.z - shotData.pos.z)));
+
+  console.Log(Format('hole distance : %f', [client.Data.GameInfo.holedistance]), C_RED);
 end;
 
 procedure TGame.HandlePlayerShotSync(const client: TGameClient; const clientPacket: TClientPacket);
 var
   player: TGameClient;
+  nextPlayer: TGameClient;
   numberOfPlayerRdy: UInt8;
   res: TClientPacket;
 begin
   Console.Log('TGame.HandlePlayerShotSync', C_BLUE);
-  client.Data.ShotSync := true;
+  client.Data.gameInfo.ShotSync := true;
   numberOfPlayerRdy := 0;
 
   for player in m_players do
   begin
-    if player.Data.ShotSync then
+    if player.Data.gameInfo.ShotSync then
     begin
       Inc(numberOfPlayerRdy)
     end;
@@ -860,25 +932,65 @@ begin
     Exit;
   end;
 
-  // Should update Wind
-  // 5B 00 06 00 4A 00 01
+  if self.m_holeComplete then
+  begin
+    self.Send(#$65#$00);
+  end else
+  begin
+    // Should update Wind
+    // 5B 00 06 00 4A 00 01
 
-  res := TClientPacket.Create;
+    nextPlayer := nil;
+    for player in m_players do
+    begin
+      if player.Data.GameInfo.HoleComplete then
+      begin
+        continue;
+      end;
+      if nil = nextPlayer then
+      begin
+        nextPlayer := player;
+      end else if player.Data.GameInfo.Holedistance > nextPlayer.Data.GameInfo.Holedistance then
+      begin
+        nextPlayer := player;
+      end;
+    end;
 
-  res.WriteStr(WriteAction(SGPID_PLAYER_NEXT));
+    if not (nil = nextPlayer) then
+    begin
+      res := TClientPacket.Create;
+      res.WriteStr(WriteAction(SGPID_PLAYER_NEXT));
+      res.WriteInt32(nextPlayer.Data.Data.playerInfo1.ConnectionId);
+      self.Send(res);
+      res.Free;
+    end;
 
-  // Supposed to choose the right next player o_O
-  res.WriteInt32(client.Data.Data.playerInfo1.ConnectionId);
-
-  self.Send(res);
-
-  res.Free;
+  end;
 end;
 
 procedure TGame.HandlerPlayerHoleComplete(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  numberOfPlayerRdy: UInt8;
+  player: TGameClient;
 begin
   Console.Log('TGame.HandlerPlayerHoleComplete', C_BLUE);
+  client.Data.GameInfo.HoleComplete := true;
 
+  numberOfPlayerRdy := 0;
+  for player in m_players do
+  begin
+    if player.Data.gameInfo.HoleComplete then
+    begin
+      Inc(numberOfPlayerRdy);
+    end;
+  end;
+
+  if not (numberOfPlayerRdy = m_players.Count) then
+  begin
+    Exit;
+  end;
+
+  m_holeComplete := true;
 end;
 
 procedure TGame.InitGameHoles;
@@ -893,6 +1005,11 @@ begin
     gameHoleInfo.Map := self.m_gameInfo.map;
     inc(hole);
   end;
+end;
+
+procedure TGame.GoToNextHole;
+begin
+  Console.Log('TGame.GoToNextHole', C_BLUE)
 end;
 
 end.

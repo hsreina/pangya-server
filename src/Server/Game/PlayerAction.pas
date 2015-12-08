@@ -2,14 +2,14 @@ unit PlayerAction;
 
 interface
 
-uses PlayerPos;
+uses Vector3;
 
 type
 
   PPlayerAction = ^TPlayerAction;
   TPlayerAction = packed record
     lastAction: cardinal;
-    pos: TPlayerPos;
+    pos: TVector3;
     procedure clear;
     function toAnsiString: ansistring;
   end;

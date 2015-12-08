@@ -10,7 +10,7 @@ type
 implementation
 
 uses
-  PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData;
+  PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData, ShotData;
 
 procedure TDataChecker.Validate;
 const
@@ -19,6 +19,7 @@ const
   playerInfo2Size = SizeOf(TPlayerInfo2);
   playerEqipedItemsSize = SizeOf(TPlayerEquipedItems);
   playerClubDataSize = SizeOf(TPlayerClubData);
+  shotDataSize = SizeOf(TShotData);
 begin
 
   if not (playerClubDataSize = $1C) then
@@ -46,6 +47,10 @@ begin
     raise Exception.CreateFmt('TPlayerEquipedItems Invalid Size (%x)', [playerEqipedItemsSize]);
   end;
 
+  if not (shotDataSize = $38) then
+  begin
+    raise Exception.CreateFmt('TShotData Invalid Size (%x)', [shotDataSize]);
+  end;
 
 end;
 

@@ -64,8 +64,8 @@ type
 implementation
 
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
-        PlayerCharacter, GameServerExceptions, PlayerPos,
-  PlayerAction;
+        PlayerCharacter, GameServerExceptions,
+  PlayerAction, Vector3;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -589,7 +589,7 @@ var
   action: TPLAYER_ACTION;
   subAction: TPLAYER_ACTION_SUB;
   game: TGame;
-  pos: TPlayerPos;
+  pos: TVector3;
   res: AnsiString;
   animationName: AnsiString;
   gamePlayer: TGameServerPlayer;

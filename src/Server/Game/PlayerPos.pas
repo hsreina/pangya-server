@@ -2,9 +2,11 @@ unit PlayerPos;
 
 interface
 
+uses Vector3;
+
 type
   TPlayerPos = packed record
-    x, y, z: single;
+    x, y, z: Single;
 
     class operator Add(const Left, Right: TPlayerPos): TPlayerPos;
     class operator Subtract(const Left, Right: TPlayerPos): TPlayerPos;

@@ -9,6 +9,15 @@ type
 
   TGameServerPlayer = class;
 
+  TGameInfo = packed record
+    var GameSlot: UInt8;
+    var LoadComplete: Boolean;
+    var ShotReady: Boolean;
+    var ShotSync: Boolean;
+    var Holedistance: Single;
+    var HoleComplete: Boolean;
+  end;
+
   TGameServerPlayer = class
     private
       var m_lobby: UInt8;
@@ -32,12 +41,9 @@ type
       property Items: TPlayerItems read m_items;
       property Caddies: TPlayerCaddies read m_caddies;
 
-      var GameSlot: UInt8;
       var InGameList: Boolean;
 
-      var LoadComplete: Boolean;
-      var ShotReady: Boolean;
-      var ShotSync: Boolean;
+      var GameInfo: TGameInfo;
 
       constructor Create;
       destructor Destroy; override;
@@ -96,7 +102,7 @@ begin
       #$00
     );
 
-    packet.WriteUInt8(GameSlot);
+    packet.WriteUInt8(gameInfo.GameSlot);
 
     packet.WriteStr(
       #$00#$00#$00#$00 +

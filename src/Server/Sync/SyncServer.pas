@@ -13,7 +13,7 @@ type
     protected
     private
 
-      m_database: TDatabase;
+      var m_database: TDatabase;
 
       procedure Init; override;
       procedure OnClientConnect(const client: TSyncClient); override;
