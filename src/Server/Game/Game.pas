@@ -631,6 +631,8 @@ begin
 
   self.Send(res);
 
+  self.Send(#$6A#$01#$93#$6C#$00#$00);
+
   res.Free;
 end;
 
@@ -789,16 +791,12 @@ end;
 
 procedure TGame.HandlePlayerActionShot(const client: TGameClient; const clientPacket: TClientPacket);
 type
-  TInfo2 = packed record
+  TInfo = packed record
     un1: array [0..$3D] of AnsiChar;
-  end;
-  TInfo1 = packed record
-    un1: array [0..$8] of AnsiChar;
-    un2: TInfo2;
   end;
 var
   shotType: UInt16;
-  shotInfo: TInfo1;
+  shotInfo: TInfo;
   res: TClientPacket;
 begin
   Console.Log('TGame.HandlePlayerActionShot', C_BLUE);
@@ -813,12 +811,13 @@ begin
 
   if shotType = 1 then
   begin
-    clientPacket.Read(shotInfo, SizeOf(TInfo1));
-    res.Write(shotInfo.un2, SizeOf(TInfo2));
+    clientPacket.Skip(9);
+    clientPacket.Read(shotInfo, SizeOf(TInfo));
+    res.Write(shotInfo, SizeOf(TInfo));
   end else
   begin
-    clientPacket.Read(shotInfo.un2, SizeOf(TInfo2));
-    res.Write(shotInfo.un2, SizeOf(TInfo2));
+    clientPacket.Read(shotInfo, SizeOf(TInfo));
+    res.Write(shotInfo, SizeOf(TInfo));
   end;
 
   res.Log;
@@ -889,6 +888,8 @@ end;
 procedure TGame.HandlePlayerShotData(const client: TGameClient; const clientPacket: TClientPacket);
 var
   shotData: TShotData;
+  str: AnsiString;
+  res: TClientPacket;
 begin
   console.Log('TGame.HandlePlayerShotData', C_BLUE);
 
@@ -896,6 +897,12 @@ begin
 
   clientPacket.Read(shotData, SizeOf(TShotData));
   DecryptShot(@shotData, SizeOf(TShotData));
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$64#$00);
+  res.Write(shotData, SizeOf(TShotData));
+  self.Send(res);
+  res.Free;
 
   if not (client.Data.Data.playerInfo1.ConnectionId = shotData.connectionId) then
   begin

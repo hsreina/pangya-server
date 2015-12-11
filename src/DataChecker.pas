@@ -2,6 +2,8 @@ unit DataChecker;
 
 interface
 
+uses PlayerCaddie;
+
 type
   TDataChecker = class
     procedure Validate;
@@ -19,6 +21,7 @@ const
   playerInfo2Size = SizeOf(TPlayerInfo2);
   playerEqipedItemsSize = SizeOf(TPlayerEquipedItems);
   playerClubDataSize = SizeOf(TPlayerClubData);
+  playerCaddieDataSize = SizeOf(TPlayerCaddieData);
   shotDataSize = SizeOf(TShotData);
 begin
 
@@ -50,6 +53,11 @@ begin
   if not (shotDataSize = $38) then
   begin
     raise Exception.CreateFmt('TShotData Invalid Size (%x)', [shotDataSize]);
+  end;
+
+  if not (playerCaddieDataSize = $19) then
+  begin
+    raise Exception.CreateFmt('TPlayerCaddieData Invalid Size (%x)', [playerCaddieDataSize]);
   end;
 
 end;

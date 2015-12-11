@@ -2,15 +2,17 @@ unit PlayerCharacter;
 
 interface
 
-uses PacketData, PlayerGenericData;
+uses PacketData, PlayerGenericData, GenericDataRecord;
 
 type
 
-  TPlayerCharacterData = packed record
+  TPlayerCharacterBaseData = packed record
     var IffId: Uint32;
     var Id: Uint32;
     var Un: array [0..$1F8] of AnsiChar;
   end;
+
+  TPlayerCharacterData = TGenericDataRecord<TPlayerCharacterBaseData>;
 
   TPlayerCharacter = class (TPlayerGenericData<TPlayerCharacterData>)
     public
@@ -22,12 +24,12 @@ implementation
 
 procedure TPlayerCharacter.SetIffId(iffId: Cardinal);
 begin
-  self.m_data.IffId := IffId;
+  self.m_data.Data.IffId := IffId;
 end;
 
 procedure TPlayerCharacter.SetID(id: Cardinal);
 begin
-  self.m_data.Id := id;
+  self.m_data.Data.Id := id;
 end;
 
 end.

@@ -55,6 +55,7 @@ constructor TSyncServer.Create(cryptLib: TCryptLib);
 begin
   inherited;
   m_database := TDatabase.Create;
+  Randomize;
 end;
 
 destructor TSyncServer.Destroy;
@@ -124,12 +125,14 @@ begin
     Exit;
   end;
 
+  playerCharacter.SetID(Random(9999999999));
+
   m_database.SavePlayerCharacters(playerUID.id, playerCharacters);
 
   playerData.Load(m_database.GetPlayerMainSave(playerUID.id));
 
   playerData.equipedCharacter := playerCharacter.GetData;
-  playerData.witems.characterId := playerData.equipedCharacter.Id;
+  playerData.witems.characterId := playerData.equipedCharacter.Data.Id;
 
   m_database.SavePlayerMainSave(playerUID.id, playerData);
 
@@ -213,27 +216,24 @@ begin
   // basic club
   item := items.Add;
   item.SetIffId($10000000);
-  item.SetId(playerId + $1);
+  item.SetId(Random(9999999999));
+  playerData.witems.clubSetId := item.GetId;
+
+  with playerData.equipedClub do
+  begin
+    IffId := item.GetIffId;
+    Id := item.GetId;
+  end;
 
   // basic aztec
   item := items.Add;
   item.SetIffId($14000000);
-  item.SetId(playerId + $2);
+  item.SetId(Random(9999999999));
+
+  playerData.witems.aztecIffID := item.GetIffId;
 
   m_database.SavePlayerItems(playerId, items);
   m_database.SavePlayerCaddies(playerId, caddies);
-
-  with playerData.witems do
-  begin
-    clubSetId := playerId + $1;
-    aztecIffId := $14000000;
-  end;
-
-  with playerData.equipedClub do
-  begin
-    IffId := $10000000;
-    Id := playerId + $1;
-  end;
 
   m_database.SavePlayerMainSave(playerid, playerData);
 
@@ -245,10 +245,8 @@ function TSyncServer.CreatePlayer(login: AnsiString; password: AnsiString): inte
 var
   playerData: TPlayerData;
 begin
-
   playerData.Clear;
   playerData.SetLogin(login);
-
   Result := m_database.CreatePlayer(login, password, playerData);
 end;
 

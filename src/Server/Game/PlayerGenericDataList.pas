@@ -19,6 +19,8 @@ type
 
     function ToPacketData: TPacketData;
     procedure Load(PacketData: TPacketData);
+
+    procedure Clear;
   end;
 
 implementation
@@ -54,6 +56,7 @@ procedure TPlayerGenericDataList<DataType, PlayerDataClass>.Remove
   (entry: PlayerDataClass);
 begin
   m_dataList.Remove(entry);
+  entry.free;
 end;
 
 function TPlayerGenericDataList<DataType, PlayerDataClass>.ToPacketData
@@ -103,6 +106,20 @@ begin
       playerData.Load(tmp);
     end;
   end;
+end;
+
+procedure TPlayerGenericDataList<DataType, PlayerDataClass>.Clear;
+var
+  playerData: PlayerDataClass;
+begin
+
+  for playerData in m_dataList do
+  begin
+    playerData.Clear;
+    playerData.free;
+  end;
+
+  playerData.Clear;
 end;
 
 end.

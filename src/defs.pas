@@ -11,6 +11,13 @@ type
     procedure SetId(id: integer);
   end;
 
+  TIffId = packed record
+    case UInt32 of
+     0: (id: UInt32);
+     1: (a, b, c, typ: UInt8);
+  end;
+
+
   TGAME_TYPE = (
     GAME_TYPE_VERSUS_STROKE       = $00,
     GAME_TYPE_VERSUS_MATCH        = $01,
@@ -72,6 +79,28 @@ type
     CLUB_TYPE_SW,
     CLUB_TYPE_PT
   );
+
+  TITEM_TYPE = (
+    ITEM_TYPE_CHARACTER           = $04,
+    ITEM_TYPE_FASHION             = $08,
+    ITEM_TYPE_CLUB                = $10,
+    ITEM_TYPE_AZTEC               = $14,
+    ITEM_TYPE_ITEM1               = $18,
+    ITEM_TYPE_ITEM2               = $1A,
+    ITEM_TYPE_CADDIE              = $1C,
+    ITEM_TYPE_CADDIE_ITEM         = $20,
+    ITEM_TYPE_ITEM_SET            = $24,
+    ITEM_TYPE_CADDIE_ITEM2        = $34,
+    ITEM_TYPE_SKIN                = $38,
+    ITEM_TYPE_TITLE               = $39,
+    ITEM_TYPE_HAIR_COLOR1         = $3C,
+    ITEM_TYPE_HAIR_COLOR2         = $3E,
+    ITEM_TYPE_MASCOT              = $40,
+    ITEM_TYPE_FURNITURE           = $48,
+    ITEM_TYPE_CARD_SET            = $7C,
+    ITEM_TYPE_UNKNOW              = $FF
+  );
+
 
 implementation
 

@@ -2,7 +2,7 @@ unit PlayerData;
 
 interface
 
-uses PlayerCharacter, PacketData, Math, PlayerClubData;
+uses PlayerCharacter, PacketData, Math, PlayerClubData, PlayerCaddie;
 
 type
 
@@ -70,18 +70,16 @@ type
     var playerInfo1: TPlayerInfo1;
     var playerInfo2: TPlayerInfo2;
     var un0003: array [0..$4D] of AnsiChar;
-
     var witems: TPlayerEquipedItems;
-
     var un0002: array [0..$2A53] of AnsiChar;
 
     var equipedCharacter: TPlayerCharacterData;
-    var equipedCaddie: array [0..$18] of AnsiChar;
+    var equipedCaddie: TPlayerCaddieData;
     var equipedClub: TPlayerClubData;
 
     var un0000: array [0..$4E] of AnsiChar;
 
-    // sound like something no from the player
+    // now sound like something related to guilds
     var un0001: array [0..$12F] of AnsiChar;
 
     procedure Clear;

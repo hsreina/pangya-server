@@ -12,7 +12,6 @@ type
     Button1: TButton;
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
   private
     var m_loginServer: TLoginServer;
     var m_gameServer: TGameServer;
@@ -31,10 +30,6 @@ implementation
 {$R *.dfm}
 
 uses ConsolePas, DataChecker, Buffer, utils;
-
-procedure TMain.Button1Click(Sender: TObject);
-begin
-end;
 
 procedure TMain.FormDestroy(Sender: TObject);
 begin

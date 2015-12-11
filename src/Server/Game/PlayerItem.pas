@@ -15,7 +15,9 @@ type
   TPlayerItem = class (TPlayerGenericData<TPlayerItemData>)
     public
       procedure SetIffId(iffId: UInt32);
+      function GetIffId: UInt32;
       procedure SetID(id: UInt32);
+      function GetId: UInt32;
   end;
 
 implementation
@@ -25,9 +27,19 @@ begin
   self.m_data.IffId := IffId;
 end;
 
+function TPlayerItem.GetIffId: UInt32;
+begin
+  Exit(self.m_data.IffId);
+end;
+
 procedure TPlayerItem.SetID(id: Cardinal);
 begin
   self.m_data.Id := id;
+end;
+
+function TPlayeritem.GetId: UInt32;
+begin
+  Exit(self.m_data.Id);
 end;
 
 end.

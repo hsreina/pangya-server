@@ -31,6 +31,7 @@ type
       procedure HandleGameRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
 
       procedure HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
@@ -45,6 +46,7 @@ type
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure handlePlayerRequestMessengerList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerGMCommaand(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
@@ -154,6 +156,14 @@ begin
   self.Sync(client, clientPacket);
 end;
 
+procedure TGameServer.HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  game: TGame;
+begin
+  game := self.m_lobbies.GetPlayerGame(client);
+  game.HandlePlayerStartGame(client, clientPacket);
+end;
+
 procedure TGameServer.HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
 var
   login: AnsiString;
@@ -168,6 +178,16 @@ begin
   reply.WriteStr(#$40#$00 + #$00);
   reply.WritePStr(login);
   reply.WritePStr(msg);
+
+
+  if msg = 'debug' then
+  begin
+    self.HandleDebugCommands(client, clientPacket);
+    Exit;
+  end else
+  begin
+
+  end;
 
   SendToGame(client, reply);
 
@@ -392,7 +412,7 @@ procedure TGameServer.HandlePlayerBuyItem(const client: TGameClient; const clien
 type
   TShopItemDesc = packed record
     un1: UInt32;
-    IffId: UInt32;
+    IffId: TIffId;
     lifeTime: word;
     un2: array [0..1] of ansichar;
     qty: UInt32;
@@ -408,6 +428,7 @@ var
   shopResult: TPacketData;
   successCount: uint16;
   randomId: Integer;
+  test: TITEM_TYPE;
 begin
   self.Log('TGameServer.HandlePlayerBuyItem', TLogType_not);
 
@@ -426,6 +447,85 @@ begin
   for I := 1 to count do
   begin
     clientPacket.Read(shopItem.un1, sizeof(TShopItemDesc));
+
+    case TITEM_TYPE(shopItem.IffId.typ) of
+      ITEM_TYPE_CHARACTER:
+      begin
+        Console.Log('ITEM_TYPE_CHARACTER');
+      end;
+      ITEM_TYPE_FASHION:
+      begin
+        Console.Log('ITEM_TYPE_FASHION');
+      end;
+      ITEM_TYPE_CLUB:
+      begin
+        Console.Log('ITEM_TYPE_CLUB');
+      end;
+      ITEM_TYPE_AZTEC:
+      begin
+        Console.Log('ITEM_TYPE_AZTEC');
+      end;
+      ITEM_TYPE_ITEM1:
+      begin
+        Console.Log('ITEM_TYPE_ITEM1');
+      end;
+      ITEM_TYPE_ITEM2:
+      begin
+        Console.Log('ITEM_TYPE_ITEM2');
+      end;
+      ITEM_TYPE_CADDIE:
+      begin
+        Console.Log('ITEM_TYPE_CADDIE');
+      end;
+      ITEM_TYPE_CADDIE_ITEM:
+      begin
+        Console.Log('ITEM_TYPE_CADDIE_ITEM');
+      end;
+      ITEM_TYPE_ITEM_SET:
+      begin
+        Console.Log('ITEM_TYPE_ITEM_SET');
+      end;
+      ITEM_TYPE_CADDIE_ITEM2:
+      begin
+        Console.Log('ITEM_TYPE_CADDIE_ITEM2');
+      end;
+      ITEM_TYPE_SKIN:
+      begin
+        Console.Log('ITEM_TYPE_SKIN');
+      end;
+      ITEM_TYPE_TITLE:
+      begin
+        Console.Log('ITEM_TYPE_TITLE');
+      end;
+      ITEM_TYPE_HAIR_COLOR1:
+      begin
+        Console.Log('ITEM_TYPE_HAIR_COLOR1');
+      end;
+      ITEM_TYPE_HAIR_COLOR2:
+      begin
+        Console.Log('ITEM_TYPE_HAIR_COLOR2');
+      end;
+      ITEM_TYPE_MASCOT:
+      begin
+        Console.Log('ITEM_TYPE_MASCOT');
+      end;
+      ITEM_TYPE_FURNITURE:
+      begin
+        Console.Log('ITEM_TYPE_FURNITURE');
+      end;
+      ITEM_TYPE_CARD_SET:
+      begin
+        Console.Log('ITEM_TYPE_CARD_SET');
+      end;
+      ITEM_TYPE_UNKNOW:
+      begin
+        Console.Log('ITEM_TYPE_UNKNOW');
+      end
+      else
+      begin
+        Console.Log(Format('Unknow item type %x', [shopItem.IffId.typ]));
+      end;
+    end;
 
     inc(successCount);
     shopResult := shopResult +
@@ -561,6 +661,7 @@ var
   packetData: TPacketData;
   itemType: UInt8;
   IffId: UInt32;
+  characterData: TPlayerCharacterData;
 begin
   self.Log('TGameServer.HandlePlayerChangeEquipment', TLogType_not);
 
@@ -568,14 +669,21 @@ begin
 
   case itemType of
     0: begin
-      console.Log('character data', C_ORANGE);
-      clientPacket.ReadUInt32(IffId);
-      WriteDataToFile(Format('c_%x.dat', [IffId]), clientPacket.ToStr);
+      console.Log('should fix that', C_ORANGE);
+      if clientPacket.Read(characterData, SizeOf(TPlayerCharacterData)) then
+      begin
+        client.Data.Data.equipedCharacter := characterData;
+        client.Send(
+          #$6B#$00 +
+          #$04 + // no clue about it for now
+          #$00 + // the above action?
+          characterData.ToPacketData
+        );
+      end;
     end;
-    1: begin
-      Console.Log('Should implement that', C_ORANGE);
-      clientPacket.Log;
-    end;
+    2: begin
+      Console.Log('look like equiped items');
+    end
     else
     begin
       Console.Log(Format('Unknow item type %x', [itemType]), C_RED);
@@ -736,6 +844,35 @@ begin
   client.Send(#$0B#$01#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$00#$00#$00#$00);
 end;
 
+procedure TGameServer.handlePlayerRequestMessengerList(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  packet: TClientPacket;
+begin
+  Console.Log('TGameServer.handlePlayerRequestMessengerList', C_BLUE);
+
+  packet := TClientPacket.Create;
+  
+  packet.WriteStr(
+    #$FC#$00 + 
+    #$01 + 
+    #$4D#$53#$4E#$5F#$31#$00#$69#$00#$00#$50#$40#$32#$00 +
+    #$00#$00#$00#$00#$60#$00#$00#$00#$50#$40#$32#$08#$50#$40#$32#$78 +
+    #$01#$E7#$00#$00#$00#$00#$00#$00#$60#$00#$00#$F7#$04#$00#$00#$88 +
+    #$13#$00#$00#$F9#$00#$00#$00
+  );
+  
+  packet.WriteStr('127.0.0.1', 15, #$00);
+
+  packet.WriteStr(
+    #$00#$03#$04#$00#$D0#$1E#$00#$00#$00#$10#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(packet);
+  
+  packet.free;
+end;
+
 procedure TGameServer.HandlePlayerGMCommaand(const client: TGameClient; const clientPacket: TClientPacket);
 var
   command: UInt16;
@@ -868,9 +1005,13 @@ begin
     begin
       self.HandlePlayerJoinMultiplayerGamesList(client, clientPacket);
     end;
-    CGPID_PLAYER_LEAV_MULTIPLAYER_GAME_LIST:
+    CGPID_PLAYER_LEAVE_MULTIPLAYER_GAME_LIST:
     begin
       self.HandlePlayerLeaveMultiplayerGamesList(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_MESSENGER_LIST:
+    begin
+      self.handlePlayerRequestMessengerList(client, clientPacket);
     end;
     CGPID_PLAYER_GM_COMMAND:
     begin
@@ -1041,7 +1182,7 @@ begin
       begin
         buffer := clientPacket.GetRemainingData;
         client.Data.Data.Load(buffer);
-        client.Data.Data.playerInfo1.ConnectionId := client.ID + 20;
+        client.Data.Data.playerInfo1.ConnectionId := client.ID;
         client.Send(
           WriteHeader(SGPID_PLAYER_MAIN_DATA) +
           #$00 +
@@ -1079,6 +1220,10 @@ begin
           WriteHeader(SGPID_PLAYER_CADDIES_DATA) +
           client.Data.Caddies.ToPacketData
         );
+
+        // mascot list
+        client.Send(#$E1#$00#$00);
+
       end;
       else
       begin

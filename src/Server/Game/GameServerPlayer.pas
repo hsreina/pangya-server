@@ -109,7 +109,7 @@ begin
       #$06#$01#$80#$39
     );
 
-    packet.WriteUInt32(Data.equipedCharacter.IffId);
+    packet.WriteUInt32(Data.equipedCharacter.Data.IffId);
 
     packet.WriteStr(
       #$00#$00 +
@@ -149,7 +149,7 @@ begin
       #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
     );
 
-    packet.Write(Data.equipedCharacter.IffId, SizeOf(TPlayerCharacterData));
+    packet.Write(Data.equipedCharacter.Data.IffId, SizeOf(TPlayerCharacterData));
 
   end;
 

@@ -46,7 +46,10 @@ uses
   GameHoleInfo in 'Server\Game\GameHoleInfo.pas',
   WindInformation in 'Server\Game\WindInformation.pas',
   ShotData in 'ShotData.pas',
-  Vector3 in 'Vector3.pas';
+  Vector3 in 'Vector3.pas',
+  PlayerMascots in 'Server\Game\PlayerMascots.pas',
+  PlayerMascot in 'Server\Game\PlayerMascot.pas',
+  GenericDataRecord in 'Server\Game\GenericDataRecord.pas';
 
 {$R *.res}
 

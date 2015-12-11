@@ -4,6 +4,10 @@ interface
 
 type
 
+  TGenericDataRecord<DataType> = packed record
+    m_data: DataType;
+  end;
+
   TPlayerGenericData<DataType: record> = class
     protected
       var m_data: DataType;

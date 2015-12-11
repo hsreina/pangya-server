@@ -102,6 +102,10 @@ begin
       'CREATE TABLE IF NOT EXISTS "caddies" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);'
     );
 
+    m_connection.ExecSQL(
+      'CREATE TABLE IF NOT EXISTS "mascots" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);'
+    );
+
   except
     on E: EDatabaseError do
     begin
