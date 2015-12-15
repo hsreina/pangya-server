@@ -4,8 +4,9 @@ interface
 
 type
 
-  TGenericDataRecord<DataType> = packed record
-    m_data: DataType;
+  TPlayerItemBase = packed record
+    var Id: Uint32;
+    var IffId: Uint32;
   end;
 
   TPlayerGenericData<DataType: record> = class

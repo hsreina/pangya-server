@@ -215,7 +215,7 @@ begin
 
   // basic club
   item := items.Add;
-  item.SetIffId($10000000);
+  item.SetIffId($10000012);
   item.SetId(Random(9999999999));
   playerData.witems.clubSetId := item.GetId;
 
@@ -247,6 +247,7 @@ var
 begin
   playerData.Clear;
   playerData.SetLogin(login);
+
   Result := m_database.CreatePlayer(login, password, playerData);
 end;
 

@@ -59,7 +59,7 @@ type
       procedure RandomizeWind;
       procedure DecryptShot(data: PansiChar; size: UInt32);
       procedure InitGameHoles;
-      procedure GoToNextHole;
+      procedure SendGameResult;
 
     public
       property Id: UInt16 read m_id write m_id;
@@ -72,6 +72,7 @@ type
       function RemovePlayer(player: TGameClient): Boolean;
       function GameInformation: AnsiString;
       function GameResume: AnsiString;
+      procedure GoToNextHole;
 
       procedure Send(data: AnsiString); overload;
       procedure Send(data: TPangyaBuffer); overload;
@@ -941,7 +942,7 @@ begin
 
   if self.m_holeComplete then
   begin
-    self.Send(#$65#$00);
+    self.GoToNextHole;
   end else
   begin
     // Should update Wind
@@ -1016,7 +1017,52 @@ end;
 
 procedure TGame.GoToNextHole;
 begin
-  Console.Log('TGame.GoToNextHole', C_BLUE)
+  Console.Log('TGame.GoToNextHole', C_BLUE);
+
+  inc(m_currentHole);
+
+  if m_currentHole < m_gameInfo.holeCount then
+  begin
+    self.Send(#$65#$00);
+  end else
+  begin
+    self.SendGameResult;
+  end;
+end;
+
+procedure TGame.SendGameResult;
+var
+  player: TGameClient;
+  res: TClientPacket;
+  index: UInt8;
+begin
+  res := TClientPacket.Create;
+  index := 0;
+
+  res.WriteStr(#$66#$00);
+  res.WriteUInt8(m_players.Count);
+
+  for player in m_players do
+  begin
+    inc(index);
+
+    res.WriteUInt32(player.Data.Data.playerInfo1.ConnectionId);
+    res.WriteUInt8(index);
+    res.WriteUInt8(0); // total point
+    res.WriteUInt8(0); // course shot count
+    res.WriteUInt16(0); // player xp
+    res.WriteStr(
+      #$67#$00#$00#$00 + // pangs
+      #$00#$00#$00#$00 +
+      #$D2#$00#$00#$00 +
+      #$00#$00#$00#$00
+    )
+
+  end;
+
+  self.Send(res);
+
+  res.Free;
 end;
 
 end.

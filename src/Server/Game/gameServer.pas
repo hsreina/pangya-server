@@ -31,7 +31,7 @@ type
       procedure HandleGameRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
 
       procedure HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket; msg: AnsiString);
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
@@ -156,12 +156,25 @@ begin
   self.Sync(client, clientPacket);
 end;
 
-procedure TGameServer.HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TGameServer.HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket; msg: AnsiString);
 var
   game: TGame;
 begin
+
   game := self.m_lobbies.GetPlayerGame(client);
-  game.HandlePlayerStartGame(client, clientPacket);
+
+  // Speed ugly way for debug command
+  if msg = ':debug' then
+  begin
+    game.HandlePlayerStartGame(client, clientPacket);
+  end
+  else if msg = ':next' then
+           
+  begin
+    game.GoToNextHole;
+  end;
+
+
 end;
 
 procedure TGameServer.HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
@@ -179,14 +192,10 @@ begin
   reply.WritePStr(login);
   reply.WritePStr(msg);
 
-
-  if msg = 'debug' then
+  if (Length(msg) >= 1) and (msg[1] = ':') then
   begin
-    self.HandleDebugCommands(client, clientPacket);
+    self.HandleDebugCommands(client, clientPacket, msg);
     Exit;
-  end else
-  begin
-
   end;
 
   SendToGame(client, reply);
@@ -234,7 +243,7 @@ var
   currentGame: Tgame;
   d: AnsiString;
 begin
-  Console.Log('TGameServer.HandlePlayerBuyItem', C_BLUE);
+  Console.Log('TGameServer.HandlePlayerCreateGame', C_BLUE);
   clientPacket.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
   clientPacket.ReadPStr(gameName);
   clientPacket.ReadPStr(gamePassword);
@@ -456,22 +465,47 @@ begin
       ITEM_TYPE_FASHION:
       begin
         Console.Log('ITEM_TYPE_FASHION');
+        with client.Data.Items.Add do
+        begin
+          SetIffId(shopItem.IffId.id);
+          setId(Random(99999999));
+        end;
       end;
       ITEM_TYPE_CLUB:
       begin
         Console.Log('ITEM_TYPE_CLUB');
+        with client.Data.Items.Add do
+        begin
+          SetIffId(shopItem.IffId.id);
+          setId(Random(99999999));
+        end;
       end;
       ITEM_TYPE_AZTEC:
       begin
         Console.Log('ITEM_TYPE_AZTEC');
+        with client.Data.Items.Add do
+        begin
+          SetIffId(shopItem.IffId.id);
+          setId(Random(99999999));
+        end;
       end;
       ITEM_TYPE_ITEM1:
       begin
         Console.Log('ITEM_TYPE_ITEM1');
+        with client.Data.Items.Add do
+        begin
+          SetIffId(shopItem.IffId.id);
+          setId(Random(99999999));
+        end;
       end;
       ITEM_TYPE_ITEM2:
       begin
         Console.Log('ITEM_TYPE_ITEM2');
+        with client.Data.Items.Add do
+        begin
+          SetIffId(shopItem.IffId.id);
+          setId(Random(99999999));
+        end;
       end;
       ITEM_TYPE_CADDIE:
       begin
@@ -480,6 +514,11 @@ begin
       ITEM_TYPE_CADDIE_ITEM:
       begin
         Console.Log('ITEM_TYPE_CADDIE_ITEM');
+        with client.Data.Caddies.Add do
+        begin
+          SetIffId(shopItem.IffId.id);
+          setId(Random(99999999));
+        end;
       end;
       ITEM_TYPE_ITEM_SET:
       begin
