@@ -52,6 +52,7 @@ type
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSetAssistMode(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestInfo(const client: TGameClient; const clientPacket: TClientPacket);
 
       procedure SendToGame(const client: TGameClient; data: AnsiString); overload;
       procedure SendToGame(const client: TGameClient; data: TPangyaBuffer); overload;
@@ -67,7 +68,7 @@ implementation
 
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
-  PlayerAction, Vector3;
+  PlayerAction, Vector3, PlayerData;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -995,6 +996,148 @@ begin
   client.Send(#$0E#$02#$00#$00#$00#$00#$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandlePlayerRequestInfo(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerRequestInfo', C_BLUE);
+
+  // Always send current player for now
+  res := TClientPacket.Create;
+
+  // Player infos
+  res.WriteStr(#$57#$01 + #$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.Write(client.Data.Data.playerInfo1, SizeOf(TPlayerInfo1));
+  res.WriteUInt32(0); // have some more data at the end
+  client.Send(res);
+  res.Clear;
+
+  // Equiped character
+  res.WriteStr(#$5E#$01);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.Write(client.Data.Data.equipedCharacter, SizeOf(TPlayerCharacterData));
+  client.Send(res);
+  res.Clear;
+
+  // Equiped character
+  res.WriteStr(#$56#$01 + #$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.Write(client.Data.Data.witems, SizeOf(TPlayerEquipedItems));
+  client.Send(res);
+  res.Clear;
+
+  // Player info 8
+  res.WriteStr(#$56#$01 + #$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.Write(client.Data.Data.playerInfo2, SizeOf(TPlayerInfo2));
+  client.Send(res);
+  res.Clear;
+
+  // Guild informations
+  res.WriteStr(#$5D#$01);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$67#$75#$69#$6C#$64#$6D#$61#$72#$6B +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$FF#$FF#$FF#$FF#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$87#$E7#$00#$20#$0E +
+    #$9E#$09#$50#$9C#$B9#$01#$64#$F6#$9F#$0E#$A8
+  );
+  client.Send(res);
+  res.Clear;
+
+  // Unknow
+  res.WriteStr(#$5C#$01 + #$33);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(
+    #$00#$00#$00#$00#$00#$00#$00#$00
+  );
+  client.Send(res);
+  res.Clear;
+
+  // Unknow
+  res.WriteStr(#$5C#$01 + #$34);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(
+    #$00#$00#$00#$00#$00#$00#$00#$00
+  );
+  client.Send(res);
+  res.Clear;
+
+  // Unknow
+  res.WriteStr(#$5B#$01 + #$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(
+    #$00#$00
+  );
+  client.Send(res);
+  res.Clear;
+
+  // Unknow
+  res.WriteStr(#$5A#$01 + #$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(
+    #$00#$00
+  );
+  client.Send(res);
+  res.Clear;
+
+  // Unknow
+  res.WriteStr(#$59#$01 + #$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00
+  );
+  client.Send(res);
+  res.Clear;
+
+  // Unknow
+  res.WriteStr(#$5C#$01 + #$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(
+    #$00#$00#$00#$00#$00#$00#$00#$00
+  );
+  client.Send(res);
+  res.Clear;
+
+  // Unknow
+  res.WriteStr(#$57#$02 + #$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(
+    #$00#$00
+  );
+  client.Send(res);
+  res.Clear;
+
+  // Unknow
+  res.WriteStr(#$89#$00 + #$01#$00#$00#$00#$05);
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  client.Send(res);
+  res.Clear;
+
+  res.Free;
+end;
+
 procedure TGameServer.HandleLobbyRequests(const lobby: TLobby; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
 var
   playerGame: TGame;
@@ -1071,7 +1214,11 @@ begin
     CGPID_PLAYER_UN_0140:
     begin
       self.HandlePlayerUnknow0140(client, clientPacket);
-    end
+    end;
+    CGPID_PLAYER_REQUEST_INFO:
+    begin
+      self.HandlePlayerRequestInfo(client, clientPacket);
+    end;
     else begin
       try
         playerGame := lobby.GetPlayerGame(client);
@@ -1094,7 +1241,7 @@ begin
     begin
       game.HandlePlayerChangeGameSettings(client, clientPacket);
     end;
-    CPID_PLAYER_SET_ASSIST_MODE:
+    CGPID_PLAYER_SET_ASSIST_MODE:
     begin
       self.HandlePlayerSetAssistMode(client, clientPacket);
     end;

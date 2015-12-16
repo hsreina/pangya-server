@@ -47,6 +47,7 @@ type
     CGPID_PLAYER_SHOT_SYNC                    = $001C,
     CGPID_PLAYER_BUY_ITEM                     = $001D,
     CGPID_PLAYER_CHANGE_EQUIP                 = $0020,
+    CGPID_PLAYER_REQUEST_INFO                 = $002F,
     CGPID_PLAYER_HOLE_COMPLETE                = $0031,
     CGPID_PLAYER_1ST_SHOT_READY               = $0034,
     CGPID_PLAYER_REQUEST_IDENTITY             = $0041,
@@ -62,7 +63,7 @@ type
     CGPID_PLAYER_UN_00EB                      = $00EB,
     CGPID_PLAYER_OPEN_SCRATCHY_CARD           = $012A,
     CGPID_PLAYER_UN_0140                      = $0140,
-    CPID_PLAYER_SET_ASSIST_MODE               = $0184,
+    CGPID_PLAYER_SET_ASSIST_MODE              = $0184,
     CGPID_NOTHING                             = $FFFF
   );
 

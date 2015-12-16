@@ -23,6 +23,7 @@ const
   playerClubDataSize = SizeOf(TPlayerClubData);
   playerCaddieDataSize = SizeOf(TPlayerCaddieData);
   shotDataSize = SizeOf(TShotData);
+  playerInfoSize = SizeOf(TPlayerInfo1);
 begin
 
   if not (playerClubDataSize = $1C) then
@@ -40,11 +41,6 @@ begin
     raise Exception.CreateFmt('TPlayerData Invalid Size (%x)', [playerDataSize]);
   end;
 
-  if not (playerInfo2Size = $EF) then
-  begin
-    raise Exception.CreateFmt('TPlayerInfo2 Invalid Size (%x)', [playerInfo2Size]);
-  end;
-
   if not (playerEqipedItemsSize = $74) then
   begin
     raise Exception.CreateFmt('TPlayerEquipedItems Invalid Size (%x)', [playerEqipedItemsSize]);
@@ -58,6 +54,16 @@ begin
   if not (playerCaddieDataSize = $19) then
   begin
     raise Exception.CreateFmt('TPlayerCaddieData Invalid Size (%x)', [playerCaddieDataSize]);
+  end;
+
+  if not (playerInfoSize = $10B) then
+  begin
+    raise Exception.CreateFmt('TPlayerInfo1 Invalid Size (%x)', [playerInfoSize]);
+  end;
+
+  if not (playerInfo2Size = $EF) then
+  begin
+    raise Exception.CreateFmt('TPlayerInfo2 Invalid Size (%x)', [playerInfo2Size]);
   end;
 
 end;
