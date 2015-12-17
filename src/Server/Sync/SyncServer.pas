@@ -248,6 +248,13 @@ begin
   playerData.Clear;
   playerData.SetLogin(login);
 
+  // Setup initial player data here
+  with playerData.playerInfo2 do
+  begin
+    rank := TRANK.INFINITY_LEGEND_A;
+    pangs := 99999999;
+  end;
+
   Result := m_database.CreatePlayer(login, password, playerData);
 end;
 
@@ -300,8 +307,6 @@ begin
   end;
 
   playerData.Load(m_database.GetPlayerMainSave(playerId));
-
-  playerData.playerInfo2.pangs := 99999999;
 
   playerData.playerInfo1.PlayerID := playerId;
 

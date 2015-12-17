@@ -114,7 +114,7 @@ begin
 
   packet.WriteStr(
     #$00 +
-    #$00 + // Seem to be restrictions on the lobby
+    #$00 + // Seem to be restrictions on the lobby $10 beginer and junior $20 junior and senior
     #$00#$00#$00#$00 +
     #$00#$00
   );

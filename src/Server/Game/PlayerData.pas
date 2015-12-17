@@ -2,7 +2,7 @@ unit PlayerData;
 
 interface
 
-uses PlayerCharacter, PacketData, Math, PlayerClubData, PlayerCaddie;
+uses PlayerCharacter, PacketData, Math, PlayerClubData, PlayerCaddie, defs;
 
 type
 
@@ -55,7 +55,19 @@ type
 
   PPlayerInfo2 = ^TPlayerInfo2;
   TPlayerInfo2 = packed record
-    var un0001: array [0..$4E] of AnsiChar;
+    var un001: UInt32;
+    var totalStroke: Int32;
+    var totalPlayTime: UInt32; // seconds
+    var avgStrokeTime: UInt32; // seconds
+    var un0002: array [0..$B] of AnsiChar;
+    var OBRate: UInt32; // 1 = 100%?
+    var totalDistance: UInt32; // forgot the unit should fix it
+    var totalHoles: UInt32;
+    var un003: UInt32;
+    var hio: UInt32;
+    var un0001: array [0..$19] of AnsiChar;
+    var experience: UInt32;
+    var rank: TRank;
     var pangs: Uint64;
     var un0003: array [0..$97] of AnsiChar;
   end;

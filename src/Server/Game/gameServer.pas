@@ -918,38 +918,52 @@ var
   command: UInt16;
   tmpUInt32: UInt32;
   tmpUInt16: UInt16;
+  tmpUInt8: UInt8;
+  game: TGame;
 begin
   Console.Log('TGameServer.HandlePlayerGMCommaand', C_BLUE);
+
+  try
+    game := m_lobbies.GetPlayerGame(client);
+  except
+    Console.Log('Failed to get player game');
+    Exit;
+  end;
+
   if not clientPacket.ReadUInt16(command) then
   begin
     Console.Log(Format('Unknow Command %d', [command]), C_RED);
+    Exit;
+  end;
 
-    case command of
-      3: begin // visible (on|off)
+  case command of
+    3: begin // visible (on|off)
 
-      end;
-      4: begin // whisper (on|off)
+    end;
+    4: begin // whisper (on|off)
 
-      end;
-      5: begin // channel (on|off)
+    end;
+    5: begin // channel (on|off)
 
-      end;
-      $E: begin // wind (speed - dir)
+    end;
+    $E: begin // wind (speed - dir)
 
-      end;
-      $A: begin // kick
-        if (clientPacket.ReadUInt32(tmpUInt32)) then
-        begin
-
-        end;
-      end;
-      $F: begin // weather (fine|rain|snow|cloud)
+    end;
+    $A: begin // kick
+      if (clientPacket.ReadUInt32(tmpUInt32)) then
+      begin
 
       end;
     end;
-
-    Exit;
+    $F: begin // weather (fine|rain|snow|cloud)
+      console.Log('weather');
+      if (clientPacket.ReadUInt8(tmpUInt8)) then
+      begin
+        game.Send(#$9E#$00 + AnsiChar(tmpUInt8) + #$00#$00);
+      end;
+    end;
   end;
+
 end;
 
 procedure TGameServer.HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1027,8 +1041,8 @@ begin
   client.Send(res);
   res.Clear;
 
-  // Player info 8
-  res.WriteStr(#$56#$01 + #$05);
+  // Player info 2
+  res.WriteStr(#$58#$01 + #$05);
   res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
   res.Write(client.Data.Data.playerInfo2, SizeOf(TPlayerInfo2));
   client.Send(res);

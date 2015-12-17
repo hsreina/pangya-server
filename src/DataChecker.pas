@@ -36,11 +36,6 @@ begin
     raise Exception.CreateFmt('TPlayerCharacter Invalid Size (%x)', [playerCharacterDataSize]);
   end;
 
-  if not (playerDataSize = $30C5) then
-  begin
-    raise Exception.CreateFmt('TPlayerData Invalid Size (%x)', [playerDataSize]);
-  end;
-
   if not (playerEqipedItemsSize = $74) then
   begin
     raise Exception.CreateFmt('TPlayerEquipedItems Invalid Size (%x)', [playerEqipedItemsSize]);
@@ -64,6 +59,11 @@ begin
   if not (playerInfo2Size = $EF) then
   begin
     raise Exception.CreateFmt('TPlayerInfo2 Invalid Size (%x)', [playerInfo2Size]);
+  end;
+
+  if not (playerDataSize = $30C5) then
+  begin
+    raise Exception.CreateFmt('TPlayerData Invalid Size (%x)', [playerDataSize]);
   end;
 
 end;

@@ -118,13 +118,20 @@ begin
   packet.Write(port, 2);
 
   packet.WriteStr(
-    #$00#$00#$00 +
-    #$08#$00#$00 +
-    #$08 + // Wings
-    #$00#$00#$00#$00#$00#$00#$00#$64#$00#$00#$00 +
-    #$03 + // icon
-    #$00
+    #$00#$00 +
+    #$00#$00#$08#$00 + //  kind of server status
+    {
+      $8 : 19 yo to enter the server
+      $10 : invisible
+      $800 : grand prix skin
+    }
+    #$08#$00#$00#$00 + // Wings
+    #$00#$00#$00#$00 +
+    #$64#$00#$00#$00 +
+    #$03 + // server icon
+    #$00 // 1 seem to remove the name
   );
+
 
   Result := packet.ToStr;
 
