@@ -47,9 +47,14 @@ type
     var game: UInt16;
     var login: array [0..$15] of AnsiChar;
     var nickname: array [0..$15] of AnsiChar;
-    var un0004: array [0..$28] of AnsiChar;
+
+    var un0004: array [0..$20] of AnsiChar;
+    var gmflag: UInt8; // with $f, gm magic will come true
+    var un0005: array [0..$6] of AnsiChar;
     var ConnectionId: UInt32;
-    var un0005: array [0..$AB] of AnsiChar;
+    var un0006: array [0..$1F] of AnsiChar;
+    var charFlag: UInt8; // with $f, seem to disable the chat
+    var un0007: array [0..$8A] of AnsiChar;
     var PlayerID: UInt32;
   end;
 
@@ -69,7 +74,14 @@ type
     var experience: UInt32;
     var rank: TRank;
     var pangs: Uint64;
-    var un0003: array [0..$97] of AnsiChar;
+    var un0003: array [0..$39] of AnsiChar;
+    var quitRateY: UInt32; // right value
+    var un0004: array [0..$1F] of AnsiChar;
+    var gameComboX: UInt32; // left part of game combo
+    var gameComboY: UInt32; // right part of game combo
+    var quitRateX: UInt32; // left value
+    var totalPangaBattlePangsWin: UInt64;
+    var un0005: array [0..$25] of AnsiChar;
   end;
 
   PPlayerUnknowData1 = ^TPlayerUnknowData1;

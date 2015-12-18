@@ -154,6 +154,7 @@ begin
     TObject(holeInfo).Free;
   end;
 
+  m_game_holes.free;
   m_players.Free;
   m_onUpdateGame.Free;
 end;

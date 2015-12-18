@@ -39,6 +39,7 @@ type
       procedure OnClientDisconnect(const client: TClient<ClientType>); virtual; abstract;
       procedure OnReceiveClientData(const client: TClient<ClientType>; const clientPacket: TClientPacket); virtual; abstract;
       procedure OnStart; virtual; abstract;
+      procedure OnDestroyClient(const client: TClient<ClientType>); virtual; abstract;
 
       function GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
 
@@ -77,11 +78,20 @@ begin
 end;
 
 destructor TServer<ClientType>.Destroy;
+var
+  client: TServerClient<ClientType>;
 begin
   inherited;
-  m_timer.Destroy;
-  m_clients.Destroy;
-  m_server.Destroy;
+  m_timer.Free;
+
+  for client in m_clients do
+  begin
+    OnDestroyClient(client);
+    client.Free;
+  end;
+
+  m_clients.Free;
+  m_server.Free;
 end;
 
 procedure TServer<ClientType>.SetPort(port: Integer);
@@ -193,6 +203,11 @@ begin
   end;
 
   self.OnClientDisconnect(client);
+
+  m_clients.Remove(client);
+
+  OnDestroyClient(client);
+  client.Free;
 end;
 
 procedure TServer<ClientType>.ServerError(Sender: TObject; Socket: TCustomWinSocket; ErrorEvent: TErrorEvent; var ErrorCode: Integer);

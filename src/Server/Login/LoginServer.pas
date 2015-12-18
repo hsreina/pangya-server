@@ -17,6 +17,7 @@ type
       procedure OnClientDisconnect(const client: TLoginClient); override;
       procedure OnReceiveClientData(const client: TLoginClient; const clientPacket: TClientPacket); override;
       procedure OnReceiveSyncData(const clientPacket: TClientPacket); override;
+      procedure OnDestroyClient(const client: TLoginClient); override;
       procedure OnStart; override;
 
       procedure Sync(const client: TLoginClient; const clientPacket: TClientPacket); overload;
@@ -65,16 +66,8 @@ begin
 end;
 
 procedure TLoginServer.OnClientDisconnect(const client: TLoginClient);
-var
-  player: TLoginPlayer;
 begin
   self.Log('TLoginServer.OnDisconnectClient', TLogType_not);
-  player := client.Data;
-  if not (player = nil) then
-  begin
-    player.Free;
-    player := nil;
-  end;
 end;
 
 procedure TLoginServer.OnStart;
@@ -168,6 +161,11 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TLoginServer.OnDestroyClient(const client: TLoginClient);
+begin
+  client.Data.Free;
 end;
 
 procedure TLoginServer.OnReceiveSyncData(const clientPacket: TClientPacket);

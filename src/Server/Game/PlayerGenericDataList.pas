@@ -106,6 +106,7 @@ begin
       playerData.Load(tmp);
     end;
   end;
+  ClientPacket.Free;
 end;
 
 procedure TPlayerGenericDataList<DataType, PlayerDataClass>.Clear;

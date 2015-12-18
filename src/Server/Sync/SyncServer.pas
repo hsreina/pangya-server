@@ -19,6 +19,7 @@ type
       procedure OnClientConnect(const client: TSyncClient); override;
       procedure OnClientDisconnect(const client: TSyncClient); override;
       procedure OnReceiveClientData(const client: TSyncClient; const clientPacket: TClientPacket); override;
+      procedure OnDestroyClient(const client: TSyncClient); override;
       procedure OnStart; override;
 
       procedure SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
@@ -38,7 +39,6 @@ type
       procedure InitPlayerData(playerId: integer);
 
       procedure HandleGamePlayerLogin(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
-
 
     public
       constructor Create(cryptLib: TCryptLib);
@@ -61,6 +61,7 @@ end;
 destructor TSyncServer.Destroy;
 begin
   inherited;
+  m_database.Free;
 end;
 
 procedure TSyncServer.Init;
@@ -452,6 +453,11 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TSyncServer.OnDestroyClient(const client: TSyncClient);
+begin
+
 end;
 
 procedure TSyncServer.OnReceiveClientData(const client: TSyncClient; const clientPacket: TClientPacket);

@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, LoginServer, Server, Logging, CryptLib,
-  gameServer, SyncUser, SyncServer, Vcl.StdCtrls, ShellApi;
+  gameServer, SyncUser, SyncServer, Vcl.StdCtrls, ShellApi, DataChecker;
 
 type
   TMain = class(TForm)
@@ -17,6 +17,8 @@ type
     var m_gameServer: TGameServer;
     var m_synServer: TSyncServer;
     var m_cryptLib: TCryptLib;
+    var m_dataChecker: TDataChecker;
+
     procedure OnServerLog(sender: TObject; msg: string; logType: TLogType);
   public
     procedure AcceptFiles(var msg: TMessage); message WM_DROPFILES;
@@ -29,7 +31,7 @@ implementation
 
 {$R *.dfm}
 
-uses ConsolePas, DataChecker, Buffer, utils;
+uses ConsolePas, Buffer, utils;
 
 procedure TMain.FormDestroy(Sender: TObject);
 begin
@@ -37,6 +39,7 @@ begin
   m_gameServer.Free;
   m_synServer.Free;
   m_cryptLib.Free;
+  m_dataChecker.Free;
 end;
 
 procedure TMain.AcceptFiles(var msg: TMessage);
@@ -62,8 +65,6 @@ begin
 end;
 
 procedure TMain.FormShow(Sender: TObject);
-var
-  dataChecker: TDataChecker;
 begin
 
   DragAcceptFiles(Handle, true);
@@ -71,10 +72,10 @@ begin
   Console.Show;
   Console.Log('PANGYA SERVER by HSReina', C_GREEN);
 
-  dataChecker := TDataChecker.Create;
+  m_dataChecker := TDataChecker.Create;
 
   try
-    dataChecker.Validate;
+    m_dataChecker.Validate;
   except
     on E : Exception do
     begin

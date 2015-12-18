@@ -60,11 +60,13 @@ uses ConsolePas;
 
 constructor TPangyaBuffer.Create;
 begin
+  inherited;
   Init;
 end;
 
 constructor TPangyaBuffer.Create(const src: AnsiString);
 begin
+  inherited Create;
   init;
   WriteStr(src);
   Seek(0, 0);
@@ -78,6 +80,7 @@ end;
 
 destructor TPangyaBuffer.Destroy;
 begin
+  inherited;
   m_data.Free;
   m_bufferLock.Free;
 end;

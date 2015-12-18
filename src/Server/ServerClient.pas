@@ -36,6 +36,7 @@ destructor TServerClient<ClientType>.Destroy;
 begin
   inherited;
   m_buffin.Free;
+  m_buffin := nil;
 end;
 
 function TServerClient<ClientType>.GetBuffin: TBuffer;
@@ -47,7 +48,10 @@ procedure TServerClient<ClientType>.handleSend;
 begin
   if (m_buffout.GetSize > 0) then
   begin
-    m_socket.SendStream(m_buffout.ToStream);
+    if not (m_buffin = nil) then
+    begin
+      m_socket.SendStream(m_buffout.ToStream);
+    end;
   end;
 end;
 

@@ -17,6 +17,7 @@ type
       procedure OnClientDisconnect(const client: TGameClient); override;
       procedure OnReceiveClientData(const client: TGameClient; const clientPacket: TClientPacket); override;
       procedure OnReceiveSyncData(const clientPacket: TClientPacket); override;
+      procedure OnDestroyClient(const client: TGameClient); override;
       procedure OnStart; override;
 
       procedure Sync(const client: TGameClient; const clientPacket: TClientPacket); overload;
@@ -113,24 +114,17 @@ end;
 
 procedure TGameServer.OnClientDisconnect(const client: TGameClient);
 var
-  player: TGameServerPlayer;
   lobby: TLobby;
 begin
   self.Log('TGameServer.OnDisconnectClient', TLogType_not);
-  player := client.Data;
-  if not (player = nil) then
-  begin
-    try
-      lobby := m_lobbies.GetLobbyById(player.Lobby);
-      lobby.RemovePlayer(client);
-    Except
-      on E: Exception do
-      begin
-        Console.Log(E.Message, C_RED);
-      end;
+  try
+    lobby := m_lobbies.GetLobbyById(client.Data.Lobby);
+    lobby.RemovePlayer(client);
+  Except
+    on E: Exception do
+    begin
+      Console.Log(E.Message, C_RED);
     end;
-    player.Free;
-    player := nil;
   end;
 end;
 
@@ -246,6 +240,7 @@ var
 begin
   Console.Log('TGameServer.HandlePlayerCreateGame', C_BLUE);
   clientPacket.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
+
   clientPacket.ReadPStr(gameName);
   clientPacket.ReadPStr(gamePassword);
   clientPacket.ReadUInt32(artifact);
@@ -1381,7 +1376,9 @@ begin
       SSAPID_PLAYER_MAIN_SAVE:
       begin
         buffer := clientPacket.GetRemainingData;
+
         client.Data.Data.Load(buffer);
+
         client.Data.Data.playerInfo1.ConnectionId := client.ID;
         client.Send(
           WriteHeader(SGPID_PLAYER_MAIN_DATA) +
@@ -1432,6 +1429,11 @@ begin
     end;
   end;
 
+end;
+
+procedure TGameServer.OnDestroyClient(const client: TGameClient);
+begin
+  client.Data.Free;
 end;
 
 procedure TGameServer.OnReceiveSyncData(const clientPacket: TClientPacket);

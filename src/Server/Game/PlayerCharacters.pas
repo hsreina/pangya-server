@@ -101,6 +101,8 @@ begin
       playerCharacter.Load(tmp);
     end;
   end;
+
+  clientPacket.Free;
 end;
 
 end.
