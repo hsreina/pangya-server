@@ -26,14 +26,14 @@ end;
 
 function TGenericDataRecord<DataType>.Load(packetData: AnsiString): Boolean;
 const
-  sizeOfCharacter = SizeOf(DataType);
+  sizeOfData = SizeOf(DataType);
 begin
-  if not (Length(packetData) = sizeOfCharacter) then
+  if not (Length(packetData) = sizeOfData) then
   begin
     Exit(False);
   end;
 
-  move(packetData[1], Data, sizeOfCharacter);
+  move(packetData[1], Data, sizeOfData);
 
   Exit(True);
 end;

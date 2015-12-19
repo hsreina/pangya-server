@@ -83,6 +83,7 @@ var
 begin
   port := 7997;
 
+  // Could retrieve this from the Sync server
   packet := TClientPacket.Create;
 
   packet.WriteStr(

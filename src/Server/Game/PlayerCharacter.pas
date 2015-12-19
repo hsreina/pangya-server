@@ -9,7 +9,8 @@ type
   TPlayerCharacterBaseData = packed record
     var IffId: Uint32;
     var Id: Uint32;
-    var Un: array [0..$1F8] of AnsiChar;
+    var HairColor: UInt8;
+    var Un: array [0..$1F7] of AnsiChar;
   end;
 
   TPlayerCharacterData = TGenericDataRecord<TPlayerCharacterBaseData>;
@@ -18,6 +19,7 @@ type
     public
       procedure SetIffId(iffId: UInt32);
       procedure SetID(id: UInt32);
+      procedure SetHairColor(color: UInt32);
   end;
 
 implementation
@@ -30,6 +32,11 @@ end;
 procedure TPlayerCharacter.SetID(id: Cardinal);
 begin
   self.m_data.Data.Id := id;
+end;
+
+procedure TPlayerCharacter.SetHairColor(color: UInt32);
+begin
+  self.m_data.Data.hairColor := color;
 end;
 
 end.

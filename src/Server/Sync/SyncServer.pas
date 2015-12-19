@@ -127,6 +127,7 @@ begin
   end;
 
   playerCharacter.SetID(Random(9999999999));
+  playerCharacter.SetHairColor(hairColor);
 
   m_database.SavePlayerCharacters(playerUID.id, playerCharacters);
 

@@ -51,6 +51,7 @@ type
     CGPID_PLAYER_HOLE_COMPLETE                = $0031,
     CGPID_PLAYER_1ST_SHOT_READY               = $0034,
     CGPID_PLAYER_REQUEST_IDENTITY             = $0041,
+    CGPID_PLAYER_REQQUEST_SERVERS_LIST        = $0043,
     CGPID_PLAYER_LOADING_INFO                 = $0048,
     CGPID_PLAYER_UPGRADE                      = $004B,
     CGPID_PLAYER_NOTICE                       = $0057,
@@ -63,6 +64,8 @@ type
     CGPID_PLAYER_UN_00EB                      = $00EB,
     CGPID_PLAYER_OPEN_SCRATCHY_CARD           = $012A,
     CGPID_PLAYER_UN_0140                      = $0140,
+    CGPID_PLAYER_REQUEST_ACHIEVEMENTS         = $0157,
+    CGPID_PLAYER_REQUEST_DAILY_REWARD         = $016E,
     CGPID_PLAYER_SET_ASSIST_MODE              = $0184,
     CGPID_NOTHING                             = $FFFF
   );

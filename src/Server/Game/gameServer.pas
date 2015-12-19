@@ -40,6 +40,7 @@ type
       procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestIdentity(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestServerList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUpgrade(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerNotice(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
@@ -53,6 +54,8 @@ type
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSetAssistMode(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure PlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInfo(const client: TGameClient; const clientPacket: TClientPacket);
 
       procedure SendToGame(const client: TGameClient; data: AnsiString); overload;
@@ -613,6 +616,16 @@ begin
 
 end;
 
+procedure TGameServer.HandlePlayerRequestServerList(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerRequestServerList', C_BLUE);
+  // Should ask this to the sync server?
+  client.Send(
+    #$9F#$00 +
+    #$00 // Number of servers
+  );
+end;
+
 procedure TGameServer.HandlePlayerUpgrade(const client: TGameClient; const clientPacket: TClientPacket);
 type
   TPacketHeader = packed record
@@ -1005,18 +1018,55 @@ begin
   client.Send(#$0E#$02#$00#$00#$00#$00#$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerRequestInfo', C_BLUE);
+
+  {
+    supposed to send all achievement data here
+    packet $022D (check the logs)
+  }
+
+  client.Send(#$2C#$02 + #$00#$00#$00#$00);
+end;
+
+procedure TGameServer.PlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.PlayerRequestDailyReward', C_BLUE);
+  client.Send(
+    #$48#$02 +
+    #$00#$00#$00#$00#$01#$08#$02#$00#$1A#$01#$00#$00#$00 +
+    #$05#$00#$00#$18 + // item id
+    #$03#$00#$00#$00 + // item count
+    #$1E#$00#$00#$00 // days logged
+  );
+end;
+
 procedure TGameServer.HandlePlayerRequestInfo(const client: TGameClient; const clientPacket: TClientPacket);
 var
   res: TClientPacket;
+  playerId: UInt32;
+  un1: UInt8;
 begin
   Console.Log('TGameServer.HandlePlayerRequestInfo', C_BLUE);
+
+  if not clientPacket.ReadUInt32(playerId) then
+  begin
+    Exit;
+  end;
+
+  if not clientPacket.ReadUInt8(un1) then
+  begin
+    Exit;
+  end;
 
   // Always send current player for now
   res := TClientPacket.Create;
 
   // Player infos
-  res.WriteStr(#$57#$01 + #$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$57#$01);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   res.Write(client.Data.Data.playerInfo1, SizeOf(TPlayerInfo1));
   res.WriteUInt32(0); // have some more data at the end
   client.Send(res);
@@ -1024,28 +1074,30 @@ begin
 
   // Equiped character
   res.WriteStr(#$5E#$01);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteUInt32(playerId);
   res.Write(client.Data.Data.equipedCharacter, SizeOf(TPlayerCharacterData));
   client.Send(res);
   res.Clear;
 
   // Equiped character
-  res.WriteStr(#$56#$01 + #$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$56#$01);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   res.Write(client.Data.Data.witems, SizeOf(TPlayerEquipedItems));
   client.Send(res);
   res.Clear;
 
   // Player info 2
-  res.WriteStr(#$58#$01 + #$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$58#$01);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   res.Write(client.Data.Data.playerInfo2, SizeOf(TPlayerInfo2));
   client.Send(res);
   res.Clear;
 
   // Guild informations
   res.WriteStr(#$5D#$01);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteUInt32(playerId);
   res.WriteStr(
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
@@ -1072,7 +1124,7 @@ begin
 
   // Unknow
   res.WriteStr(#$5C#$01 + #$33);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteUInt32(playerId);
   res.WriteStr(
     #$00#$00#$00#$00#$00#$00#$00#$00
   );
@@ -1081,7 +1133,7 @@ begin
 
   // Unknow
   res.WriteStr(#$5C#$01 + #$34);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteUInt32(playerId);
   res.WriteStr(
     #$00#$00#$00#$00#$00#$00#$00#$00
   );
@@ -1089,8 +1141,9 @@ begin
   res.Clear;
 
   // Unknow
-  res.WriteStr(#$5B#$01 + #$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$5B#$01);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   res.WriteStr(
     #$00#$00
   );
@@ -1098,8 +1151,9 @@ begin
   res.Clear;
 
   // Unknow
-  res.WriteStr(#$5A#$01 + #$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$5A#$01);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   res.WriteStr(
     #$00#$00
   );
@@ -1107,8 +1161,9 @@ begin
   res.Clear;
 
   // Unknow
-  res.WriteStr(#$59#$01 + #$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$59#$01);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   res.WriteStr(
     #$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
@@ -1121,8 +1176,9 @@ begin
   res.Clear;
 
   // Unknow
-  res.WriteStr(#$5C#$01 + #$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$5C#$01);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   res.WriteStr(
     #$00#$00#$00#$00#$00#$00#$00#$00
   );
@@ -1130,8 +1186,9 @@ begin
   res.Clear;
 
   // Unknow
-  res.WriteStr(#$57#$02 + #$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$57#$02);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   res.WriteStr(
     #$00#$00
   );
@@ -1139,8 +1196,9 @@ begin
   res.Clear;
 
   // Unknow
-  res.WriteStr(#$89#$00 + #$01#$00#$00#$00#$05);
-  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  res.WriteStr(#$89#$00 + #$01#$00#$00#$00);
+  res.WriteUInt8(un1);
+  res.WriteUInt32(playerId);
   client.Send(res);
   res.Clear;
 
@@ -1179,6 +1237,10 @@ begin
     CGPID_PLAYER_REQUEST_IDENTITY:
     begin
       self.HandlePlayerRequestIdentity(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQQUEST_SERVERS_LIST:
+    begin
+      self.HandlePlayerRequestServerList(client, clientPacket);
     end;
     CGPID_PLAYER_UPGRADE:
     begin
@@ -1227,6 +1289,14 @@ begin
     CGPID_PLAYER_REQUEST_INFO:
     begin
       self.HandlePlayerRequestInfo(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_ACHIEVEMENTS:
+    begin
+      self.HandlePlayerRequestAchievements(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_DAILY_REWARD:
+    begin
+      self.PlayerRequestDailyReward(client, clientPacket);
     end;
     else begin
       try
@@ -1392,7 +1462,6 @@ begin
       begin
         Console.Log('Characters');
         client.Data.Characters.Load(clientPacket.GetRemainingData);
-        Console.WriteDump(client.Data.Characters.ToPacketData);
         client.Send(
           WriteHeader(SGPID_PLAYER_CHARACTERS_DATA) +
           client.Data.Characters.ToPacketData
