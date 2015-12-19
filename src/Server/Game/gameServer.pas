@@ -54,8 +54,10 @@ type
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSetAssistMode(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
       procedure PlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerPlayBongdariShop(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInfo(const client: TGameClient; const clientPacket: TClientPacket);
 
       procedure SendToGame(const client: TGameClient; data: AnsiString); overload;
@@ -72,7 +74,7 @@ implementation
 
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
-  PlayerAction, Vector3, PlayerData;
+  PlayerAction, Vector3, PlayerData, BongdatriShop;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -1018,6 +1020,54 @@ begin
   client.Send(#$0E#$02#$00#$00#$00#$00#$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const clientPacket: TClientPacket);
+const
+  validSerialSize = 13;
+var
+  serial: AnsiString;
+  serialSize: Uint32;
+begin
+  Console.Log('TGameServer.HandlePlayerEnterScratchyCardSerial', C_BLUE);
+
+  clientPacket.Log;
+
+  if not clientPacket.ReadUInt32(serialSize) then
+  begin
+    Exit;
+  end;
+
+  if not (serialSize = validSerialSize) then
+  begin
+    Exit;
+  end;
+
+  setLength(serial, validSerialSize);
+
+  if not clientPacket.Read(serial[1], validSerialSize) then
+  begin
+    Exit;
+  end;
+
+  Console.Log(Format('serial : %s', [serial]));
+
+  // The server seem to alway answer that with any wrong serial
+  // Serial seem broken in original Pangya
+  client.Send(
+    #$DE#$00 + #$16#$26#$26#$00
+  );
+
+  // Old server data was
+  {
+  client.Send(
+    #$DE#$00 +
+    #$00#$00#$00#$00 +
+    #$00#$00#$00#$00 + // return code 0 success, 1 used, 2 invalid, 3 expired etc...
+    #$00#$00#$00#$00
+  );
+  }
+
+end;
+
 procedure TGameServer.HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   Console.Log('TGameServer.HandlePlayerRequestInfo', C_BLUE);
@@ -1030,6 +1080,7 @@ begin
   client.Send(#$2C#$02 + #$00#$00#$00#$00);
 end;
 
+
 procedure TGameServer.PlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   Console.Log('TGameServer.PlayerRequestDailyReward', C_BLUE);
@@ -1040,6 +1091,88 @@ begin
     #$03#$00#$00#$00 + // item count
     #$1E#$00#$00#$00 // days logged
   );
+end;
+
+procedure TGameServer.HandlePlayerPlayBongdariShop(const client: TGameClient; const clientPacket: TClientPacket);
+const
+  ballCount: UInt32 = 1;
+  transactionCount: UInt32 = 1;
+var
+  res: TClientPacket;
+  res2: TClientPacket;
+  bongdariResultItem: TBongdariResultItem;
+  bongdariTransactionResult: TBongdariTransactionResult;
+  I: UInt32;
+begin
+  Console.Log('TGameServer.HandlePlayerPlayBongdariShop', C_BLUE);
+
+  res := TClientPacket.Create;
+  res2 := TClientPacket.Create;
+
+  with bongdariTransactionResult do
+  begin
+    Un1 := 2;
+    un2 := 0;
+    un3 := 0;
+    un4 := 0;
+    un5 := 0;
+    un6 := 0;
+    un7 := 0;
+    un8 := 0;
+    un9 := 0;
+  end;
+
+  { // Pop a warning message
+  client.Send(
+    #$FB#$00 +
+    #$FF#$FF#$FF#$FF +
+    #$FD#$FF#$FF#$FF
+  );
+  }
+
+  // res2 will be a kind of resume of the transaction
+  res2.WriteStr(#$16#$02);
+  res2.WriteStr(#$3C#$96#$75#$56);
+  res2.WriteUInt32(transactionCount);
+
+  res.WriteStr(#$1B#$02);
+  res.WriteStr(#$00#$00#$00#$00#$15#$0E#$5B#$06);
+
+  res.WriteUInt32(ballCount); // ball count
+
+  for I := 1 to ballCount do
+  begin
+    bongdariResultItem.BallType := 2;
+    bongdariResultItem.IffId := $18000008;
+    bongdariResultItem.Id := $10101010;
+    bongdariResultItem.Quantity := 1;
+    bongdariResultItem.Spec := 0;
+    res.Write(bongdariResultItem, SizeOf(TBongdariResultItem));
+
+
+    bongdariTransactionResult.IffId := $18000008;
+    bongdariTransactionResult.Id := $10101010;
+    bongdariTransactionResult.QtyBefore := 0;
+    bongdariTransactionResult.QtyAfter := 1;
+    bongdariTransactionResult.Qty := 1;
+    res2.Write(bongdariTransactionResult, SizeOf(TBongdariTransactionResult));
+
+  end;
+
+  with client.Data do
+  begin
+    res.WriteInt64(Data.playerInfo2.pangs);
+    res.WriteInt64(Cookies);
+  end;
+
+  // Send the transaction details
+  client.Send(res2);
+
+  // Send bongdari game result
+  client.Send(res);
+
+  res.Free;
+  res2.Free;
 end;
 
 procedure TGameServer.HandlePlayerRequestInfo(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1290,9 +1423,17 @@ begin
     begin
       self.HandlePlayerRequestInfo(client, clientPacket);
     end;
+    CGPID_PLAYER_PLAY_BONGDARI_SHOP:
+    begin
+      self.HandlePlayerPlayBongdariShop(client, clientPacket);
+    end;
     CGPID_PLAYER_REQUEST_ACHIEVEMENTS:
     begin
       self.HandlePlayerRequestAchievements(client, clientPacket);
+    end;
+    CGPID_PLAYER_ENTER_SCRATCHY_SERIAL:
+    begin
+      self.HandlePlayerEnterScratchyCardSerial(client, clientPacket);
     end;
     CGPID_PLAYER_REQUEST_DAILY_REWARD:
     begin
@@ -1489,7 +1630,11 @@ begin
 
         // mascot list
         client.Send(#$E1#$00#$00);
-
+      end;
+      SSAPID_PLAYER_COOKIES:
+      begin
+        clientPacket.ReadInt64(client.Data.Cookies);
+        client.Send(#$96#$00 + Write(client.Data.Cookies, 8));
       end;
       else
       begin

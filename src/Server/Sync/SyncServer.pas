@@ -341,8 +341,13 @@ begin
   );
 
   cookies := 99999999;
-  // Cookies
-  self.SendToGame(client, playerUID, #$96#$00 + Write(cookies, 8));
+
+  // player cookies
+  self.PlayerAction(
+    client,
+    playerUID,
+    WriteAction(SSAPID_PLAYER_COOKIES) + Write(cookies, 8)
+  );
 
   // Send Lobbies list
   self.PlayerAction(client, playerUID, #$02#$00);

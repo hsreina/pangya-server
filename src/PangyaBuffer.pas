@@ -31,6 +31,12 @@ type
       function WriteInt32(const src: Int32): Boolean;
       function ReadInt32(var dst: Int32): Boolean;
 
+      function WriteUInt64(const src: UInt64): Boolean;
+      function ReadUInt64(var dst: UInt64): Boolean;
+
+      function WriteInt64(const src: Int64): Boolean;
+      function ReadInt64(var dst: Int64): Boolean;
+
       function Write(const src; const count: UInt32): Boolean;
       function Read(var dst; const count: UInt32): Boolean;
 
@@ -133,6 +139,26 @@ end;
 function TPangyaBuffer.ReadInt32(var dst: Int32): Boolean;
 begin
   Exit(Read(dst, 4));
+end;
+
+function TPangyaBuffer.WriteUInt64(const src: UInt64): Boolean;
+begin
+  Exit(Write(src, 8));
+end;
+
+function TPangyaBuffer.ReadUInt64(var dst: UInt64): Boolean;
+begin
+  Exit(Read(dst, 8));
+end;
+
+function TPangyaBuffer.WriteInt64(const src: Int64): Boolean;
+begin
+  Exit(Write(src, 8));
+end;
+
+function TPangyaBuffer.ReadInt64(var dst: Int64): Boolean;
+begin
+  Exit(Read(dst, 8));
 end;
 
 function TPangyaBuffer.Write(const src; const count: Cardinal): Boolean;

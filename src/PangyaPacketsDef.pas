@@ -56,6 +56,7 @@ type
     CGPID_PLAYER_UPGRADE                      = $004B,
     CGPID_PLAYER_NOTICE                       = $0057,
     CGPID_PLAYER_ACTION                       = $0063,
+    CGPID_PLAYER_ENTER_SCRATCHY_SERIAL        = $0071,
     CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST   = $0081,
     CGPID_PLAYER_LEAVE_MULTIPLAYER_GAME_LIST  = $0082,
     CGPID_PLAYER_REQUEST_MESSENGER_LIST       = $008B,
@@ -64,6 +65,7 @@ type
     CGPID_PLAYER_UN_00EB                      = $00EB,
     CGPID_PLAYER_OPEN_SCRATCHY_CARD           = $012A,
     CGPID_PLAYER_UN_0140                      = $0140,
+    CGPID_PLAYER_PLAY_BONGDARI_SHOP           = $014B,
     CGPID_PLAYER_REQUEST_ACHIEVEMENTS         = $0157,
     CGPID_PLAYER_REQUEST_DAILY_REWARD         = $016E,
     CGPID_PLAYER_SET_ASSIST_MODE              = $0184,
@@ -101,6 +103,7 @@ type
     SSAPID_PLAYER_CHARACTERS          = $0004,
     SSAPID_PLAYER_ITEMS               = $0005,
     SSAPID_PLAYER_CADDIES             = $0006,
+    SSAPID_PLAYER_COOKIES             = $0007,
     SSAPID_NOTHING                    = $FFFF
   );
 

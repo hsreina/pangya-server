@@ -73,7 +73,7 @@ type
     var un0001: array [0..$19] of AnsiChar;
     var experience: UInt32;
     var rank: TRank;
-    var pangs: Uint64;
+    var pangs: Int64;
     var un0003: array [0..$39] of AnsiChar;
     var quitRateY: UInt32; // right value
     var un0004: array [0..$1F] of AnsiChar;

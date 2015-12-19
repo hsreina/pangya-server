@@ -27,7 +27,7 @@ type
       var m_items: TPlayerItems;
       function FGetPlayerData: PPlayerData;
     public
-      var Cookies: UInt64;
+      var Cookies: Int64;
       var Action: TPlayerAction;
 
       function GameInformation: AnsiString; overload;
