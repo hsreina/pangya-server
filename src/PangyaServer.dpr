@@ -49,7 +49,9 @@ uses
   Vector3 in 'Vector3.pas',
   PlayerMascots in 'Server\Game\PlayerMascots.pas',
   PlayerMascot in 'Server\Game\PlayerMascot.pas',
-  GenericDataRecord in 'Server\Game\GenericDataRecord.pas';
+  GenericDataRecord in 'Server\Game\GenericDataRecord.pas',
+  BongdatriShop in 'Server\Game\MiniGames\Bongdari\BongdatriShop.pas',
+  PlayerEquipment in 'Server\Game\PlayerEquipment.pas';
 
 {$R *.res}
 

@@ -19,6 +19,9 @@ type
     public
       constructor Create;
       destructor Destroy; override;
+
+      property List: TList<TGame> read m_games;
+
       function GetGameById(gameId: Byte): TGame;
       function getPlayerGame(player: TGameServerPlayer): TGame;
       function CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent): TGame;

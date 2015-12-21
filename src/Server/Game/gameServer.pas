@@ -56,7 +56,10 @@ type
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure PlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerGiveUpDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerAcceptDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerPlayBongdariShop(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInfo(const client: TGameClient; const clientPacket: TClientPacket);
 
@@ -74,7 +77,7 @@ implementation
 
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
-  PlayerAction, Vector3, PlayerData, BongdatriShop;
+  PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -712,6 +715,7 @@ var
   itemType: UInt8;
   IffId: UInt32;
   characterData: TPlayerCharacterData;
+  equipedItem: TPlaterEquipedItems;
 begin
   self.Log('TGameServer.HandlePlayerChangeEquipment', TLogType_not);
 
@@ -726,13 +730,23 @@ begin
         client.Send(
           #$6B#$00 +
           #$04 + // no clue about it for now
-          #$00 + // the above action?
+          AnsiChar(itemType) + // the above action?
           characterData.ToPacketData
         );
       end;
     end;
     2: begin
       Console.Log('look like equiped items');
+      if clientPacket.Read(equipedItem, SizeOf(TPlaterEquipedItems)) then
+      begin
+        client.Data.Data.witems.items := equipedItem;
+        client.Send(
+          #$6B#$00 +
+          #$04 + // no clue about it for now
+          AnsiChar(itemType) + // the above action?
+          equipedItem.ToPacketData
+        );
+      end;
     end
     else
     begin
@@ -1080,8 +1094,127 @@ begin
   client.Send(#$2C#$02 + #$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandlePlayerGiveUpDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerGiveUpDailyQuest', C_BLUE);
+  {
+    00000000  54 01 03 00 00 00 A2 6F  E0 02 A3 6F E0 02 A4 6F    T.....¢oà.£oà.¤o
+    00000010  E0 02                                               à.
+  }
 
-procedure TGameServer.PlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
+  client.Send(
+    #$16#$02 + #$8F#$62#$77#$56 +
+    #$03#$00#$00#$00 +
+
+    #$02#$0A#$00#$40#$6C#$16 +
+    #$C9#$F1#$03#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+
+    #$02#$04#$00#$40 +
+    #$6C#$17#$C9#$F1#$03#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+
+    #$02#$04 +
+    #$00#$40#$6C#$18#$C9#$F1#$03#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(
+    #$28#$02 + #$00#$00#$00#$00 +
+    #$03#$00#$00#$00 +
+    #$A2#$6F#$E0#$02 +
+    #$A3#$6F#$E0#$02 +
+    #$A4#$6F#$E0#$02
+  );
+
+end;
+
+procedure TGameServer.HandlePlayerAcceptDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerAcceptDailyQuest', C_BLUE);
+  {
+    00000000  52 01 03 00 00 00 A2 6F  E0 02 A3 6F E0 02 A4 6F    R.....¢oà.£oà.¤o
+    00000010  E0 02                                               à.
+  }
+
+  client.Send(
+    #$16#$02 + #$8D#$62#$77#$56 +
+    #$03#$00#$00#$00 + // count
+
+    #$02#$0A#$00#$40#$6C#$16 +
+    #$C9#$F1#$03#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+
+    #$02#$04#$00#$40 +
+    #$6C#$17#$C9#$F1#$03#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+
+    #$02#$04 +
+    #$00#$40#$6C#$18#$C9#$F1#$03#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(
+    #$26#$02 + #$00#$00#$00#$00 +
+    #$03#$00#$00#$00 + // count
+
+    #$01#$56#$00#$00#$78#$A2 +
+    #$6F#$E0#$02#$03#$00#$00#$00#$01#$00#$00#$00#$22#$01#$80#$74#$0A +
+    #$00#$40#$6C#$16#$C9#$F1#$03#$00#$00#$00#$00 +
+
+    #$01#$BB#$00#$00#$78 +
+    #$A3#$6F#$E0#$02#$03#$00#$00#$00#$01#$00#$00#$00#$7C#$01#$80#$74 +
+    #$04#$00#$40#$6C#$17#$C9#$F1#$03#$00#$00#$00#$00 +
+
+    #$01#$AE#$00#$00 +
+    #$78#$A4#$6F#$E0#$02#$03#$00#$00#$00#$01#$00#$00#$00#$6F#$01#$80 +
+    #$74#$04#$00#$40#$6C#$18#$C9#$F1#$03#$00#$00#$00#$00
+  );
+
+end;
+
+procedure TGameServer.HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerRequestDailyQuest', C_BLUE);
+  client.Send(
+    #$16#$02 + #$83#$62#$77#$56 +
+    #$03#$00#$00#$00 + // count
+    #$02#$56#$00#$00#$78#$A2 +
+    #$6F#$E0#$02#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+
+    #$02#$BB#$00#$00 +
+    #$78#$A3#$6F#$E0#$02#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+
+    #$02#$AE +
+    #$00#$00#$78#$A4#$6F#$E0#$02#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(
+    #$25#$02#$00#$00#$00#$00#$00#$60#$76#$56#$CD#$22#$2E#$54#$03#$00 +
+    #$00#$00#$56#$00#$00#$78#$BB#$00#$00#$78#$AE#$00#$00#$78#$03#$00 +
+    #$00#$00#$50#$7B#$D8#$02#$51#$7B#$D8#$02#$52#$7B#$D8#$02
+  );
+end;
+
+procedure TGameServer.HandlePlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   Console.Log('TGameServer.PlayerRequestDailyReward', C_BLUE);
   client.Send(
@@ -1216,7 +1349,7 @@ begin
   res.WriteStr(#$56#$01);
   res.WriteUInt8(un1);
   res.WriteUInt32(playerId);
-  res.Write(client.Data.Data.witems, SizeOf(TPlayerEquipedItems));
+  res.Write(client.Data.Data.witems, SizeOf(TPlayerEquipment));
   client.Send(res);
   res.Clear;
 
@@ -1435,9 +1568,21 @@ begin
     begin
       self.HandlePlayerEnterScratchyCardSerial(client, clientPacket);
     end;
+    CGPID_PLAYER_REQUEST_DAILY_QUEST:
+    begin
+      self.HandlePlayerRequestDailyQuest(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACCEPT_DAILY_QUEST:
+    begin
+      self.HandlePlayerAcceptDailyQuest(client, clientPacket);
+    end;
+    CGPID_PLAYER_GIVEUP_DAILY_QUEST:
+    begin
+      self.HandlePlayerGiveUpDailyQuest(client, clientPacket);
+    end;
     CGPID_PLAYER_REQUEST_DAILY_REWARD:
     begin
-      self.PlayerRequestDailyReward(client, clientPacket);
+      self.HandlePlayerRequestDailyReward(client, clientPacket);
     end;
     else begin
       try

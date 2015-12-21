@@ -46,14 +46,14 @@ end;
 
 function TPlayerGenericData<DataType>.Load(packetData: AnsiString): Boolean;
 const
-  sizeOfCharacter = SizeOf(DataType);
+  sizeOfData = SizeOf(DataType);
 begin
-  if not (Length(packetData) = sizeOfCharacter) then
+  if not (Length(packetData) = sizeOfData) then
   begin
     Exit(False);
   end;
 
-  move(packetData[1], m_data, sizeOfCharacter);
+  move(packetData[1], m_data, sizeOfData);
 
   Exit(True);
 end;

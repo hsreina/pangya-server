@@ -12,14 +12,15 @@ type
 implementation
 
 uses
-  PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData, ShotData;
+  PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData, ShotData,
+  PlayerEquipment;
 
 procedure TDataChecker.Validate;
 const
   playerCharacterDataSize = SizeOf(TPlayerCharacterData);
   playerDataSize = SizeOf(TPlayerData);
   playerInfo2Size = SizeOf(TPlayerInfo2);
-  playerEqipedItemsSize = SizeOf(TPlayerEquipedItems);
+  playerEqipedItemsSize = SizeOf(TPlayerEquipment);
   playerClubDataSize = SizeOf(TPlayerClubData);
   playerCaddieDataSize = SizeOf(TPlayerCaddieData);
   shotDataSize = SizeOf(TShotData);

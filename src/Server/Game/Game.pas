@@ -17,7 +17,7 @@ type
     holeCount: byte;
     map: UInt8;
     mode: TGAME_MODE;
-    naturalMode: cardinal;
+    naturalMode: UInt32;
   end;
 
   TGame = class;
@@ -647,7 +647,6 @@ var
   tmpUInt8: UInt8;
   tmpUInt16: UInt16;
   tmpUInt32: UInt32;
-  gameInfo: TPlayerCreateGameInfo;
   currentPlayersCount: UInt16;
 begin
   Console.Log('TGame.HandlePlayerChangeGameSettings', C_BLUE);
@@ -660,7 +659,6 @@ begin
     Exit;
   end;
 
-  gameInfo := m_gameInfo;
   currentPlayersCount := self.PlayerCount;
 
   for i := 1 to nbOfActions do begin
@@ -672,40 +670,63 @@ begin
 
     case action of
       0: begin
-        clientPacket.ReadPStr(tmpStr);
-        // TODO: Should Check the size maybe
-        m_name := tmpStr;
+        if clientPacket.ReadPStr(tmpStr) then
+        begin
+          // TODO: Should Check the size maybe
+          m_name := tmpStr;
+        end;
       end;
       1: begin
-        clientPacket.ReadPStr(tmpStr);
-        // TODO: Should Check the size maybe
-        m_password := tmpStr;
+        if clientPacket.ReadPStr(tmpStr) then
+        begin
+          // TODO: Should Check the size maybe
+          m_password := tmpStr;
+        end;
+      end;
+      2: begin
+        if clientPacket.ReadUInt8(tmpUInt8) then
+        begin
+          m_gameInfo.gameType := TGAME_TYPE(tmpUInt8);
+        end;
       end;
       3: begin
-        clientPacket.ReadUInt8(tmpUInt8);
-        gameInfo.map := tmpUInt8;
+        if clientPacket.ReadUInt8(tmpUInt8) then
+        begin
+          m_gameInfo.map := tmpUInt8;
+        end;
       end;
       4: begin
-        clientPacket.ReadUInt8(tmpUInt8);
-        gameInfo.holeCount := tmpUInt8;
+        if clientPacket.ReadUInt8(tmpUInt8) then
+        begin
+          m_gameInfo.holeCount := tmpUInt8;
+        end;
       end;
       5: begin
-        clientPacket.ReadUInt8(tmpUInt8);
-        gameInfo.Mode := TGAME_MODE(tmpUInt8);
+        if clientPacket.ReadUInt8(tmpUInt8) then
+        begin
+          m_gameInfo.Mode := TGAME_MODE(tmpUInt8);
+        end;
       end;
       6: begin
-        clientPacket.ReadUInt8(tmpUInt8);
-        gameInfo.turnTime := tmpUInt8 * 1000;
+        if clientPacket.ReadUInt8(tmpUInt8) then
+        begin
+          m_gameInfo.turnTime := tmpUInt8 * 1000;
+        end;
       end;
       7: begin
-        clientPacket.ReadUInt8(tmpUInt8);
-        if tmpUInt8 > currentPlayersCount then
+        if clientPacket.ReadUInt8(tmpUInt8) then
         begin
-          gameInfo.maxPlayers := tmpUInt8;
+          if tmpUInt8 > currentPlayersCount then
+          begin
+            m_gameInfo.maxPlayers := tmpUInt8;
+          end;
         end;
       end;
       14: begin
-        clientPacket.ReadUInt32(tmpUInt32);
+        if clientPacket.ReadUInt32(tmpUInt32) then
+        begin
+          m_gameInfo.naturalMode := tmpUInt32;
+        end;
       end
       else begin
         Console.Log(Format('Unknow action %d', [action]));
@@ -714,7 +735,6 @@ begin
   end;
 
   self.TriggerGameUpdated;
-
 end;
 
 procedure TGame.TriggerGameUpdated;

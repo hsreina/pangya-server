@@ -9,7 +9,6 @@ uses
 
 type
   TMain = class(TForm)
-    Button1: TButton;
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private

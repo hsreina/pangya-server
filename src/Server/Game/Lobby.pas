@@ -200,24 +200,26 @@ end;
 
 procedure TLobby.JoinMultiplayerGamesList(client: TGameClient);
 var
-  p: TGameClient;
-  playersinlist: integer;
+  player: TGameClient;
+  game: TGame;
+  playersInList: UInt32;
   outData: AnsiString;
   firstPacket: Boolean;
+  gamesInList: UInt32;
 begin
 
   playersInList := 0;
   outData := '';
   firstPacket := true;
-  for p in m_players do
+  for player in m_players do
   begin
 
-    if not P.Data.InGameList then
+    if not player.Data.InGameList then
     begin
       continue;
     end;
 
-    outData := outData + p.Data.LobbyInformations;
+    outData := outData + player.Data.LobbyInformations;
     inc(playersinlist);
     if playersinlist >= 8 then
     begin
@@ -243,6 +245,45 @@ begin
       outdata;
       client.Send(outdata);
   end;
+
+  gamesInList := 0;
+  outData := '';
+  firstPacket := true;
+
+  for game in m_games.List do
+  begin
+
+    // Skip the default game
+    if game.Id = 0 then
+    begin
+      Continue;
+    end;
+
+    outData := outData + game.GameInformation;
+    inc(gamesInList);
+
+    if gamesInList >= 8 then
+    begin
+      if firstPacket then begin
+        outdata := #$47#$00 +
+          ansichar(gamesInList) + #$00 + #$FF#$FF + outdata;
+        firstPacket := false;
+      end else begin
+        outdata := #$47#$00 +
+          ansichar(gamesInList) + #$00 + #$FF#$FF + outdata;
+      end;
+      self.Send(outdata);
+      gamesInList := 0;
+      outdata := '';
+    end;
+  end;
+
+  if gamesInList > 0 then begin
+    outdata := #$47#$0 +
+      ansichar(gamesInList) + #$01 + #$FF#$FF + outdata;
+      self.Send(outdata);
+  end;
+
 
   self.Send(
     #$46#$00 + #$01#$01 +

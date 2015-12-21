@@ -2,45 +2,10 @@ unit PlayerData;
 
 interface
 
-uses PlayerCharacter, PacketData, Math, PlayerClubData, PlayerCaddie, defs;
+uses PlayerCharacter, PacketData, Math, PlayerClubData, PlayerCaddie, defs,
+  PlayerEquipment;
 
 type
-
-  PPlayerEquipedItems = ^TPlayerEquipedItems;
-  TPlayerEquipedItems = packed record
-    caddieId: UInt32;
-    characterId: UInt32;
-    clubSetId: UInt32;
-    aztecIffID: UInt32;
-
-    var un3: UInt32;
-    var un4: UInt32;
-    var un5: UInt32;
-    var un6: UInt32;
-    var un7: UInt32;
-    var un8: UInt32;
-    var un9: UInt32;
-    var un10: UInt32;
-    var un11: UInt32;
-    var un12: UInt32;
-
-    var un13: UInt32;
-    var un14: UInt32;
-    var un15: UInt32;
-    var un16: UInt32;
-    var un17: UInt32;
-    var un18: UInt32;
-
-    var un19: UInt32;
-    var un20: UInt32;
-    var un21: UInt32;
-    var un22: UInt32;
-    var un23: UInt32;
-    var un24: UInt32;
-    var un25: UInt32;
-    var un26: UInt32;
-    var un27: UInt32;
-  end;
 
   PPlayerInfo1 = ^TPlayerInfo1;
   TPlayerInfo1 = packed record
@@ -94,7 +59,7 @@ type
     var playerInfo1: TPlayerInfo1;
     var playerInfo2: TPlayerInfo2;
     var un0003: array [0..$4D] of AnsiChar;
-    var witems: TPlayerEquipedItems;
+    var witems: TPlayerEquipment;
     var un0002: array [0..$2A53] of AnsiChar;
 
     var equipedCharacter: TPlayerCharacterData;
