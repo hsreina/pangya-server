@@ -86,11 +86,13 @@ type
       procedure HandlePlayerStartGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayer1stShotReady(const client: TGameClient; const clientPacket: TClientPacket);
-
       procedure HandlePlayerActionShot(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerActionRotate(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerActionHit(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerActionChangeClub(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerFastForward(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerPowerShot(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerUseItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerShotData(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerShotSync(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerHoleComplete(const client: TGameClient; const clientPacket: TClientPacket);
@@ -905,6 +907,74 @@ begin
   begin
     data[x] := ansichar(byte(data[x]) xor byte(m_gameKey[x mod 16]));
   end;
+end;
+
+procedure TGame.HandlePlayerFastForward(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerFastForward', C_BLUE);
+  {
+    offset   0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F
+  00000000  65 00 00 00 40 40                                   e...@@
+  }
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$C7#$00);
+  res.WriteStr(#$00#$00#$40#$40); // same as sent packet
+  res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
+  self.Send(res);
+  res.Free;
+end;
+
+procedure TGame.HandlePlayerPowerShot(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  action: UInt8;
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerPowerShot', C_BLUE);
+  if not ClientPacket.ReadUInt8(action) then
+  begin
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$58#$00);
+  res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
+  res.WriteUInt8(action);
+  self.Send(res);
+  res.Free;
+end;
+
+procedure TGame.HandlePlayerUseItem(const client: TGameClient; const clientPacket: TClientPacket);
+type
+  TReply = packed record
+    IffId: UInt32;
+    Id: UInt32;
+    connectionId: UInt32;
+  end;
+var
+  IffId: UInt32;
+  res: TClientPacket;
+  reply: TReply;
+begin
+  Console.Log('TGame.HandlePlayerUseItem', C_BLUE);
+  if not clientPacket.ReadUInt32(IffId) then
+  begin
+    Exit;
+  end;
+
+  // Should check if the player have this item
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$5A#$00);
+  res.WriteUInt32(IffId);
+  res.WriteUInt32(1); // item Id
+  res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
+  self.Send(res);
+
+  res.Free;
 end;
 
 procedure TGame.HandlePlayerShotData(const client: TGameClient; const clientPacket: TClientPacket);

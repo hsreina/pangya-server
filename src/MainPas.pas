@@ -68,7 +68,9 @@ begin
 
   DragAcceptFiles(Handle, true);
 
+  {$IFDEF DEBUG}
   Console.Show;
+  {$ENDIF}
   Console.Log('PANGYA SERVER by HSReina', C_GREEN);
 
   m_dataChecker := TDataChecker.Create;

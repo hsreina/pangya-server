@@ -56,6 +56,7 @@ type
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerSendInvite(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerGiveUpDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerAcceptDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1094,6 +1095,13 @@ begin
   client.Send(#$2C#$02 + #$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandlePlayerSendInvite(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerSendInvite', C_BLUE);
+  ClientPacket.Log;
+  Console.Log('Should implement that', C_ORANGE);
+end;
+
 procedure TGameServer.HandlePlayerGiveUpDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   Console.Log('TGameServer.HandlePlayerGiveUpDailyQuest', C_BLUE);
@@ -1580,6 +1588,10 @@ begin
     begin
       self.HandlePlayerGiveUpDailyQuest(client, clientPacket);
     end;
+    CGPID_PLAYER_SEND_INVITE:
+    begin
+      self.HandlePlayerSendInvite(client, clientPacket);
+    end;
     CGPID_PLAYER_REQUEST_DAILY_REWARD:
     begin
       self.HandlePlayerRequestDailyReward(client, clientPacket);
@@ -1650,6 +1662,10 @@ begin
     begin
       game.HandlePlayerActionChangeClub(client, clientPacket);
     end;
+    CGPID_PLAYER_USE_ITEM:
+    begin
+      game.HandlePlayerUseItem(client, clientPacket);
+    end;
     CGPID_PLAYER_SHOTDATA:
     begin
       game.HandlePlayerShotData(client, clientPacket);
@@ -1661,7 +1677,15 @@ begin
     CGPID_PLAYER_HOLE_COMPLETE:
     begin
       game.HandlerPlayerHoleComplete(client, clientPacket);
-    end
+    end;
+    CGPID_PLAYER_FAST_FORWARD:
+    begin
+      game.HandlePlayerFastForward(client, clientPacket);
+    end;
+    CGPID_PLAYER_POWER_SHOT:
+    begin
+      game.HandlePlayerPowerShot(client, clientPacket);
+    end;
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;

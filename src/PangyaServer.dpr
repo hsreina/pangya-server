@@ -1,7 +1,13 @@
 program PangyaServer;
 
 uses
-  msvcrtMM in 'msvcrtMM.pas',
+  {$IFDEF DEBUG}
+  FastMM4 in 'Libs\Fast\FastMM4.pas',
+  FastMM4Messages in 'Libs\Fast\FastMM4Messages.pas',
+  {$ENDIF }
+  {$IFDEF RELEASE}
+  msvcrtMM,
+  {$ENDIF}
   Vcl.Forms,
   MainPas in 'MainPas.pas' {Main},
   ConsolePas in 'ConsolePas.pas' {Console},
