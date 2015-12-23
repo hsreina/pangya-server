@@ -59,7 +59,9 @@ type
       procedure HandlePlayerSendInvite(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerGiveUpDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerAcceptDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRecycleItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestCookiesCount(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerPlayBongdariShop(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInfo(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1015,7 +1017,8 @@ begin
   client.Send(
     #$16#$02 +
     #$D9#$C2#$53#$56 + // seem to increase
-    #$01#$00#$00#$00#$02#$16#$00#$E0#$1B#$12 +
+    #$01#$00#$00#$00 +
+    #$02#$16#$00#$E0#$1B#$12 +
     #$49#$76#$06#$00#$00#$00#$00 +
     #$01#$00#$00#$00 +
     #$02#$00#$00#$00 +
@@ -1111,7 +1114,8 @@ begin
   }
 
   client.Send(
-    #$16#$02 + #$8F#$62#$77#$56 +
+    #$16#$02 +
+    #$8F#$62#$77#$56 +
     #$03#$00#$00#$00 +
 
     #$02#$0A#$00#$40#$6C#$16 +
@@ -1187,6 +1191,88 @@ begin
 
 end;
 
+procedure TGameServer.HandlePlayerRecycleItem(const client: TGameClient; const clientPacket: TClientPacket);
+type
+  TRecycleItemInfo = packed record
+    IffId: UInt32;
+    Id: UInt32;
+    un: UInt32;
+  end;
+var
+  count: UInt32;
+  itemInfo: TRecycleItemInfo;
+  I: Integer;
+begin
+  Console.Log('TGameServer.HandlePlayerRecycleItem', C_BLUE);
+  {
+      offset   0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F
+    00000000  8D 01 01 00 00 00 01 00  00 18 51 10 84 00 01 00    ç.........Q.Ñ...
+    00000010  00 00
+
+  offset   0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F
+00000000  8D 01 02 00 00 00 00 00  00 18 DD DC 74 07 01 00    ç.........›‹t...
+00000010  00 00 01 00 00 18 BF 22  93 07 01 00 00 00          ......ø"ì.....
+                                            ..
+  }
+  if not clientPacket.ReadUInt32(count) then
+  begin
+    Exit;
+  end;
+
+  for I := 1 to count do
+  begin
+    clientPacket.Read(itemInfo, SizeOf(TRecycleItemInfo));
+    console.Log('recycle info : ');
+    console.Log(Format('IffId %x', [itemInfo.IffId]));
+    console.Log(Format('Id %x', [itemInfo.Id]));
+    console.Log(Format('Un %x', [itemInfo.Un]));
+  end;
+
+
+
+
+  // Pangs and cookies info
+  client.Send(
+    #$C8#$00 +
+    self.Write(client.Data.data.playerInfo2.pangs, 8) +
+    self.Write(client.Data.Cookies, 8)
+  );
+
+  // again this transaction
+  client.Send(
+    #$16#$02 +
+    #$2F#$01#$7A#$56 +
+    #$02#$00#$00#$00 +
+    #$02#$A7#$02#$00#$1A#$9F +
+    #$95#$73#$06#$00#$00#$00#$00#$D0#$02#$00#$00#$DE#$02#$00#$00#$0E +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$02#$0F#$02#$00 +
+    #$1A#$B0#$F7#$AC#$06#$00#$00#$00#$00#$11#$00#$00#$00#$10#$00#$00 +
+    #$00#$FF#$FF#$FF#$FF#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+
+  // Receive Mileage bonus
+  client.Send(
+    #$74#$02 +
+    #$00#$00#$00#$00 +
+    #$0A#$00#$00#$00 +
+    #$04#$00#$00#$00 // count
+  );
+
+  // Challenge complete
+  // Get extra bonus mileage 1 time
+  client.Send(
+    #$2E#$02 +
+    #$01#$00#$00#$00 +
+    #$1B#$00#$80#$4D +
+    #$E8#$08#$80#$74
+  )
+
+end;
+
 procedure TGameServer.HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   Console.Log('TGameServer.HandlePlayerRequestDailyQuest', C_BLUE);
@@ -1220,6 +1306,18 @@ begin
     #$00#$00#$56#$00#$00#$78#$BB#$00#$00#$78#$AE#$00#$00#$78#$03#$00 +
     #$00#$00#$50#$7B#$D8#$02#$51#$7B#$D8#$02#$52#$7B#$D8#$02
   );
+end;
+
+procedure TGameServer.HandlePlayerRequestCookiesCount(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.PlayerRequestDailyReward', C_BLUE);
+  res := TClientPacket.Create;
+  res.WriteStr(WriteAction(SFPID_PLAYER_COOKIES));
+  res.WriteInt64(client.Data.Cookies);
+  client.Send(res);
+  res.Free;
 end;
 
 procedure TGameServer.HandlePlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1580,6 +1678,10 @@ begin
     begin
       self.HandlePlayerRequestDailyQuest(client, clientPacket);
     end;
+    CGPID_PLAYER_RECYCLE_ITEM:
+    begin
+      self.HandlePlayerRecycleItem(client, clientPacket);
+    end;
     CGPID_PLAYER_ACCEPT_DAILY_QUEST:
     begin
       self.HandlePlayerAcceptDailyQuest(client, clientPacket);
@@ -1595,6 +1697,10 @@ begin
     CGPID_PLAYER_REQUEST_DAILY_REWARD:
     begin
       self.HandlePlayerRequestDailyReward(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_COOKIES_COUNT:
+    begin
+      self.HandlePlayerRequestCookiesCount(client, clientPacket);
     end;
     else begin
       try

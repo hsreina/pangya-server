@@ -52,6 +52,7 @@ type
     CGPID_PLAYER_REQUEST_INFO                 = $002F,
     CGPID_PLAYER_HOLE_COMPLETE                = $0031,
     CGPID_PLAYER_1ST_SHOT_READY               = $0034,
+    CGPID_PLAYER_REQUEST_COOKIES_COUNT        = $003D,
     CGPID_PLAYER_REQUEST_IDENTITY             = $0041,
     CGPID_PLAYER_REQQUEST_SERVERS_LIST        = $0043,
     CGPID_PLAYER_LOADING_INFO                 = $0048,
@@ -76,6 +77,7 @@ type
     CGPID_PLAYER_REQUEST_ACHIEVEMENTS         = $0157,
     CGPID_PLAYER_REQUEST_DAILY_REWARD         = $016E,
     CGPID_PLAYER_SET_ASSIST_MODE              = $0184,
+    CGPID_PLAYER_RECYCLE_ITEM                 = $018D,
     CGPID_NOTHING                             = $FFFF
   );
 
@@ -91,6 +93,7 @@ type
     SGPID_PLAYER_EQUIP_DATA                   = $0072,
     SGPID_PLAYER_ITEMS_DATA                   = $0073,
     SGPID_PLAYER_1ST_SHOT_READY               = $0090,
+    SFPID_PLAYER_COOKIES                      = $0096,
     SGPID_PLAYER_LOADING_INFO                 = $00A3,
     SGPID_NOTHING                             = $FFFF
   );

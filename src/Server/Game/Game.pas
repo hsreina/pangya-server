@@ -309,10 +309,10 @@ begin
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$64#$00#$00#$00#$64#$00#$00#$00 +
     #$00#$00#$00#$00 + // game created by player id
-    #$FF +
-    #$00#$00#$00#$00
+    #$FF
   );
 
+  packet.WriteUInt32(self.m_artifact);
   packet.WriteUInt32(m_gameInfo.naturalMode);
 
   packet.WriteStr(
