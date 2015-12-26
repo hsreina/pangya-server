@@ -577,8 +577,10 @@ begin
     shopResult := shopResult +
       self.Write(shopItem.IffId, 4) + // IffId
       self.Write(randomId, 4) + // Id
-      #$00#$00#$00#$01 +
-      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00 + // time
+      #$00 +
+      #$01#$00#$00#$00 + // qty left
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
       #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00;
   end;
 
@@ -750,8 +752,11 @@ begin
           equipedItem.ToPacketData
         );
       end;
+    end;
+    4: begin // Character
+      Console.Log('Look like character');
     end
-    else
+    else;
     begin
       Console.Log(Format('Unknow item type %x', [itemType]), C_RED);
       clientPacket.Log;
@@ -1792,6 +1797,10 @@ begin
     begin
       game.HandlePlayerPowerShot(client, clientPacket);
     end;
+    CGPID_PLAYER_CHANGE_EQUPMENT:
+    begin
+      game.HandlePlayerChangeEquipment(client, clientPacket);
+    end
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;

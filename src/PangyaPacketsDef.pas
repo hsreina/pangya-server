@@ -34,6 +34,7 @@ type
     CGPID_PLAYER_CREATE_GAME                  = $0008,
     CGPID_PLAYER_JOIN_GAME                    = $0009,
     CGPID_PLAYER_CHANGE_GAME_SETTINGS         = $000A,
+    CGPID_PLAYER_CHANGE_EQUPMENT              = $000C,
     CGPID_PLAYER_READY                        = $000D,
     CGPID_PLAYER_START_GAME                   = $000E,
     CGPID_PLAYER_LEAVE_GAME                   = $000F,

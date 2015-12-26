@@ -91,6 +91,7 @@ type
       procedure HandlePlayerActionHit(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerActionChangeClub(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerFastForward(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerPowerShot(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUseItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerShotData(const client: TGameClient; const clientPacket: TClientPacket);
@@ -926,6 +927,84 @@ begin
   res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
   self.Send(res);
   res.Free;
+end;
+
+procedure TGame.HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
+type
+  THeader = packed record
+    Action: UInt8;
+    Id: Uint32;
+  end;
+var
+  header: THeader;
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerChangeEquipment', C_BLUE);
+  if not clientPacket.Read(header, SizeOf(THeader)) then
+  begin
+    Exit;
+  end;
+  Console.Log(Format('action : %x', [header.Action]));
+  Console.Log(Format('id : %x', [header.Id]));
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$4B#$00);
+  res.WriteUInt32(0);
+  res.WriteUInt8(header.Action);
+  res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
+  res.WriteUInt32(header.Id);
+
+  case header.Action of
+    1: begin // Caddie
+      Console.Log('Caddie');
+
+      // Equiped caddie data
+      res.WriteStr(
+        #$00#$00#$00#$00 +
+        #$0B#$77#$18#$33#$AC#$FE#$7F#$0E#$F0#$51#$E8#$08#$E5 +
+        #$7F#$6B#$00#$AC
+      );
+
+    end;
+    2: begin // Aztec
+      Console.Log('Aztec');
+      // for Aztec, Id = IffId
+      client.Data.Data.witems.AztecIffID := header.Id;
+    end;
+    3: begin // Clucb
+      Console.Log('Club');
+
+      // Equiped club data
+      res.WriteStr(
+        #$00#$00#$00#$10 + // club Iff Id
+        #$01#$00#$00#$00 + // qty?
+        #$00#$00#$00#$00#$00#$00#$B7#$07#$E5 +
+        #$7F#$6B#$00#$AC#$FE#$7F#$0E
+      );
+
+    end;
+    5: begin // Mascot
+      Console.Log('Mascot');
+
+      // Equiped mascot data
+      res.WriteStr(
+        #$00#$00#$00#$00 + #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$EF +
+        #$6C#$18#$33#$2C#$F6#$7F#$0E#$D3#$7D
+      );
+    end;
+    else begin
+      Console.Log(Format('Unknow action %x', [header.Action]));
+    end;
+  end;
+
+
+
+
+  client.Send(res);
+  res.Free;
+
 end;
 
 procedure TGame.HandlePlayerPowerShot(const client: TGameClient; const clientPacket: TClientPacket);

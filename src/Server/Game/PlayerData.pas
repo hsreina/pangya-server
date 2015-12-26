@@ -66,6 +66,7 @@ type
     var equipedCaddie: TPlayerCaddieData;
     var equipedClub: TPlayerClubData;
 
+    // A part of this is equiped mascot data
     var un0000: array [0..$4E] of AnsiChar;
 
     // now sound like something related to guilds
