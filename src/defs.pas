@@ -21,15 +21,23 @@ type
     GAME_TYPE_VERSUS_STROKE = $00,
     GAME_TYPE_VERSUS_MATCH = $01,
     GAME_TYPE_CHAT_ROOM = $02,
+    GAME_TYPE_03 = $03,
     GAME_TYPE_TOURNEY_TOURNEY = $04, // 30 Players tournament
     GAME_TYPE_TOURNEY_TEAM = $05, // 30 Players team tournament
     GAME_TYPE_TOURNEY_GUILD = $06, // Guild battle
     GAME_TYPE_BATTLE_PANG_BATTLE = $07, // Pang Battle
     GAME_TYPE_08 = $08, // Public My Room
+    GAME_TYPE_09 = $09,
+    GAME_TYPE_0A = $0A,
+    GAME_TYPE_0B = $0B,
+    GAME_TYPE_0C = $0C,
+    GAME_TYPE_0D = $0D,
+    GAME_TYPE_CHIP_IN_PRACTICE = $0E,
     GAME_TYPE_0F = $0F, // Playing for the first time
     GAME_TYPE_10 = $10, // Learn with caddie
     GAME_TYPE_11 = $11, // Stroke
     GAME_TYPE_12 = $12, // This is Chaos!
+    GAME_TYPE_HOLE_REPEAT = $13, // This is Chaos!
     GAME_TYPE_14 = $14 // Grand Prix
   );
 
@@ -174,11 +182,33 @@ type
     INFINITY_LEGEND_A = $46
   );
 
+  TCREATE_GAME_RESULT = (
+    CREATE_GAME_RESULT_SUCCESS = $00,
+    CREATE_GAME_RESULT_FULL = $02,
+    CREATE_GAME_ROOM_DONT_EXISTS = $03,
+    CREATE_GAME_INCORRECT_PASSWORD = $04,
+    CREATE_GAME_INVALID_LEVEL = $05,
+    CREATE_GAME_CREATE_FAILED = $07,
+    CREATE_GAME_ALREADY_STARTED = $08,
+    CREATE_GAME_CREATE_FAILED2 = $09,
+    CREATE_GAME_NEED_REGISTER_WITH_GUILD = $0D,
+    CREATE_GAME_PANG_BATTLE_INSSUFICENT_PANGS = $0F,
+    CREATE_GAME_APPROACH_INSSUFICENT_PANGS = $11,
+    CREATE_GAME_CANT_CREATE = $12
+  );
+
+function WriteGameCreateResult(gameCreateResult: TCREATE_GAME_RESULT): Uint8;
+
 implementation
 
 procedure TPlayerUID.SetId(id: integer);
 begin
   self.id := id;
+end;
+
+function WriteGameCreateResult(gameCreateResult: TCREATE_GAME_RESULT): Uint8;
+begin
+  move(gameCreateResult, result, 1);
 end;
 
 end.

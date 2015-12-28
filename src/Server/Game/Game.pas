@@ -4,7 +4,7 @@ interface
 
 uses
   Generics.Collections, GameServerPlayer, defs, PangyaBuffer, utils, ClientPacket, SysUtils,
-  GameHoleInfo, Vector3;
+  GameHoleInfo, Vector3, System.TypInfo;
 
 type
 
@@ -126,6 +126,7 @@ constructor TGame.Create(name, password: AnsiString; gameInfo: TPlayerCreateGame
 var
   I: Integer;
 begin
+  Console.Log('TGame.Create', C_BLUE);
   m_onUpdateGame := TGameGenericEvent.Create;
 
   m_game_holes := TList<TGameHoleInfo>.Create;
@@ -134,6 +135,11 @@ begin
   begin
     m_game_holes.Add(TGameHoleInfo.Create);
   end;
+
+  Console.Log(Format('mode : %s', [GetEnumName(TypeInfo(TGAME_MODE), Integer(gameInfo.mode))]));
+  Console.Log(Format('type : %s', [GetEnumName(TypeInfo(TGAME_TYPE), Integer(gameInfo.gameType))]));
+
+
 
   m_onUpdateGame.Event := onUpdate;
   m_name := name;
@@ -167,6 +173,7 @@ var
   gamePlayer: TGameClient;
   playerIndex: integer;
   res: TClientPacket;
+  gameId: UInt16;
 begin
   if m_players.Count >= m_gameInfo.maxPlayers then
   begin
@@ -174,7 +181,17 @@ begin
   end;
 
   playerIndex := m_players.Add(player);
-  player.Data.Data.playerInfo1.game := m_id;
+
+  // The game 0 is the lobby
+  if m_id = 0 then
+  begin
+    gameId := $FFFF;
+  end else
+  begin
+    gameId := m_id;
+  end;
+
+  player.Data.Data.playerInfo1.game := gameId;
 
   if m_id = 0 then
   begin
@@ -271,6 +288,8 @@ var
   plTest: boolean;
   val: UInt8;
   testResult: UInt8;
+  gameType: UInt8;
+  specialFlag: UInt8;
 begin
   packet := TClientPacket.Create;
 
@@ -284,6 +303,16 @@ begin
     #$00#$00#$00#$00#$00#$00
   );
 
+  gameType := UInt8(m_gameInfo.gameType);
+  if m_gameinfo.gameType = TGAME_TYPE.GAME_TYPE_CHIP_IN_PRACTICE then
+  begin
+    gameType := $0B;
+    specialFlag := $0E;
+  end else
+  begin
+    specialFlag := $FF;
+  end;
+
   pl := Length(m_password);
   plTest := pl > 0;
 
@@ -295,7 +324,7 @@ begin
   packet.Write(m_gameKey[0], 16);
   packet.WriteStr(#$00#$1E);
   packet.WriteUInt8(m_gameInfo.holeCount);
-  packet.WriteUInt8(UInt8(m_gameInfo.gameType));
+  packet.WriteUInt8(gameType);
   packet.WriteUInt16(m_id);
   packet.WriteUInt8(UInt8(m_gameInfo.mode));
   packet.WriteUInt8(m_gameInfo.map);
@@ -309,9 +338,10 @@ begin
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$64#$00#$00#$00#$64#$00#$00#$00 +
-    #$00#$00#$00#$00 + // game created by player id
-    #$FF
+    #$00#$00#$00#$00 // game created by player id
   );
+
+  packet.WriteUInt8(specialFlag);
 
   packet.WriteUInt32(self.m_artifact);
   packet.WriteUInt32(m_gameInfo.naturalMode);
@@ -331,10 +361,17 @@ end;
 function TGame.GameResume: AnsiString;
 var
   packet: TClientPacket;
+  gameType: UInt8;
 begin
   packet := TClientPacket.Create;
 
-  packet.WriteUInt8(UInt8(m_gameInfo.gameType));
+  gameType := UInt8(m_gameInfo.gameType);
+  if m_gameinfo.gameType = TGAME_TYPE.GAME_TYPE_CHIP_IN_PRACTICE then
+  begin
+    gameType := $0b;
+  end;
+
+  packet.WriteUInt8(gameType);
   packet.WriteUInt8(m_gameInfo.map);
   packet.WriteUInt8(m_gameInfo.holeCount);
   packet.WriteUInt8(UInt8(m_gameInfo.mode));
@@ -597,6 +634,13 @@ begin
     );
     res.WriteUInt8(gameHoleInfo.Map);
     res.WriteUInt8(gameHoleInfo.Hole);
+  end;
+
+  if m_gameinfo.gameType = TGAME_TYPE.GAME_TYPE_CHIP_IN_PRACTICE then
+  begin
+    self.Send(res);
+    res.Free;
+    Exit;
   end;
 
   // Coins info

@@ -22,7 +22,7 @@ type
 
       property List: TList<TGame> read m_games;
 
-      function GetGameById(gameId: Byte): TGame;
+      function GetGameById(gameId: UInt16): TGame;
       function getPlayerGame(player: TGameServerPlayer): TGame;
       function CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent): TGame;
       procedure DestroyGame(game: Tgame);
@@ -90,10 +90,16 @@ begin
   end;
 end;
 
-function TGamesList.GetGameById(gameId: Byte): TGame;
+function TGamesList.GetGameById(gameId: UInt16): TGame;
 var
   game: TGame;
 begin
+
+  if gameId = $FFFF then
+  begin
+    gameId := 0;
+  end;
+
   for game in m_games do
   begin
     if game.Id = gameId then

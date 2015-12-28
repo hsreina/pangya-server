@@ -71,6 +71,7 @@ type
     CGPID_PLAYER_UN_00EB                      = $00EB,
     CGPID_PLAYER_OPEN_SCRATCHY_CARD           = $012A,
     CGPID_PLAYER_UN_0140                      = $0140,
+    CGPID_PLAYER_REQUEST_INBOX                = $0143,
     CGPID_PLAYER_PLAY_BONGDARI_SHOP           = $014B,
     CGPID_PLAYER_REQUEST_DAILY_QUEST          = $0151,
     CGPID_PLAYER_ACCEPT_DAILY_QUEST           = $0152,

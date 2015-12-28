@@ -61,6 +61,7 @@ type
       procedure HandlePlayerAcceptDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRecycleItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestInbox(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestCookiesCount(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerPlayBongdariShop(const client: TGameClient; const clientPacket: TClientPacket);
@@ -248,6 +249,7 @@ var
   game: TGame;
   currentGame: Tgame;
   d: AnsiString;
+  res: TClientPacket;
 begin
   Console.Log('TGameServer.HandlePlayerCreateGame', C_BLUE);
   clientPacket.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
@@ -265,6 +267,25 @@ begin
       Exit;
     end;
   end;
+
+  // Lets pprevent game creation for some type of unimplemented games
+  if
+    not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_VERSUS_STROKE) AND
+    not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_VERSUS_MATCH) AND
+    not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_CHIP_IN_PRACTICE) AND
+    not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_CHAT_ROOM)
+  then
+  begin
+    res := TClientPacket.Create;
+    // Can't create a game here
+    res.WriteStr(#$49#$00);
+    res.WriteUInt8(WriteGameCreateResult(TCREATE_GAME_RESULT.CREATE_GAME_CANT_CREATE));
+    client.Send(res);
+    res.Free;
+    Exit;
+  end;
+
+  //
 
   try
     game := playerLobby.CreateGame(gamename, gamePassword, gameInfo, artifact);
@@ -1313,6 +1334,46 @@ begin
   );
 end;
 
+procedure TGameServer.HandlePlayerRequestInbox(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerRequestInbox', C_BLUE);
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$11#$02);
+  res.WriteUInt32(0);
+  res.WriteUInt32(1); // page number
+  res.WriteUInt32(1); // page count
+  res.WriteUInt32(1); // entries count
+
+  res.WriteStr(
+    #$01#$00#$00#$00 + // Email ID?
+    #$40#$53#$47#$49 +
+    #$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$01#$00#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$FF#$FF#$FF#$FF +
+    #$00#$00#$00#$18 + // item Idd Id
+    #$00 +
+    #$03#$00#$00#$00 + // count
+    #$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$FF#$FF#$FF#$FF#$00#$00#$00#$00#$30#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(res);
+  res.Free;
+end;
+
 procedure TGameServer.HandlePlayerRequestCookiesCount(const client: TGameClient; const clientPacket: TClientPacket);
 var
   res: TClientPacket;
@@ -1707,6 +1768,10 @@ begin
     begin
       self.HandlePlayerRequestCookiesCount(client, clientPacket);
     end;
+    CGPID_PLAYER_REQUEST_INBOX:
+    begin
+      self.HandlePlayerRequestInbox(client, clientPacket);
+    end
     else begin
       try
         playerGame := lobby.GetPlayerGame(client);
