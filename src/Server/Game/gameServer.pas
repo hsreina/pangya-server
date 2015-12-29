@@ -1,3 +1,11 @@
+{*******************************************************}
+{                                                       }
+{       Pangya Server                                   }
+{                                                       }
+{       Copyright (C) 2015 Shad'o Soft tm               }
+{                                                       }
+{*******************************************************}
+
 unit GameServer;
 
 interface
@@ -62,6 +70,11 @@ type
       procedure HandlePlayerRecycleItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInbox(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlerPlayerDeleteMail(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure handlerPlayerSendMail(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestOfflinePlayerInfo(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerMoveInboxGift(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestInboxDetails(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestCookiesCount(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyReward(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerPlayBongdariShop(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1254,9 +1267,6 @@ begin
     console.Log(Format('Un %x', [itemInfo.Un]));
   end;
 
-
-
-
   // Pangs and cookies info
   client.Send(
     #$C8#$00 +
@@ -1303,8 +1313,10 @@ procedure TGameServer.HandlePlayerRequestDailyQuest(const client: TGameClient; c
 begin
   Console.Log('TGameServer.HandlePlayerRequestDailyQuest', C_BLUE);
   client.Send(
-    #$16#$02 + #$83#$62#$77#$56 +
+    #$16#$02 +
+    #$83#$62#$77#$56 +
     #$03#$00#$00#$00 + // count
+
     #$02#$56#$00#$00#$78#$A2 +
     #$6F#$E0#$02#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$01#$00#$00#$00 +
@@ -1359,7 +1371,7 @@ begin
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$01#$00#$00#$00#$00 +
-    #$01#$00#$00#$00 +
+    #$00#$00#$00#$00 + // 1 seem to be an item 0 a letter
     #$FF#$FF#$FF#$FF +
     #$00#$00#$00#$18 + // item Idd Id
     #$00 +
@@ -1371,6 +1383,219 @@ begin
   );
 
   client.Send(res);
+  res.Free;
+end;
+
+procedure TGameServer.HandlerPlayerDeleteMail(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  mailTo: AnsiString;
+  mailBody: AnsiString;
+  un1, un2: UInt32;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlerPlayerDeleteMail', C_BLUE);
+  clientPacket.ReadUInt32(un1);
+  clientPacket.ReadUInt32(un2);
+  Console.Log(Format('un1: %x, un2: %x', [un1, un2]));
+
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$15#$02);
+
+  // same as requestMail List
+  res.WriteUInt32(0);
+  res.WriteUInt32(1); // page number
+  res.WriteUInt32(1); // page count
+  res.WriteUInt32(1); // entries count
+
+  res.WriteStr(
+    #$01#$00#$00#$00 + // Email ID?
+    #$40#$53#$47#$49 +
+    #$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$01#$00#$00#$00#$00 +
+    #$00#$00#$00#$00 +
+    #$FF#$FF#$FF#$FF +
+    #$00#$00#$00#$18 + // item Idd Id
+    #$00 +
+    #$03#$00#$00#$00 + // count
+    #$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$FF#$FF#$FF#$FF#$00#$00#$00#$00#$30#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(res);
+  res.Free;
+
+
+end;
+
+procedure TGameServer.handlerPlayerSendMail(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  mailTo: AnsiString;
+  mailBody: AnsiString;
+  un1, un2: UInt32;
+begin
+  Console.Log('TGameServer.handlerPlayerSendMail', C_BLUE);
+
+  clientPacket.ReadUInt32(un1);
+  clientPacket.ReadUInt32(un2);
+  Console.Log(Format('un1: %x, un2: %x', [un1, un2]));
+
+  if not clientPacket.ReadPStr(mailTo) then
+  begin
+    Exit;
+  end;
+
+  clientPacket.Skip(2);
+
+  if not clientPacket.ReadPStr(mailBody) then
+  begin
+    Exit;
+  end;
+
+  console.Log(Format('mailTo : %s', [mailto]));
+  console.Log(Format('mailBody : %s', [mailBody]));
+
+  // Should Send Pang left
+  client.Send(
+    #$C8#$00 +
+    self.Write(client.Data.data.playerInfo2.pangs, 8) +
+    self.Write(client.Data.Cookies, 8)
+  );
+
+  // Shound send a transaction result
+  client.Send(
+    #$16#$02 +
+    #$61#$03#$3C#$56#$01#$00#$00#$00#$02#$10#$00#$00#$18#$D9 +
+    #$C9#$04#$07#$00#$00#$00#$00#$00#$00#$00#$00#$03#$00#$00#$00 +
+    #$03#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(
+    #$13#$02 +
+    #$00#$00#$00#$00 // error id from iff
+    // #$49#$40#$2C#$00 // mail failed, the item could not be attached
+  );
+
+  // 13 02 49 40 2C 00
+
+end;
+
+procedure TGameServer.HandlePlayerRequestOfflinePlayerInfo(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  nick: AnsiString;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerRequestOfflinePlayerInfo', C_BLUE);
+
+  clientPacket.Skip(1);
+
+  if not clientPacket.ReadPStr(nick) then
+  begin
+    Exit;
+  end;
+
+  console.Log(Format('search nickname %s', [nick]));
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$A1#$00);
+  res.WriteUInt8(0); // response type 0 ok 2 not found
+
+  // player unique Id
+  res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  // Player info without the gameId
+  res.Write(client.Data.Data.playerInfo1.login[0], SizeOf(TPlayerInfo1) - 2);
+
+  client.Send(res);
+
+  res.Free;
+end;
+
+procedure TGameServer.HandlePlayerMoveInboxGift(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  inboxId: UInt32;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerMoveInboxGift', C_BLUE);
+  clientPacket.Log;
+
+  if not clientPacket.ReadUInt32(inboxId) then
+  begin
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+
+  // Send transaction result
+  res.WriteStr(
+    #$16#$02 +
+    #$61#$03#$3C#$56#$01#$00#$00#$00#$02#$10#$00#$00#$18#$D9 +
+    #$C9#$04#$07#$00#$00#$00#$00#$00#$00#$00#$00#$03#$00#$00#$00 +
+    #$03#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(res);
+
+  client.Send(
+    #$14#$02 + #$00#$00#$00#$00
+  );
+
+  res.Free;
+end;
+
+procedure TGameServer.HandlePlayerRequestInboxDetails(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  inboxId: UInt32;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerRequestInboxDetails', C_BLUE);
+  if not clientPacket.ReadUInt32(inboxId) then
+  begin
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$12#$02);
+  res.WriteUInt32(0);
+  res.WriteUInt32(inboxId);
+
+  res.WritePStr('SERVER'); // Sender
+  res.WritePStr('2014-10-03 18:40:009'); // sent date (plz keep this format)
+
+  res.WritePStr('This is the text displayed in the message');
+
+  res.WriteUInt8(1); // ?
+
+  res.WriteUInt32(1); // items count
+
+  // item details
+  res.WriteStr(
+    #$FF#$FF#$FF#$FF +
+    #$33#$00#$00#$1A + // IffId
+    #$00 +
+    #$19#$00#$00#$00 + // count
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$FF#$FF#$FF#$FF#$00#$00#$00#$00#$30#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(res);
+
   res.Free;
 end;
 
@@ -1771,6 +1996,26 @@ begin
     CGPID_PLAYER_REQUEST_INBOX:
     begin
       self.HandlePlayerRequestInbox(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_INBOX_DETAILS:
+    begin
+      self.HandlePlayerRequestInboxDetails(client, clientPacket);
+    end;
+    CGPID_PLAYER_MOVE_INBOX_GIFT:
+    begin
+      self.HandlePlayerMoveInboxGift(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_OFFLINE_PLAYER_INFO:
+    begin
+      self.HandlePlayerRequestOfflinePlayerInfo(client, clientPacket);
+    end;
+    CGPID_PLAYER_SEND_MAIL:
+    begin
+      self.handlerPlayerSendMail(client, clientPacket);
+    end;
+    CGPID_PLAYER_DELETE_MAIL:
+    begin
+      self.HandlerPlayerDeleteMail(client, clientPacket);
     end
     else begin
       try

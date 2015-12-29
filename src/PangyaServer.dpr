@@ -1,4 +1,14 @@
+{*******************************************************}
+{                                                       }
+{       Pangya Server                                    }
+{                                                       }
+{       Copyright (C) 2015 Shad'o Soft tm               }
+{                                                       }
+{*******************************************************}
+
 program PangyaServer;
+
+{ $APPTYPE CONSOLE}
 
 uses
   {$IFDEF DEBUG}
@@ -7,7 +17,7 @@ uses
   {$ENDIF }
   {$IFDEF RELEASE}
   msvcrtMM,
-  {$ENDIF}
+  {$ENDIF }
   Vcl.Forms,
   MainPas in 'MainPas.pas' {Main},
   ConsolePas in 'ConsolePas.pas' {Console},

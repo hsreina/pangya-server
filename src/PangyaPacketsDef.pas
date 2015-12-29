@@ -1,3 +1,11 @@
+{*******************************************************}
+{                                                       }
+{       Pangya Server                                   }
+{                                                       }
+{       Copyright (C) 2015 Shad'o Soft tm               }
+{                                                       }
+{*******************************************************}
+
 unit PangyaPacketsDef;
 
 interface
@@ -31,6 +39,7 @@ type
     CGPID_PLAYER_LOGIN                        = $0002,
     CGPID_PLAYER_MESSAGE                      = $0003,
     CGPID_PLAYER_JOIN_LOBBY                   = $0004,
+    CGPID_PLAYER_REQUEST_OFFLINE_PLAYER_INFO  = $0007,
     CGPID_PLAYER_CREATE_GAME                  = $0008,
     CGPID_PLAYER_JOIN_GAME                    = $0009,
     CGPID_PLAYER_CHANGE_GAME_SETTINGS         = $000A,
@@ -72,6 +81,10 @@ type
     CGPID_PLAYER_OPEN_SCRATCHY_CARD           = $012A,
     CGPID_PLAYER_UN_0140                      = $0140,
     CGPID_PLAYER_REQUEST_INBOX                = $0143,
+    CGPID_PLAYER_REQUEST_INBOX_DETAILS        = $0144,
+    CGPID_PLAYER_SEND_MAIL                    = $0145,
+    CGPID_PLAYER_MOVE_INBOX_GIFT              = $0146,
+    CGPID_PLAYER_DELETE_MAIL                  = $0147,
     CGPID_PLAYER_PLAY_BONGDARI_SHOP           = $014B,
     CGPID_PLAYER_REQUEST_DAILY_QUEST          = $0151,
     CGPID_PLAYER_ACCEPT_DAILY_QUEST           = $0152,
