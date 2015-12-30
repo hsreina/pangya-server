@@ -19,6 +19,10 @@ type
 
   end;
 
+  InvalidException = class(Exception)
+
+  end;
+
   LobbyGamesFullException = class(FullException)
 
   end;
@@ -47,6 +51,9 @@ type
 
   end;
 
+  InvalidIndexException = class(InvalidException)
+
+  end;
 
 implementation
 

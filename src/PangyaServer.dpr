@@ -38,7 +38,7 @@ uses
   Database in 'Server\Sync\Database.pas',
   PacketData in 'Server\PacketData.pas',
   GameServerPlayer in 'Server\Game\GameServerPlayer.pas',
-  gameServer in 'Server\Game\gameServer.pas',
+  GameServer in 'Server\Game\GameServer.pas',
   LobbiesList in 'Server\Game\LobbiesList.pas',
   Lobby in 'Server\Game\Lobby.pas',
   PlayerCharacter in 'Server\Game\PlayerCharacter.pas',
@@ -67,7 +67,8 @@ uses
   PlayerMascot in 'Server\Game\PlayerMascot.pas',
   GenericDataRecord in 'Server\Game\GenericDataRecord.pas',
   BongdatriShop in 'Server\Game\MiniGames\Bongdari\BongdatriShop.pas',
-  PlayerEquipment in 'Server\Game\PlayerEquipment.pas';
+  PlayerEquipment in 'Server\Game\PlayerEquipment.pas',
+  PlayerQuest in 'Server\Game\PlayerQuest.pas';
 
 {$R *.res}
 

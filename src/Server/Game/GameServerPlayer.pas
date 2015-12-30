@@ -11,7 +11,7 @@ unit GameServerPlayer;
 interface
 
 uses PlayerData, PlayerCharacters, Client, PlayerAction, PlayerItems,
-  PlayerCaddies;
+  PlayerCaddies, PlayerQuest;
 
 type
 
@@ -33,6 +33,8 @@ type
       var m_characters: TPlayerCharacters;
       var m_caddies: TPlayerCaddies;
       var m_items: TPlayerItems;
+      var m_quest: TPlayerQuest;
+
       function FGetPlayerData: PPlayerData;
     public
       var Cookies: Int64;
@@ -48,10 +50,11 @@ type
       property Characters: TPlayerCharacters read m_characters;
       property Items: TPlayerItems read m_items;
       property Caddies: TPlayerCaddies read m_caddies;
+      property Quests: TPlayerQuest read m_quest;
 
       var InGameList: Boolean;
-
       var GameInfo: TGameInfo;
+
 
       constructor Create;
       destructor Destroy; override;
@@ -71,6 +74,7 @@ begin
   m_caddies := TPlayerCaddies.Create;
   m_lobby := $FF;
   InGameList := false;
+  m_quest := TPlayerQuest.Create;
 end;
 
 destructor TGameServerPlayer.Destroy;
@@ -79,6 +83,7 @@ begin
   m_characters.Free;
   m_items.Free;
   m_caddies.Free;
+  m_quest.Free;
 end;
 
 function TGameServerPlayer.FGetPlayerData;

@@ -41,6 +41,7 @@ type
 
       procedure HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket; msg: AnsiString);
+      procedure HandlerPlayerWhisper(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
@@ -70,6 +71,7 @@ type
       procedure HandlePlayerRecycleItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInbox(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlerPlayerClearQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerDeleteMail(const client: TGameClient; const clientPacket: TClientPacket);
       procedure handlerPlayerSendMail(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestOfflinePlayerInfo(const client: TGameClient; const clientPacket: TClientPacket);
@@ -85,6 +87,8 @@ type
       procedure SendToLobby(const client: TGameClient; data: AnsiString); overload;
       procedure SendToLobby(const client: TGameClient; data: TPangyaBuffer); overload;
 
+      function GetPlayerByNickname(nickname: AnsiString): TGameClient;
+
     public
       constructor Create(cryptLib: TCryptLib);
       destructor Destroy; override;
@@ -94,7 +98,8 @@ implementation
 
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
-  PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment;
+  PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment,
+  PlayerQuest;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -193,23 +198,90 @@ begin
   begin
     game.GoToNextHole;
   end;
+end;
 
+function TGameServer.GetPlayerByNickname(nickname: AnsiString): TGameClient;
+var
+  player: TGameClient;
+begin
+  for player in Clients do
+  begin
+    if player.Data.Data.playerInfo1.nickname = nickname then
+    begin
+      Exit(player);
+    end;
+  end;
+  Exit(nil);
+end;
 
+procedure TGameServer.HandlerPlayerWhisper(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  targetNickname: AnsiString;
+  msg: AnsiString;
+  res: TClientPacket;
+  target: TGameClient;
+begin
+  Console.Log('TGameeServer.HandlePlayerSendMessage', C_BLUE);
+  {
+    Whisper is supposed to work between servers
+    we'll see that later
+  }
+
+  if not clientPacket.ReadPStr(targetNickname) then
+  begin
+    Exit;
+  end;
+
+  if not clientPacket.ReadPStr(msg) then
+  begin
+    Exit;
+  end;
+
+  Console.Log(Format('whisper to: %s', [targetNickname]));
+  Console.Log(Format('whisper msg: %s', [msg]));
+
+  target := GetPlayerByNickname(targetNickname);
+
+  res := TClientPacket.Create;
+
+  if not (target = nil) then
+  begin
+
+    // Must send that to the sender
+    res.WriteStr(
+      #$84#$00 + #$00
+    );
+    res.WritePStr(targetNickname);
+    res.WritePStr(msg);
+    client.Send(res);
+
+    res.Clear;
+
+    // And this to the target
+    res.WriteStr(
+      #$84#$00 + #$01
+    );
+    res.WritePStr(client.Data.Data.playerInfo1.nickname);
+    res.WritePStr(msg);
+    target.Send(res);
+  end;
+
+  res.Free;
 end;
 
 procedure TGameServer.HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
 var
-  login: AnsiString;
+  userNickname: AnsiString;
   msg: AnsiString;
   reply: TPangyaBuffer;
 begin
   Console.Log('TGameeServer.HandlePlayerSendMessage', C_BLUE);
-  clientPacket.ReadPStr(login);
+  clientPacket.ReadPStr(userNickname);
   clientPacket.ReadPStr(msg);
 
   reply := TPangyaBuffer.Create;
   reply.WriteStr(#$40#$00 + #$00);
-  reply.WritePStr(login);
+  reply.WritePStr(userNickname);
   reply.WritePStr(msg);
 
   if (Length(msg) >= 1) and (msg[1] = ':') then
@@ -400,7 +472,7 @@ begin
 
 end;
 
-procedure TgameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TGameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
 var
   playergame: TGame;
   playerLobby: TLobby;
@@ -1386,6 +1458,48 @@ begin
   res.Free;
 end;
 
+procedure TGameServer.HandlerPlayerClearQuest(const client: TGameClient; const clientPacket: TClientPacket);
+type
+  TQuestData = packed record
+    pos: word;
+    value: cardinal;
+  end;
+var
+  res: TCLientPacket;
+  questData: TQuestData;
+  playerQuests: TPlayerQuest;
+  newQuestStatus: UInt32;
+begin
+  Console.Log('TGameServer.HandlerPlayerClearQuest', C_BLUE);
+
+  if not clientPacket.Read(questData, SizeOf(TQuestData)) then
+  begin
+    Exit;
+  end;
+
+  playerQuests := client.Data.Quests;
+
+  newQuestStatus := playerQuests.GetQuestData(questData.pos) + questData.value;
+
+  playerQuests.SetQuestData(
+    questData.pos,
+    newQuestStatus
+  );
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(
+    #$1F#$01 +
+    #$00#$01
+  );
+
+  res.WriteUInt32(newQuestStatus);
+
+  client.Send(res);
+
+  res.Free;
+end;
+
 procedure TGameServer.HandlerPlayerDeleteMail(const client: TGameClient; const clientPacket: TClientPacket);
 var
   mailTo: AnsiString;
@@ -1397,7 +1511,6 @@ begin
   clientPacket.ReadUInt32(un1);
   clientPacket.ReadUInt32(un2);
   Console.Log(Format('un1: %x, un2: %x', [un1, un2]));
-
 
   res := TClientPacket.Create;
 
@@ -1877,6 +1990,10 @@ begin
     begin
       self.HandlePlayerSendMessage(client, clientPacket);
     end;
+    CGPID_PLAYER_WHISPER:
+    begin
+      self.HandlerPlayerWhisper(client, clientPacket);
+    end;
     CGPID_PLAYER_CREATE_GAME:
     begin
       self.HandlePlayerCreateGame(client, clientPacket);
@@ -2016,6 +2133,10 @@ begin
     CGPID_PLAYER_DELETE_MAIL:
     begin
       self.HandlerPlayerDeleteMail(client, clientPacket);
+    end;
+    CGPID_PLAYER_CLEAR_QUEST:
+    begin
+      self.HandlerPlayerClearQuest(client, clientpacket);
     end
     else begin
       try

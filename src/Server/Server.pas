@@ -56,6 +56,9 @@ type
       function FillStr(data: AnsiString; size: UInt32; withWhat: AnsiChar): AnsiString;
 
       function Deserialize(value: UInt32): UInt32;
+
+      // Should replace this by something better
+      property Clients: TList<TServerClient<ClientType>> read m_clients;
     public
       constructor Create(cryptLib: TCryptLib);
       destructor Destroy; override;

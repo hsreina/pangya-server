@@ -109,7 +109,7 @@
         <DCCReference Include="Server\Sync\Database.pas"/>
         <DCCReference Include="Server\PacketData.pas"/>
         <DCCReference Include="Server\Game\GameServerPlayer.pas"/>
-        <DCCReference Include="Server\Game\gameServer.pas"/>
+        <DCCReference Include="Server\Game\GameServer.pas"/>
         <DCCReference Include="Server\Game\LobbiesList.pas"/>
         <DCCReference Include="Server\Game\Lobby.pas"/>
         <DCCReference Include="Server\Game\PlayerCharacter.pas"/>
@@ -139,6 +139,7 @@
         <DCCReference Include="Server\Game\GenericDataRecord.pas"/>
         <DCCReference Include="Server\Game\MiniGames\Bongdari\BongdatriShop.pas"/>
         <DCCReference Include="Server\Game\PlayerEquipment.pas"/>
+        <DCCReference Include="Server\Game\PlayerQuest.pas"/>
         <None Include="Libs\Fast\FastMM4Options.inc"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
@@ -558,13 +559,13 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
-                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <ModelSupport>False</ModelSupport>
         </BorlandProject>
