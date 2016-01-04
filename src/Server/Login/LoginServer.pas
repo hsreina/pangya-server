@@ -11,7 +11,7 @@ unit LoginServer;
 interface
 
 uses Client, LoginPlayer, ClientPacket, SyncClient, Server, SyncableServer,
-  CryptLib;
+  CryptLib, IniFiles;
 
 type
 
@@ -24,7 +24,10 @@ type
       procedure OnClientConnect(const client: TLoginClient); override;
       procedure OnClientDisconnect(const client: TLoginClient); override;
       procedure OnReceiveClientData(const client: TLoginClient; const clientPacket: TClientPacket); override;
+
       procedure OnReceiveSyncData(const clientPacket: TClientPacket); override;
+      procedure OnConnect(sender: TObject); override;
+
       procedure OnDestroyClient(const client: TLoginClient); override;
       procedure OnStart; override;
 
@@ -36,6 +39,9 @@ type
 
       procedure HandlePlayerServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
+
+      procedure RegisterServer;
+
     public
       procedure Debug;
       constructor Create(cryptLib: TCryptLib);
@@ -57,10 +63,24 @@ begin
 end;
 
 procedure TLoginServer.Init;
+var
+  iniFile: TIniFile;
 begin
-  self.SetPort(10103);
-  self.SetSyncPort(7998);
-  self.setSyncHost('127.0.0.1');
+  iniFile := TIniFile.Create('../config/server.ini');
+
+  self.SetPort(
+    iniFile.ReadInteger('login', 'port', 10103)
+  );
+
+  self.SetSyncPort(
+    iniFile.ReadInteger('sync', 'port', 7998)
+  );
+
+  self.setSyncHost(
+    iniFile.ReadString('sync', 'host', '127.0.0.1')
+  );
+
+  iniFile.Free;
 end;
 
 procedure TLoginServer.OnClientConnect(const client: TLoginClient);
@@ -177,6 +197,12 @@ begin
   client.Data.Free;
 end;
 
+procedure TLoginServer.OnConnect(sender: TObject);
+begin
+  self.Log('TLoginServer.OnConnect', TLogType_not);
+  self.RegisterServer;
+end;
+
 procedure TLoginServer.OnReceiveSyncData(const clientPacket: TClientPacket);
 var
   packetId: TSSPID;
@@ -265,7 +291,18 @@ end;
 procedure TLoginServer.Sync(const client: TLoginClient; const clientPacket: TClientPacket);
 begin
   self.Log('TLoginServer.Sync', TLogType.TLogType_not);
-  self.Sync(#$01 + #$01#$00 + write(client.UID.id, 4) + WritePStr(client.UID.login) + clientPacket.ToStr);
+  self.Sync(#$01#$00 + write(client.UID.id, 4) + WritePStr(client.UID.login) + clientPacket.ToStr);
+end;
+
+procedure TLoginServer.RegisterServer;
+var
+  res: TClientPacket;
+begin
+  res := TClientPacket.Create;
+  res.WriteUInt16(0);
+  res.WriteUInt8(1); // Login server
+  self.Sync(res);
+  res.Free;
 end;
 
 procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);

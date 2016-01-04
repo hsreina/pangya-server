@@ -11,7 +11,7 @@ unit SyncServer;
 interface
 
 uses Client, SyncUser, Server, ClientPacket, CryptLib, SysUtils, defs,
-  Database;
+  Database, IniFiles, PangyaPacketsDef;
 
 type
 
@@ -30,6 +30,9 @@ type
       procedure OnDestroyClient(const client: TSyncClient); override;
       procedure OnStart; override;
 
+      procedure OnReceiveLoginClientData(const packetId: TSSPID; const client: TSyncClient; const clientPacket: TClientPacket);
+      procedure OnReceiveGameClientData(const packetId: TSSPID; const client: TSyncClient; const clientPacket: TClientPacket);
+
       procedure SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
       procedure PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
 
@@ -47,6 +50,7 @@ type
       procedure InitPlayerData(playerId: integer);
 
       procedure HandleGamePlayerLogin(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
+      procedure RegisterServer(const client: TSyncClient; const clientPacket: TClientPacket);
 
     public
       constructor Create(cryptLib: TCryptLib);
@@ -56,7 +60,7 @@ type
 
 implementation
 
-uses Logging, PangyaPacketsDef, ConsolePas, PlayerCharacters, PlayerCharacter,
+uses Logging, ConsolePas, PlayerCharacters, PlayerCharacter,
   PacketData, utils, PlayerData, PlayerItems, PlayerItem, PlayerCaddies;
 
 constructor TSyncServer.Create(cryptLib: TCryptLib);
@@ -73,15 +77,29 @@ begin
 end;
 
 procedure TSyncServer.Init;
+var
+  iniFile: TIniFile;
 begin
-  self.SetPort(7998);
+
+  iniFile := TIniFile.Create('../config/server.ini');
+
+  self.SetPort(
+    iniFile.ReadInteger('sync', 'port', 7998)
+  );
+
   m_database.Init;
+
+  iniFile.Free;
 end;
 
 procedure TSyncServer.OnClientConnect(const client: TSyncClient);
+var
+  user: TSyncUser;
 begin
   self.Log('TSyncServer.OnClientConnect', TLogType_not);
   client.UID.login := 'Sync';
+  user := TSyncUser.Create;
+  client.Data := user;
 end;
 
 procedure TSyncServer.OnClientDisconnect(const client: TSyncClient);
@@ -471,6 +489,49 @@ end;
 
 procedure TSyncServer.OnDestroyClient(const client: TSyncClient);
 begin
+  client.Data.Free;
+end;
+
+procedure TSyncServer.OnReceiveLoginClientData(const packetId: TSSPID; const client: TSyncClient; const clientPacket: TClientPacket);
+begin
+  case packetID of
+    SSPID_PLAYER_SYNC:
+    begin
+      self.SyncLoginPlayer(client, clientPacket);
+    end;
+    else
+    begin
+      self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+    end;
+  end;
+end;
+
+procedure TSyncServer.OnReceiveGameClientData(const packetId: TSSPID; const client: TSyncClient; const clientPacket: TClientPacket);
+begin
+  case packetID of
+    SSPID_PLAYER_SYNC:
+    begin
+      self.SyncGamePlayer(client, clientPacket);
+    end;
+    else
+    begin
+      self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+    end;
+  end;
+end;
+
+procedure TSyncServer.RegisterServer(const client: TSyncClient; const clientPacket: TClientPacket);
+var
+  clientType: TSYNC_CLIENT_TYPE;
+begin
+  Console.Log('TSyncServer.RegisterServer', C_BLUE);
+  if not clientPacket.Read(clientType, 1) then
+  begin
+    Exit;
+  end;
+
+  client.Data.ClientType := clientType;
+  client.Data.Registred := true;
 
 end;
 
@@ -480,27 +541,48 @@ var
   server: UInt8;
 begin
   self.Log('TSyncServer.OnReceiveClientData', TLogType_not);
-  if (clientPacket.ReadUInt8(server) and clientPacket.Read(packetID, 2)) then
+
+  if not clientPacket.Read(packetID, 2) then
+  begin
+    Exit;
+  end;
+
+  if client.Data.Registred then
+  begin
+    case client.Data.ClientType of
+      SYNC_CLIENT_TYPE_LOGIN:
+      begin
+        self.OnReceiveLoginClientData(packetId, client, clientPacket);
+      end;
+      SYNC_CLIENT_TYPE_GAME:
+      begin
+        self.OnReceiveGameClientData(packetId, client, clientPacket);
+      end;
+    end;
+  end else
   begin
     case packetID of
-      SSPID_PLAYER_SYNC:
+      TSSPID.SSPID_REGISTER_SERVER:
       begin
-        if server = 1 then
-        begin
-          self.SyncLoginPlayer(client, clientPacket);
-        end
-        else
-        if server = 2 then
-        begin
-          self.SyncGamePlayer(client, clientPacket);
-        end;
-      end;
-      else
-      begin
-        self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+        self.RegisterServer(client, clientPacket);
       end;
     end;
   end;
+
+
+  {
+  if (clientPacket.ReadUInt8(server) and clientPacket.Read(packetID, 2)) then
+  begin
+    if server = 1 then
+    begin
+      self.OnReceiveLoginClientData(packetId, client, clientPacket);
+    end else
+    if server = 2 then
+    begin
+      self.OnReceiveGameClientData(packetId, client, clientPacket);
+    end;
+  end;
+  }
 end;
 
 procedure TSyncServer.Debug;

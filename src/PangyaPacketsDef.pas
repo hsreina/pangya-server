@@ -117,6 +117,7 @@ type
 
   // Sync server packets from any server to Sync server
   TSSPID = (
+    SSPID_REGISTER_SERVER             = $0000,
     SSPID_PLAYER_SYNC                 = $0001, // send player Sync packet
     SSPID_PLAYER_ACTION               = $0002, // do an action related to the player
     SSPID_NOTHING                     = $FFFF

@@ -11,7 +11,7 @@ unit GameServer;
 interface
 
 uses Client, GameServerPlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib,
-  SyncableServer, PangyaBuffer, PangyaPacketsDef, Lobby, Game;
+  SyncableServer, PangyaBuffer, PangyaPacketsDef, Lobby, Game, IniFiles;
 
 type
 
@@ -24,7 +24,10 @@ type
       procedure OnClientConnect(const client: TGameClient); override;
       procedure OnClientDisconnect(const client: TGameClient); override;
       procedure OnReceiveClientData(const client: TGameClient; const clientPacket: TClientPacket); override;
+
       procedure OnReceiveSyncData(const clientPacket: TClientPacket); override;
+      procedure OnConnect(sender: TObject); override;
+
       procedure OnDestroyClient(const client: TGameClient); override;
       procedure OnStart; override;
 
@@ -89,6 +92,8 @@ type
 
       function GetPlayerByNickname(nickname: AnsiString): TGameClient;
 
+      procedure RegisterServer;
+
     public
       constructor Create(cryptLib: TCryptLib);
       destructor Destroy; override;
@@ -120,10 +125,25 @@ begin
 end;
 
 procedure TGameServer.Init;
+var
+  iniFile: TIniFile;
 begin
-  self.SetPort(7997);
-  self.SetSyncPort(7998);
-  self.setSyncHost('127.0.0.1');
+  iniFile := TIniFile.Create('../config/server.ini');
+
+  self.SetPort(
+    iniFile.ReadInteger('game', 'port', 7997)
+  );
+
+
+  self.SetSyncPort(
+    iniFile.ReadInteger('sync', 'port', 7998)
+  );
+
+  self.setSyncHost(
+    iniFile.ReadString('game', 'host', '127.0.0.1')
+  );
+
+  iniFile.Free;
 end;
 
 procedure TGameServer.OnClientConnect(const client: TGameClient);
@@ -167,7 +187,7 @@ end;
 procedure TGameServer.Sync(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   self.Log('TGameServer.Sync', TLogType.TLogType_not);
-  self.Sync(#$02 + #$01#$00 + write(client.UID.id, 4) + writePStr(client.UID.login) + clientPacket.ToStr);
+  self.Sync(#$01#$00 + write(client.UID.id, 4) + writePStr(client.UID.login) + clientPacket.ToStr);
 end;
 
 procedure TGameServer.HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
@@ -2363,6 +2383,23 @@ end;
 procedure TGameServer.OnDestroyClient(const client: TGameClient);
 begin
   client.Data.Free;
+end;
+
+procedure TGameServer.RegisterServer;
+var
+  res: TClientPacket;
+begin
+  res := TClientPacket.Create;
+  res.WriteUInt16(0);
+  res.WriteUInt8(2); // Login server
+  self.Sync(res);
+  res.Free;
+end;
+
+procedure TGameServer.OnConnect(sender: TObject);
+begin
+  self.Log('TGameServer.OnConnect', TLogType_not);
+  self.RegisterServer;
 end;
 
 procedure TGameServer.OnReceiveSyncData(const clientPacket: TClientPacket);

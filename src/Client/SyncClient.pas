@@ -15,6 +15,7 @@ uses ScktComp, Buffer, ExtCtrls, CryptLib, Logging, ClientPacket;
 type
 
   TSyncClientReadEvent = procedure (sender: TObject; const clientPacket: TClientPacket) of object;
+  TSyncClientConnectEvent = procedure (sender: TObject) of object;
 
   TSyncClient = class (TLogging)
     protected
@@ -28,6 +29,10 @@ type
 
       var FOnRead: TSyncClientReadEvent;
       procedure TriggerOnRead(const clientPacket: TClientPacket);
+
+      var FOnConnect: TSyncClientConnectEvent;
+      procedure TriggerOnConnect;
+
 
       procedure OnTimer(Sender: TObject);
 
@@ -44,6 +49,7 @@ type
       destructor Destroy; override;
 
       property OnRead: TSyncClientReadEvent read FOnRead write FOnRead;
+      property OnConnect: TSyncClientConnectEvent read FOnConnect write FOnConnect;
 
       procedure SetPort(port: integer);
       procedure SetHost(host: string);
@@ -151,6 +157,7 @@ end;
 procedure TSyncClient.OnClientConnect(Sender: TObject; Socket: TCustomWinSocket);
 begin
   self.Log('TSyncClient.OnClientConnect', TLogType_not);
+  self.TriggerOnConnect;
 end;
 
 procedure TSyncClient.OnClientDisconnect(Sender: TObject; Socket: TCustomWinSocket);
@@ -220,6 +227,14 @@ begin
   if Assigned(FOnRead) then
   begin
     FOnRead(self, clientPacket);
+  end;
+end;
+
+procedure TSyncClient.TriggerOnConnect;
+begin
+  if Assigned(FOnConnect) then
+  begin
+    FOnConnect(self);
   end;
 end;
 
