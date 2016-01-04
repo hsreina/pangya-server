@@ -26,6 +26,7 @@ type
       constructor Create;
       destructor Destroy; override;
       property ClientType: TSYNC_CLIENT_TYPE read m_type write m_type;
+      property Registred: Boolean read m_registred write m_registred;
   end;
 
 implementation

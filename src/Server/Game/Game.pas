@@ -990,6 +990,7 @@ type
 var
   header: THeader;
   res: TClientPacket;
+  ok: Boolean;
 begin
   Console.Log('TGame.HandlePlayerChangeEquipment', C_BLUE);
   if not clientPacket.Read(header, SizeOf(THeader)) then
@@ -998,6 +999,8 @@ begin
   end;
   Console.Log(Format('action : %x', [header.Action]));
   Console.Log(Format('id : %x', [header.Id]));
+
+  ok := true;
 
   res := TClientPacket.Create;
   res.WriteStr(#$4B#$00);
@@ -1035,6 +1038,10 @@ begin
       );
 
     end;
+    4: begin
+      Console.Log('character');
+      Console.Log('Should search about that', C_ORANGE);
+    end;
     5: begin // Mascot
       Console.Log('Mascot');
 
@@ -1048,13 +1055,15 @@ begin
     end;
     else begin
       Console.Log(Format('Unknow action %x', [header.Action]));
+      ok := false;
     end;
   end;
 
+  if ok then
+  begin
+    client.Send(res);
+  end;
 
-
-
-  client.Send(res);
   res.Free;
 
 end;
