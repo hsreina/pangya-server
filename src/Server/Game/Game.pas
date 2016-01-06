@@ -147,8 +147,6 @@ begin
   Console.Log(Format('mode : %s', [GetEnumName(TypeInfo(TGAME_MODE), Integer(gameInfo.mode))]));
   Console.Log(Format('type : %s', [GetEnumName(TypeInfo(TGAME_TYPE), Integer(gameInfo.gameType))]));
 
-
-
   m_onUpdateGame.Event := onUpdate;
   m_name := name;
   m_password := password;
@@ -1041,6 +1039,7 @@ begin
     4: begin
       Console.Log('character');
       Console.Log('Should search about that', C_ORANGE);
+      ok := false;
     end;
     5: begin // Mascot
       Console.Log('Mascot');

@@ -17,9 +17,11 @@ uses
 
 type
   TMain = class(TForm)
-    procedure FormShow(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
+
     var m_loginServer: TLoginServer;
     var m_gameServer: TGameServer;
     var m_synServer: TSyncServer;
@@ -27,6 +29,7 @@ type
     var m_dataChecker: TDataChecker;
 
     procedure OnServerLog(sender: TObject; msg: string; logType: TLogType);
+    procedure Init;
   public
     procedure AcceptFiles(var msg: TMessage); message WM_DROPFILES;
   end;
@@ -40,13 +43,40 @@ implementation
 
 uses ConsolePas, Buffer, utils;
 
+procedure TMain.FormCreate(Sender: TObject);
+begin
+  DragAcceptFiles(Handle, true);
+  {$IFDEF CONSOLE}
+  Init;
+  {$ENDIF}
+end;
+
 procedure TMain.FormDestroy(Sender: TObject);
 begin
+{$IFDEF LOGIN_SERVER}
   m_loginServer.Free;
+{$ENDIF}
+
+{$IFDEF GAME_SERVER}
   m_gameServer.Free;
+{$ENDIF}
+
+{$IFDEF SYNC_SERVER}
   m_synServer.Free;
+{$ENDIF}
+
   m_cryptLib.Free;
   m_dataChecker.Free;
+end;
+
+procedure TMain.FormShow(Sender: TObject);
+begin
+  {$IFDEF DEBUG}
+  Console.Show;
+  {$ENDIF}
+  {$IFNDEF CONSOLE}
+  Init;
+  {$ENDIF}
 end;
 
 procedure TMain.AcceptFiles(var msg: TMessage);
@@ -65,57 +95,10 @@ begin
     outdata := GetDataFromFile(acFileName);
     console.writeDump(outdata);
     console.log('send to game 0');
-    m_gameServer.SendDebugData(outdata);
+    //m_gameServer.SendDebugData(outdata);
   end;
 
   DragFinish(msg.WParam);
-end;
-
-procedure TMain.FormShow(Sender: TObject);
-begin
-
-  DragAcceptFiles(Handle, true);
-
-  {$IFDEF DEBUG}
-  Console.Show;
-  {$ENDIF}
-  Console.Log('PANGYA SERVER by HSReina', C_GREEN);
-
-  m_dataChecker := TDataChecker.Create;
-
-  try
-    m_dataChecker.Validate;
-  except
-    on E : Exception do
-    begin
-      Console.Log(Format('Data validation failed : %s', [E.Message]), C_RED);
-    end;
-  end;
-
-  m_cryptLib:= TCryptLib.Create;
-
-  m_loginServer := TLoginServer.Create(m_cryptLib);
-  m_gameServer := TGameServer.Create(m_cryptLib);
-  m_synServer := TSyncServer.Create(m_cryptLib);
-
-  m_synServer.Debug;
-
-  if not m_cryptLib.init then
-  begin
-    Console.Log('CryptLib init Failed', C_RED);
-    Exit;
-  end else
-  begin
-    Console.Log('CryptLib init Ok', C_GREEN);
-  end;
-
-  m_synServer.OnLog := self.OnServerLog;
-  m_loginServer.OnLog := self.OnServerLog;
-  m_gameServer.OnLog := self.OnServerLog;
-
-  m_synServer.Start;
-  m_loginServer.Start;
-  m_gameServer.Start;
 end;
 
 procedure TMain.OnServerLog(sender: TObject; msg: string; logType: TLogType);
@@ -131,6 +114,53 @@ begin
   end;
 
   Console.Log(msg, color);
+end;
+
+procedure TMain.Init;
+begin
+  Console.Log('PANGYA SERVER by HSReina', C_GREEN);
+
+  m_dataChecker := TDataChecker.Create;
+
+  try
+    m_dataChecker.Validate;
+  except
+    on E : Exception do
+    begin
+      Console.Log(Format('Data validation failed : %s', [E.Message]), C_RED);
+    end;
+  end;
+
+  m_cryptLib:= TCryptLib.Create;
+
+  if not m_cryptLib.init then
+  begin
+    Console.Log('CryptLib init Failed', C_RED);
+    Exit;
+  end else
+  begin
+    Console.Log('CryptLib init Ok', C_GREEN);
+  end;
+
+{$IFDEF SYNC_SERVER}
+  m_synServer := TSyncServer.Create(m_cryptLib);
+  m_synServer.OnLog := self.OnServerLog;
+  m_synServer.Debug;
+  m_synServer.Start;
+{$ENDIF}
+
+{$IFDEF LOGIN_SERVER}
+  m_loginServer := TLoginServer.Create(m_cryptLib);
+  m_loginServer.OnLog := self.OnServerLog;
+  m_loginServer.Start;
+{$ENDIF}
+
+{$IFDEF GAME_SERVER}
+  m_gameServer := TGameServer.Create(m_cryptLib);
+  m_gameServer.OnLog := self.OnServerLog;
+  m_gameServer.Start;
+{$ENDIF}
+
 end;
 
 end.

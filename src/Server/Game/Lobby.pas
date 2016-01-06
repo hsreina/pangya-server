@@ -57,7 +57,7 @@ type
 
 implementation
 
-uses ClientPacket, ConsolePas, GameServerExceptions;
+uses ClientPacket, ConsolePas, GameServerExceptions, defs;
 
 constructor TLobby.Create;
 var
@@ -69,6 +69,9 @@ begin
 
   m_games.OnCreateGame.Event := self.OnCreateGame;
   m_games.OnDestroyGame.Event := self.OnDestroyGame;
+
+  gameInfo.gameType := TGAME_TYPE.GAME_TYPE_VERSUS_STROKE;
+  gameInfo.mode := TGAME_MODE.GAME_MODE_FRONT;
 
   m_nullGame := m_games.CreateGame('null game', '', gameInfo, 0, self.OnUpdateGame);
   m_maxPlayers := 20;

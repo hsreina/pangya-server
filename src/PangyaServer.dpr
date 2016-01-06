@@ -8,7 +8,14 @@
 
 program PangyaServer;
 
+  // If you want a console version of the server
+  // {$APPTYPE CONSOLE}
+  // {$DEFINE CONSOLE}
+  // It's actually not really a full console version, but it will look like
+  // Don't use link console option or the server will not work
+  // We'll fix that later
 { $APPTYPE CONSOLE}
+{ $DEFINE CONSOLE}
 
 uses
   {$IFDEF DEBUG}
@@ -77,6 +84,11 @@ begin
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
+
+  {$IFDEF CONSOLE}
+  Application.ShowMainForm := false;
+  {$ENDIF}
+
   Application.CreateForm(TMain, Main);
   Application.CreateForm(TConsole, Console);
   Application.Run;

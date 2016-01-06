@@ -132,10 +132,37 @@ begin
   result := log(data, pColor, false);
 end;
 
+function GetConsoleAttributes(pColor: TColor): Word;
+begin
+  case pColor of
+    clRed:
+      Exit(FOREGROUND_RED);
+    clBlue:
+      Exit(FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_INTENSITY);
+    clGreen:
+      Exit(FOREGROUND_GREEN or FOREGROUND_INTENSITY);
+    else
+      Exit(
+        FOREGROUND_RED or
+        FOREGROUND_GREEN or
+        FOREGROUND_BLUE
+      );
+  end;
+end;
+
 function TConsole.log(data: string; pColor: TColor; bold: boolean): ansistring;
 var
   logFile: TextFile;
 begin
+
+  {$IFDEF CONSOLE}
+  SetConsoleTextAttribute(
+    GetStdHandle(STD_OUTPUT_HANDLE),
+    GetConsoleAttributes(pColor)
+  );
+
+  WriteLn(data);
+  {$ELSE}
   with DebugInfo do
   begin
     SelStart := GetTextLen; // move to the end
@@ -147,6 +174,7 @@ begin
     SelText := data + C_NL;
   end;
   result := data;
+  {$ENDIF}
 
   //AssignFile(logFile, 'log.txt');
   //Append(logFile);
