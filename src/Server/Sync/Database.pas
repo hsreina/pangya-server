@@ -200,7 +200,6 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'SELECT id FROM player WHERE login = :login';
-    Console.Log(Format('query : %s', [query.SQL.Text]), C_RED);
     query.ParamByName('login').AsAnsiString := userName;
     query.Open();
 
@@ -225,7 +224,6 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'SELECT id FROM player WHERE login = :login/* AND password = :password*/ LIMIT 1';
-    Console.Log(Format('query : %s', [query.SQL.Text]), C_RED);
     query.ParamByName('login').AsAnsiString := userName;
     //query.ParamByName('password').AsAnsiString := password;
     query.Open();

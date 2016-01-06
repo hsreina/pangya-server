@@ -35,12 +35,14 @@ type
       procedure PlayerSync(const clientPacket: TClientPacket; const client: TLoginClient);
       procedure ServerPlayerAction(const clientPacket: TClientPacket; const client: TLoginClient);
 
-      function ServersList: AnsiString;
-
       procedure HandlePlayerServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
 
       procedure RegisterServer;
+
+      var m_host: AnsiString;
+      var m_port: Integer;
+      var m_name: AnsiString;
 
     public
       procedure Debug;
@@ -68,9 +70,12 @@ var
 begin
   iniFile := TIniFile.Create('../config/server.ini');
 
-  self.SetPort(
-    iniFile.ReadInteger('login', 'port', 10103)
-  );
+  m_port := iniFile.ReadInteger('login', 'port', 10103);
+  self.SetPort(m_port);
+
+  m_host := iniFile.ReadString('login', 'host', '127.0.0.1');;
+
+  m_name := iniFile.ReadString('login', 'name', 'LoginServer');;
 
   self.SetSyncPort(
     iniFile.ReadInteger('sync', 'port', 7998)
@@ -104,64 +109,6 @@ begin
   self.StartSyncClient;
 end;
 
-function TLoginServer.ServersList: AnsiString;
-var
-  port: UInt32;
-  packet: TClientPacket;
-begin
-  port := 7997;
-
-  // Could retrieve this from the Sync server
-  packet := TClientPacket.Create;
-
-  packet.WriteStr(
-    #$02#$00 +
-    #$01 // Number of servers
-  );
-
-  packet.WriteStr('server name', 16, #$00);
-
-  packet.WriteStr(
-    #$00#$00#$00#$00 +
-    #$00#$00#$00#$00 +
-    #$00#$00#$00#$00 +
-    #$00#$00#$00#$00 +
-    #$00#$00#$00#$00 +
-    #$00#$00#$00#$00 +
-    #$7F#$00#$00#$01 + // unique ID?
-    #$40#$06#$00#$00 +
-    #$45#$00#$00#$00
-  );
-
-  packet.WriteStr('127.0.0.1', 15, #$00);
-
-  packet.WriteStr(#$00#$00#$00);
-
-  packet.Write(port, 2);
-
-  packet.WriteStr(
-    #$00#$00 +
-    #$00#$00#$08#$00 + //  kind of server status
-    {
-      $8 : 19 yo to enter the server
-      $10 : invisible
-      $800 : grand prix skin
-    }
-    #$08#$00#$00#$00 + // Wings
-    #$00#$00#$00#$00 +
-    #$64#$00#$00#$00 +
-    #$03 + // server icon
-    #$00 // 1 seem to remove the name
-  );
-
-
-  Result := packet.ToStr;
-
-  Console.WriteDump(Result);
-
-  packet.Free;
-end;
-
 procedure TLoginServer.PlayerSync(const clientPacket: TClientPacket; const client: TLoginClient);
 var
   playerUID: TPlayerUID;
@@ -182,7 +129,7 @@ begin
     case actionId of
       SSAPID_SEND_SERVER_LIST:
       begin
-        client.Send(ServersList);
+        //client.Send(ServersList);
       end;
       else
       begin
@@ -301,6 +248,9 @@ begin
   res := TClientPacket.Create;
   res.WriteUInt16(0);
   res.WriteUInt8(1); // Login server
+  res.WritePStr(m_name);
+  res.WriteInt32(m_port);
+  res.WritePStr(m_host);
   self.Sync(res);
   res.Free;
 end;

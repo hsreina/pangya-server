@@ -11,7 +11,7 @@ unit SyncServer;
 interface
 
 uses Client, SyncUser, Server, ClientPacket, CryptLib, SysUtils, defs,
-  Database, IniFiles, PangyaPacketsDef;
+  Database, IniFiles, PangyaPacketsDef, Generics.Collections, System.TypInfo;
 
 type
 
@@ -51,6 +51,8 @@ type
 
       procedure HandleGamePlayerLogin(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
       procedure RegisterServer(const client: TSyncClient; const clientPacket: TClientPacket);
+
+      function GameServerList: AnsiString;
 
     public
       constructor Create(cryptLib: TCryptLib);
@@ -418,7 +420,11 @@ begin
 
   self.SendToGame(client, playerUID, #$10#$00 + WritePStr('178d22e'));
 
-  self.PlayerAction(client, playerUID, #$01#$00);
+  // Should send server list
+  self.SendToGame(client, playerUID, Self.GameServerList);
+
+  // this is an action who can be performed from the sync server to any other server
+  //self.PlayerAction(client, playerUID, #$01#$00);
 end;
 
 procedure TSyncServer.SyncGamePlayer(const client: TSyncClient; const clientPacket: TClientPacket);
@@ -525,13 +531,23 @@ var
   clientType: TSYNC_CLIENT_TYPE;
 begin
   Console.Log('TSyncServer.RegisterServer', C_BLUE);
-  if not clientPacket.Read(clientType, 1) then
+  if
+    not clientPacket.Read(clientType, 1) or
+    not clientPacket.ReadPStr(client.Data.Name) or
+    not clientPacket.ReadInt32(client.Data.Port) or
+    not clientPacket.ReadPStr(client.Data.Host)
+  then
   begin
     Exit;
   end;
 
   client.Data.ClientType := clientType;
   client.Data.Registred := true;
+
+  Console.Log(Format('Server type : %s', [GetEnumName(TypeInfo(TSYNC_CLIENT_TYPE), Integer(clientType))]));
+  Console.Log(Format('Server name : %s', [client.Data.Name]));
+  Console.Log(Format('Server host : %s', [client.Data.host]));
+  Console.Log(Format('Server port : %d', [client.Data.port]));
 
 end;
 
@@ -587,6 +603,86 @@ end;
 
 procedure TSyncServer.Debug;
 begin
+end;
+
+function TSyncServer.GameServerList: AnsiString;
+var
+  port: UInt32;
+  packet: TClientPacket;
+  serversList: TList<TSyncClient>;
+  client: TSyncClient;
+begin
+  port := 7997;
+
+  serversList := TList<TSyncClient>.Create;
+
+  for client in self.Clients do
+  begin
+    with client.Data do
+    begin
+      if Registred and (ClientType = TSYNC_CLIENT_TYPE.SYNC_CLIENT_TYPE_GAME) then
+      begin
+        serversList.Add(client);
+      end;
+    end;
+  end;
+
+  // Could retrieve this from the Sync server
+  packet := TClientPacket.Create;
+
+  packet.WriteStr(
+    #$02#$00 +
+    #$01 // Number of servers
+  );
+
+  for client in serversList do
+  begin
+
+    packet.WriteStr(client.Data.Name, 16, #$00);
+
+    packet.WriteStr(
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$7F#$00#$00#$01 + // unique ID?
+      #$40#$06#$00#$00 +
+      #$45#$00#$00#$00
+    );
+
+    packet.WriteStr(client.Data.Host, 15, #$00);
+
+    packet.WriteStr(#$00#$00#$00);
+
+    packet.Write(client.Data.Port, 2);
+
+    packet.WriteStr(
+      #$00#$00 +
+      #$00#$00#$08#$00 + //  kind of server status
+      {
+        $8 : 19 yo to enter the server
+        $10 : invisible
+        $800 : grand prix skin
+      }
+      #$08#$00#$00#$00 + // Wings
+      #$00#$00#$00#$00 +
+      #$64#$00#$00#$00 +
+      #$03 + // server icon
+      #$00 // 1 seem to remove the name
+    );
+
+  end;
+
+
+
+  Result := packet.ToStr;
+
+  Console.WriteDump(Result);
+
+  serversList.Free;
+  packet.Free;
 end;
 
 end.

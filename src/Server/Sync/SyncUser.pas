@@ -25,8 +25,11 @@ type
     public
       constructor Create;
       destructor Destroy; override;
-      property ClientType: TSYNC_CLIENT_TYPE read m_type write m_type;
-      property Registred: Boolean read m_registred write m_registred;
+      var ClientType: TSYNC_CLIENT_TYPE;
+      var Registred: Boolean;
+      var Name: AnsiString;
+      var Host: AnsiString;
+      var Port: Integer;
   end;
 
 implementation

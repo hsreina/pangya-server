@@ -37,6 +37,10 @@ type
 
       var m_lobbies: TLobbiesList;
 
+      var m_host: AnsiString;
+      var m_port: Integer;
+      var m_name: AnsiString;
+
       function LobbiesList: AnsiString;
 
       procedure HandleLobbyRequests(const lobby: TLobby; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
@@ -130,17 +134,16 @@ var
 begin
   iniFile := TIniFile.Create('../config/server.ini');
 
-  self.SetPort(
-    iniFile.ReadInteger('game', 'port', 7997)
-  );
+  m_port := iniFile.ReadInteger('game', 'port', 7997);
+  self.SetPort(m_port);
 
+  m_host := iniFile.ReadString('game', 'host', '127.0.0.1');
+  self.setSyncHost(m_host);
+
+  m_name := iniFile.ReadString('game', 'name', 'GameServer');
 
   self.SetSyncPort(
     iniFile.ReadInteger('sync', 'port', 7998)
-  );
-
-  self.setSyncHost(
-    iniFile.ReadString('game', 'host', '127.0.0.1')
   );
 
   iniFile.Free;
@@ -2392,6 +2395,9 @@ begin
   res := TClientPacket.Create;
   res.WriteUInt16(0);
   res.WriteUInt8(2); // Login server
+  res.WritePStr(m_name);
+  res.WriteInt32(m_port);
+  res.WritePStr(m_host);
   self.Sync(res);
   res.Free;
 end;

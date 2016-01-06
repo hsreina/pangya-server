@@ -11,7 +11,7 @@ unit Server;
 interface
 
 uses ScktComp, Logging, Client, Generics.Collections, ExtCtrls, CryptLib,
-  ServerClient, ClientPacket, SyncClient, defs, PacketData;
+  ServerClient, ClientPacket, SyncClient, defs, PacketData, SysUtils;
 
 type
 
@@ -107,7 +107,8 @@ end;
 
 procedure TServer<ClientType>.SetPort(port: Integer);
 begin
-  Log('TServer.SetPort', TLogType.TLogType_not);
+  Console.Log('TServer.SetPort', C_BLUE);
+  Console.Log(Format('Port : %d', [port]));
   self.m_server.Port := port;
 end;
 

@@ -8,14 +8,10 @@
 
 program PangyaServer;
 
-  // If you want a console version of the server
-  // {$APPTYPE CONSOLE}
-  // {$DEFINE CONSOLE}
-  // It's actually not really a full console version, but it will look like
-  // Don't use link console option or the server will not work
-  // We'll fix that later
-{ $APPTYPE CONSOLE}
-{ $DEFINE CONSOLE}
+{$IFDEF RELEASE}
+  {$APPTYPE CONSOLE}
+  {$DEFINE CONSOLE}
+{$ENDIF}
 
 uses
   {$IFDEF DEBUG}

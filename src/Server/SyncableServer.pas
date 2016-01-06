@@ -10,7 +10,7 @@ unit SyncableServer;
 
 interface
 
-uses SyncClient, Server, CryptLib, ClientPacket, ScktComp, PangyaBuffer;
+uses SyncClient, Server, CryptLib, ClientPacket, ScktComp, PangyaBuffer, SysUtils;
 
 type
   TSyncableServer<ClientType> = class abstract (TServer<ClientType>)
@@ -38,7 +38,7 @@ type
 
 implementation
 
-uses Logging;
+uses Logging, ConsolePas;
 
 constructor TSyncableServer<ClientType>.Create(cryptLib: TCryptLib);
 begin
@@ -56,7 +56,8 @@ end;
 
 procedure TSyncableServer<ClientType>.SetSyncPort(port: Integer);
 begin
-  self.Log('TSyncableServer<ClientType>.SetSyncPort', TLogType_not);
+  Console.Log('TSyncableServer<ClientType>.SetSyncPort', C_BLUE);
+  Console.Log(Format('port : %d', [port]));
   m_syncClient.SetPort(port);
 end;
 
@@ -96,6 +97,8 @@ end;
 
 procedure TSyncableServer<ClientType>.SetSyncHost(host: string);
 begin
+  Console.Log('TSyncableServer<ClientType>.SetSyncHost', C_BLUE);
+  Console.Log(Format('host : %s', [host]));
   m_syncClient.SetHost(host);
 end;
 
