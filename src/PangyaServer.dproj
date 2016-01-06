@@ -3,7 +3,7 @@
         <ProjectGuid>{09C46BC0-306B-4E1A-8313-9143618DBCF8}</ProjectGuid>
         <MainSource>PangyaServer.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
+        <Config Condition="'$(Config)'==''">Release</Config>
         <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
@@ -45,6 +45,7 @@
         <Cfg_2>true</Cfg_2>
         <Base>true</Base>
     </PropertyGroup>
+    <Import Project="AllInOne.optset" Condition="'$(Base)'!='' And Exists('AllInOne.optset')"/>
     <PropertyGroup Condition="'$(Base)'!=''">
         <DCC_S>false</DCC_S>
         <DCC_E>false</DCC_E>
@@ -56,6 +57,7 @@
         <DCC_F>false</DCC_F>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_K>false</DCC_K>
+        <CfgDependentOn>AllInOne.optset</CfgDependentOn>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_UsePackage>vcl;CodeSiteExpressPkg;$(DCC_UsePackage)</DCC_UsePackage>
@@ -97,7 +99,6 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="Libs\Fast\FastMM4.pas"/>
-        <DCCReference Include="Libs\Fast\FastMM4Messages.pas"/>
         <DCCReference Include="MainPas.pas">
             <Form>Main</Form>
         </DCCReference>
@@ -159,6 +160,7 @@
         </BuildConfiguration>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
+            <DependentOn>AllInOne.optset</DependentOn>
         </BuildConfiguration>
         <BuildConfiguration Include="Release">
             <Key>Cfg_1</Key>
@@ -583,13 +585,13 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
-                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <ModelSupport>False</ModelSupport>
         </BorlandProject>
