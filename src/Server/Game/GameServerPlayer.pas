@@ -24,6 +24,7 @@ type
     var ShotSync: Boolean;
     var Holedistance: Single;
     var HoleComplete: Boolean;
+    var ReadyForgame: Boolean;
   end;
 
   TGameServerPlayer = class
@@ -64,7 +65,7 @@ type
 
 implementation
 
-uses ClientPacket, PlayerCharacter;
+uses ClientPacket, PlayerCharacter, utils;
 
 constructor TGameServerPlayer.Create;
 begin
@@ -125,9 +126,25 @@ begin
     packet.WriteUInt32(Data.equipedCharacter.Data.IffId);
 
     packet.WriteStr(
-      #$00#$00 +
-      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-      #$00#$00#$06#$01#$80#$39#$08#$02#$0F +
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$06#$01#$80#$39
+    );
+
+    packet.WriteStr(
+      #$08 // user mode
+    );
+
+    packet.WriteUInt8(
+      TGeneric.Iff<UInt8>(gameInfo.ReadyForgame, 2, 0)
+    );
+
+    packet.Write(self.Data.playerInfo2.rank, 1);
+
+    packet.WriteStr(
       #$00#$0A +
       #$00#$00#$00#$00 + // emblem
       #$00#$00#$00#$00 + // emblem
@@ -181,7 +198,7 @@ begin
   tmpGameId := m_data.playerInfo1.game;
   if tmpGameId = 0 then
   begin
-    tmpGameId := $ffFF;
+    tmpGameId := $ffff;
   end;
 
   packet := TClientPacket.Create;
@@ -190,9 +207,9 @@ begin
   packet.WriteUInt32(Data.playerInfo1.ConnectionId);
   packet.WriteUInt16(tmpGameId);
   packet.Write(Data.playerInfo1.nickname[0], 22);
+  packet.Write(self.Data.playerInfo2.rank, 1);
 
   packet.WriteStr(
-    #$00 + // rank
     #$00#$00#$00#$00#$00#$00#$00 +
     #$00#$E8#$03#$00 +
     #$00 +
@@ -213,7 +230,6 @@ begin
   Result := packet.ToStr;
 
   packet.free;
-
 end;
 
 end.

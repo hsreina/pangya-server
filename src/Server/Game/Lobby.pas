@@ -167,12 +167,18 @@ end;
 
 procedure TLobby.OnPlayerJoinGame(game: TGame; player: TGameClient);
 begin
-
+  self.Send(
+    #$46#$00#$03#$01 +
+    player.Data.LobbyInformations
+  );
 end;
 
 procedure TLobby.OnPlayerLeaveGame(game: TGame; player: TGameClient);
 begin
-
+  self.Send(
+    #$46#$00#$03#$01 +
+    player.Data.LobbyInformations
+  );
 end;
 
 procedure TLobby.OnCreateGame(game: TGame);
@@ -181,6 +187,9 @@ begin
   begin
     Exit;
   end;
+
+  game.OnPlayerJoinGame.Event := self.OnPlayerJoinGame;
+  game.OnPlayerLeaveGame.Event := self.OnPlayerLeaveGame;
 
   self.Send(
     #$47#$00#$01#$01#$FF#$FF +

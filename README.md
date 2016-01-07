@@ -19,6 +19,7 @@ To make it work with your project, "pangya.dll" must share some functions the se
   - _pangya_client_decrypt
   - _pangya_server_encrypt
   - _pangya_client_encrypt
+  - _pangya_server_decrypt (not used bust must be present)
   - _deserialize
 
 defined as:
@@ -33,6 +34,7 @@ defined as:
     DLLEXPORT ret_struct pangya_client_decrypt(char *data, int size, char key);
     DLLEXPORT ret_struct pangya_server_encrypt(char *data, int size, char key);
     DLLEXPORT ret_struct pangya_client_encrypt(char *data, int size, char key, char packetid);
+	DLLEXPORT ret_struct pangya_server_decrypt(char *data, int size, char key);
     DLLEXPORT UInt32 deserialize(UInt32 deserialize);
 
 "pangya_client_decrypt" must accept the full packet send by the client as data and must return the decrypted packet starting with the Id of the packet.
@@ -40,5 +42,7 @@ defined as:
 "pangya_server_encrypt" must accept the decrypted packet as data starting with the Id of the packet.
 
 "pangya_client_encrypt" must accept the decrypted packet as data starting with the Id of the packet.
+
+"pangya_server_decrypt" this function is not used by the server it must be present but its content can be empty
 
 If you need more details about dll format, you still can send an e-mail to bugreport@shadosoft-tm.com

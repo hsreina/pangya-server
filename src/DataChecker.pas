@@ -35,7 +35,7 @@ const
   playerInfoSize = SizeOf(TPlayerInfo1);
 begin
 
-  if not (playerClubDataSize = $1C) then
+  if not (playerClubDataSize = $26) then
   begin
     raise Exception.CreateFmt('TPlayerClubData Invalid Size (%x)', [playerClubDataSize]);
   end;

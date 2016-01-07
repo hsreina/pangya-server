@@ -428,12 +428,6 @@ begin
     client.Data.GameInformation +
     #$00
   );
-
-  // Lobby player informations
-  client.Send(
-    #$46#$00#$03#$01 +
-    client.Data.LobbyInformations
-  );
 end;
 
 procedure TGameServer.HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
@@ -487,12 +481,6 @@ begin
   );
   }
 
-  // Lobby player informations
-  playerLobby.Send(
-    #$46#$00#$03#$01 +
-    client.Data.LobbyInformations
-  );
-
 end;
 
 procedure TGameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
@@ -541,14 +529,6 @@ begin
 
   }
 
-  // Lobby player informations
-  {
-  playerLobby.Send(
-    #$46#$00#$03#$01 +
-    client.Data.LobbyInformations
-  );
-  }
-
   client.Send(#$4C#$00#$FF#$FF);
 
 end;
@@ -570,7 +550,7 @@ var
   I: integer;
   shopItem: TShopItemDesc;
 
-  shopResult: TPacketData;
+  shopResult: AnsiString;
   successCount: uint16;
   randomId: Integer;
   test: TITEM_TYPE;

@@ -42,6 +42,18 @@ type
       destructor Destroy; override;
   end;
 
+  TGamePlayerEvent = TEvent2<TGame, TGameClient>;
+
+  TGamePlayerGenericEvent = class
+    private
+      var m_event: TGamePlayerEvent;
+    public
+      procedure Trigger(game: TGame; player: TGameClient);
+      property Event: TGamePlayerEvent read m_event write m_event;
+      constructor Create;
+      destructor Destroy; override;
+  end;
+
   TGame = class
     private
       var m_id: UInt16;
@@ -55,7 +67,10 @@ type
       var m_gameKey: array [0 .. $F] of ansichar;
       var m_game_holes: TList<TGameHoleInfo>;
       var m_currentHole: UInt8;
+
       var m_onUpdateGame: TGameGenericEvent;
+      var m_onPlayerJoinGame: TGamePlayerGenericEvent;
+      var m_onPlayerLeaveGame: TGamePlayerGenericEvent;
 
       var m_currentHolePos: TVector3;
       var m_holeComplete: Boolean;
@@ -72,6 +87,9 @@ type
     public
       property Id: UInt16 read m_id write m_id;
       property PlayerCount: Uint16 read FGetPlayerCount;
+
+      property OnPlayerJoinGame: TGamePlayerGenericEvent read m_onPlayerJoinGame;
+      property OnPlayerLeaveGame: TGamePlayerGenericEvent read m_onPlayerLeaveGame;
 
       constructor Create(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent);
       destructor Destroy; override;
@@ -130,12 +148,32 @@ begin
   end;
 end;
 
+constructor TGamePlayerGenericEvent.Create;
+begin
+  inherited Create;
+end;
+
+destructor TGamePlayerGenericEvent.Destroy;
+begin
+  inherited;
+end;
+
+procedure TGamePlayerGenericEvent.Trigger(game: TGame; player: TGameClient);
+begin
+  if Assigned(m_event) then
+  begin
+    m_event(game, player);
+  end;
+end;
+
 constructor TGame.Create(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent);
 var
   I: Integer;
 begin
   Console.Log('TGame.Create', C_BLUE);
   m_onUpdateGame := TGameGenericEvent.Create;
+  m_onPlayerJoinGame := TGamePlayerGenericEvent.Create;
+  m_onPlayerLeaveGame := TGamePlayerGenericEvent.Create;
 
   m_game_holes := TList<TGameHoleInfo>.Create;
 
@@ -172,6 +210,8 @@ begin
   m_game_holes.free;
   m_players.Free;
   m_onUpdateGame.Free;
+  m_onPlayerJoinGame.Free;
+  m_onPlayerLeaveGame.Free;
 end;
 
 function TGame.AddPlayer(player: TGameClient): Boolean;
@@ -205,7 +245,11 @@ begin
   end;
 
   // tmp fix, should create the list of player when a player leave the game
-  player.Data.gameInfo.GameSlot := playerIndex + 1;
+  with player.Data.gameInfo do
+  begin
+    GameSlot := playerIndex + 1;
+    ReadyForgame := false;
+  end;
 
   player.Data.Action.clear;
 
@@ -225,12 +269,7 @@ begin
 
   self.TriggerGameUpdated;
 
-  // player lobby informations
-  self.Send(
-    #$46#$00 +
-    #$03#$01 +
-    player.Data.LobbyInformations
-  );
+  m_onPlayerJoinGame.Trigger(self, player);
 
   res := TClientPacket.Create;
 
@@ -260,6 +299,7 @@ begin
     raise PlayerNotFoundException.CreateFmt('Game (%d) can''t remove player with id %d', [player.Data.Data.playerInfo1.PlayerID]);
     Exit(false);
   end;
+
   player.Data.Data.playerInfo1.game := $FFFF;
 
   if m_id = 0 then
@@ -271,6 +311,8 @@ begin
     #$48#$00 + #$02 + #$FF#$FF +
     player.Data.GameInformation(0)
   );
+
+  m_onPlayerLeaveGame.Trigger(self, player);
 
   m_onUpdateGame.Trigger(self);
 
@@ -1005,53 +1047,44 @@ begin
   res.WriteUInt32(0);
   res.WriteUInt8(header.Action);
   res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
-  res.WriteUInt32(header.Id);
 
   case header.Action of
     1: begin // Caddie
       Console.Log('Caddie');
-
       // Equiped caddie data
       res.WriteStr(
-        #$00#$00#$00#$00 +
-        #$0B#$77#$18#$33#$AC#$FE#$7F#$0E#$F0#$51#$E8#$08#$E5 +
-        #$7F#$6B#$00#$AC
+        client.Data.Data.equipedCaddie.ToStr
       );
-
     end;
-    2: begin // Aztec
+    2: begin
       Console.Log('Aztec');
-      // for Aztec, Id = IffId
       client.Data.Data.witems.AztecIffID := header.Id;
+      res.WriteUint32(header.Id);
     end;
-    3: begin // Clucb
+    3: begin
       Console.Log('Club');
-
-      // Equiped club data
       res.WriteStr(
-        #$00#$00#$00#$10 + // club Iff Id
-        #$01#$00#$00#$00 + // qty?
-        #$00#$00#$00#$00#$00#$00#$B7#$07#$E5 +
-        #$7F#$6B#$00#$AC#$FE#$7F#$0E
+        client.Data.Data.equipedClub.ToStr
       );
-
     end;
     4: begin
-      Console.Log('character');
-      Console.Log('Should search about that', C_ORANGE);
-      ok := false;
-    end;
-    5: begin // Mascot
-      Console.Log('Mascot');
-
-      // Equiped mascot data
+      Console.Log('Character');
       res.WriteStr(
-        #$00#$00#$00#$00 + #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$EF +
-        #$6C#$18#$33#$2C#$F6#$7F#$0E#$D3#$7D
+        client.Data.Data.equipedCharacter.ToPacketData
       );
     end;
+    5: begin
+      Console.Log('mascot');
+
+      res.WriteStr(
+        #$00#$00#$00#$00#$00 +
+        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+        #$00#$00#$00#$00#$00#$00#$00#$00#$00
+      );
+
+    end
     else begin
       Console.Log(Format('Unknow action %x', [header.Action]));
       ok := false;

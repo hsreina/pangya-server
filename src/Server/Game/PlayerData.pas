@@ -75,7 +75,7 @@ type
     var equipedClub: TPlayerClubData;
 
     // A part of this is equiped mascot data
-    var un0000: array [0..$4E] of AnsiChar;
+    var un0000: array [0..$44] of AnsiChar;
 
     // now sound like something related to guilds
     var un0001: array [0..$12F] of AnsiChar;
