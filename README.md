@@ -15,27 +15,29 @@ In the project files, you'll see references to a library "pang.dll"
 
 "pang.dll" is a library used in some of my projects and will not be shared in this project. It will not be shared with the source code but maybe someone will can create it for you. Or maybe you'll create it for yourself.
 
+You can found sample here
+https://github.com/hsreina/pang.dll-sample
+
+- The BCC32 version is the one we use on this server.
+
 To make it work with your project, "pangya.dll" must share some functions the server will be able to understand.
   - _pangya_client_decrypt
   - _pangya_server_encrypt
   - _pangya_client_encrypt
   - _pangya_server_decrypt (not used bust must be present)
   - _deserialize
+  - _pangya_free (used to free buffout pointer allocated by the library)
 
 defined as:
 
     #define DLLEXPORT EXTERN_C __declspec(dllexport)
     
-    struct ret_struct {
-	    int size;
-	    char *data;
-    };
-
-    DLLEXPORT ret_struct pangya_client_decrypt(char *data, int size, char key);
-    DLLEXPORT ret_struct pangya_server_encrypt(char *data, int size, char key);
-    DLLEXPORT ret_struct pangya_client_encrypt(char *data, int size, char key, char packetid);
-	DLLEXPORT ret_struct pangya_server_decrypt(char *data, int size, char key);
-    DLLEXPORT UInt32 deserialize(UInt32 deserialize);
+    DLLEXPORT int _pangya_client_decrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
+    DLLEXPORT int _pangya_server_encrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
+    DLLEXPORT int _pangya_client_encrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key, char packetid);
+	DLLEXPORT int _pangya_server_decrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
+    DLLEXPORT UInt32 _pangya_deserialize(UInt32 deserialize);
+	DLLEXPORT void _pangya_free(char **buffout);
 
 "pangya_client_decrypt" must accept the full packet send by the client as data and must return the decrypted packet starting with the Id of the packet.
 
