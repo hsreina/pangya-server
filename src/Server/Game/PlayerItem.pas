@@ -22,10 +22,10 @@ type
 
   TPlayerItem = class (TPlayerGenericData<TPlayerItemData>)
     public
-      procedure SetIffId(iffId: UInt32);
-      function GetIffId: UInt32;
-      procedure SetID(id: UInt32);
-      function GetId: UInt32;
+      function GetIffId: UInt32; override;
+      procedure SetIffId(iffId: UInt32); override;
+      function GetId: UInt32; override;
+      procedure SetId(id: UInt32); override;
   end;
 
 implementation

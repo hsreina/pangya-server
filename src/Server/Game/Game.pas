@@ -128,7 +128,8 @@ type
 
 implementation
 
-uses GameServerExceptions, Buffer, ConsolePas, PangyaPacketsDef, ShotData;
+uses GameServerExceptions, Buffer, ConsolePas, PangyaPacketsDef, ShotData,
+  PlayerGenericData;
 
 constructor TGameGenericEvent.Create;
 begin
@@ -1031,6 +1032,7 @@ var
   header: THeader;
   res: TClientPacket;
   ok: Boolean;
+  equipment: TGenericPacketData;
 begin
   Console.Log('TGame.HandlePlayerChangeEquipment', C_BLUE);
   if not clientPacket.Read(header, SizeOf(THeader)) then
@@ -1076,13 +1078,13 @@ begin
     5: begin
       Console.Log('mascot');
 
-      res.WriteStr(
-        #$00#$00#$00#$00#$00 +
-        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-        #$00#$00#$00#$00#$00#$00#$00#$00#$00
-      );
+      try
+        equipment := client.Data.Mascots.getById(header.id);
+      except
+        Console.Log('Should make this part more generic', C_RED);
+      end;
+
+      res.WriteStr(equipment.ToPacketData);
 
     end
     else begin

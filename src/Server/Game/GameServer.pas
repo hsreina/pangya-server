@@ -78,6 +78,7 @@ type
       procedure HandlePlayerRecycleItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInbox(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerSetMascotText(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerClearQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerDeleteMail(const client: TGameClient; const clientPacket: TClientPacket);
       procedure handlerPlayerSendMail(const client: TGameClient; const clientPacket: TClientPacket);
@@ -538,7 +539,7 @@ type
   TShopItemDesc = packed record
     un1: UInt32;
     IffId: TIffId;
-    lifeTime: word;
+    lifeTime: word; // days
     un2: array [0..1] of ansichar;
     qty: UInt32;
     un3: UInt32;
@@ -552,8 +553,8 @@ var
 
   shopResult: AnsiString;
   successCount: uint16;
-  randomId: Integer;
   test: TITEM_TYPE;
+  itemId: UInt32;
 begin
   self.Log('TGameServer.HandlePlayerBuyItem', TLogType_not);
 
@@ -567,7 +568,7 @@ begin
   clientPacket.ReadUInt8(rental);
   clientPacket.ReadUInt16(count);
 
-  randomId := random(134775813);
+  itemId := random($FFFFFFFF);
 
   for I := 1 to count do
   begin
@@ -581,46 +582,41 @@ begin
       ITEM_TYPE_FASHION:
       begin
         Console.Log('ITEM_TYPE_FASHION');
-        with client.Data.Items.Add do
+        with client.Data.Items.Add(shopItem.IffId.id) do
         begin
-          SetIffId(shopItem.IffId.id);
-          setId(Random(99999999));
+          itemId := getId;
         end;
       end;
       ITEM_TYPE_CLUB:
       begin
         Console.Log('ITEM_TYPE_CLUB');
-        with client.Data.Items.Add do
+        with client.Data.Items.Add(shopItem.IffId.id) do
         begin
-          SetIffId(shopItem.IffId.id);
-          setId(Random(99999999));
+          itemId := getId;
         end;
       end;
       ITEM_TYPE_AZTEC:
       begin
         Console.Log('ITEM_TYPE_AZTEC');
-        with client.Data.Items.Add do
+        with client.Data.Items.Add(shopItem.IffId.id) do
         begin
-          SetIffId(shopItem.IffId.id);
-          setId(Random(99999999));
+          itemId := getId;
         end;
       end;
       ITEM_TYPE_ITEM1:
       begin
         Console.Log('ITEM_TYPE_ITEM1');
-        with client.Data.Items.Add do
+        with client.Data.Items.Add(shopItem.IffId.id) do
         begin
-          SetIffId(shopItem.IffId.id);
-          setId(Random(99999999));
+          itemId := getId;
         end;
       end;
       ITEM_TYPE_ITEM2:
       begin
         Console.Log('ITEM_TYPE_ITEM2');
-        with client.Data.Items.Add do
+        with client.Data.Items.Add(shopItem.IffId.id) do
         begin
-          SetIffId(shopItem.IffId.id);
-          setId(Random(99999999));
+          itemId := getId;
         end;
       end;
       ITEM_TYPE_CADDIE:
@@ -630,10 +626,9 @@ begin
       ITEM_TYPE_CADDIE_ITEM:
       begin
         Console.Log('ITEM_TYPE_CADDIE_ITEM');
-        with client.Data.Caddies.Add do
+        with client.Data.Caddies.Add(shopItem.IffId.id) do
         begin
-          SetIffId(shopItem.IffId.id);
-          setId(Random(99999999));
+          itemId := getId;
         end;
       end;
       ITEM_TYPE_ITEM_SET:
@@ -663,6 +658,10 @@ begin
       ITEM_TYPE_MASCOT:
       begin
         Console.Log('ITEM_TYPE_MASCOT');
+        with client.Data.Mascots.Add(shopItem.IffId.id) do
+        begin
+          itemId := getId;
+        end;
       end;
       ITEM_TYPE_FURNITURE:
       begin
@@ -685,8 +684,8 @@ begin
     inc(successCount);
     shopResult := shopResult +
       self.Write(shopItem.IffId, 4) + // IffId
-      self.Write(randomId, 4) + // Id
-      #$00#$00 + // time
+      self.Write(itemId, 4) + // Id
+      self.Write(shopItem.lifeTime, 4) + // time
       #$00 +
       #$01#$00#$00#$00 + // qty left
       #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
@@ -1461,6 +1460,60 @@ begin
   res.Free;
 end;
 
+procedure TGameServer.HandlePlayerSetMascotText(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  mascotId: UInt32;
+  text: AnsiString;
+  mascot: TPlayerMascot;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerSetMascotText', C_BLUE);
+  if not clientPacket.ReadUInt32(mascotId) or not clientPacket.ReadPStr(text) then
+  begin
+    Exit;
+  end;
+
+  try
+    mascot := client.Data.Mascots.getById(mascotId);
+  except
+    on E: NotFoundException do
+    begin
+      res := TClientPacket.Create;
+      res.WriteStr(#$E2#$00 + #$01);
+      res.WriteUInt32(mascotId);
+      client.Send(res);
+      res.Free;
+      Exit;
+    end;
+  end;
+
+  if client.Data.Data.playerInfo2.pangs < 100 then
+  begin
+    // Not enough pang
+    res := TClientPacket.Create;
+    res.WriteStr(#$E2#$00 + #$03);
+    res.WriteUInt32(mascotId);
+    client.Send(res);
+    res.Free;
+    Exit;
+  end;
+
+  dec(client.Data.Data.playerInfo2.pangs, 100);
+
+  mascot.setText(text);
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$E2#$00 + #$04);
+  res.WriteUInt32(mascotId);
+  res.WritePStr(text);
+  res.WriteUInt64(client.Data.Data.playerInfo2.pangs);
+
+  client.Send(res);
+
+  res.Free;
+end;
+
 procedure TGameServer.HandlerPlayerClearQuest(const client: TGameClient; const clientPacket: TClientPacket);
 type
   TQuestData = packed record
@@ -2140,7 +2193,11 @@ begin
     CGPID_PLAYER_CLEAR_QUEST:
     begin
       self.HandlerPlayerClearQuest(client, clientpacket);
-    end
+    end;
+    CGPID_PLAYER_SET_MASCOT_TEXT:
+    begin
+      self.HandlePlayerSetMascotText(client, clientpacket);
+    end;
     else begin
       try
         playerGame := lobby.GetPlayerGame(client);

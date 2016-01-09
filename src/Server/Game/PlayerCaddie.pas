@@ -22,8 +22,10 @@ type
 
   TPlayerCaddie = class (TPlayerGenericData<TPlayerCaddieData>)
     public
-      procedure SetIffId(iffId: UInt32);
-      procedure SetID(id: UInt32);
+      function GetIffId: UInt32; override;
+      procedure SetIffId(iffId: UInt32); override;
+      function GetId: UInt32; override;
+      procedure SetId(id: UInt32); override;
   end;
 
 implementation
@@ -33,9 +35,19 @@ begin
   self.m_data.IffId := IffId;
 end;
 
+function TPlayerCaddie.GetIffId;
+begin
+  Result := self.m_data.IffId;
+end;
+
 procedure TPlayerCaddie.SetID(id: Cardinal);
 begin
   self.m_data.Id := id;
+end;
+
+function TPlayerCaddie.GetId;
+begin
+  Result := self.m_data.Id;
 end;
 
 function TPlayerCaddieData.ToStr: AnsiString;

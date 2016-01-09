@@ -33,10 +33,16 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Add: PlayerDataClass;
+    function Add(PacketData: TPacketData): PlayerDataClass; overload;
+    function Add(IffId: UInt32): PlayerDataClass; overload;
+
     procedure Remove(entry: PlayerDataClass);
 
     function ToPacketData: TPacketData;
+
+    function getById(Id: Uint32): PlayerDataClass;
+    function getByIffId(IffId: Uint32): PlayerDataClass;
+
     procedure Load(PacketData: TPacketData);
 
     procedure Clear;
@@ -44,7 +50,7 @@ type
 
 implementation
 
-uses ConsolePas, SysUtils;
+uses ConsolePas, SysUtils, GameServerExceptions;
 
 constructor TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Create;
 begin
@@ -62,12 +68,28 @@ begin
   m_dataList.Free;
 end;
 
-function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Add: PlayerDataClass;
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Add(IffId: UInt32): PlayerDataClass;
 var
   playerData: PlayerDataClass;
 begin
   playerData := PlayerDataClass.Create;
+
+  // For now, just set a random Id
+  playerData.setId(Random($FFFFFFFF));
+  playerData.setIffId(IffId);
+
   m_dataList.Add(playerData);
+  Exit(playerData);
+end;
+
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Add(PacketData: TPacketData): PlayerDataClass;
+var
+  playerData: PlayerDataClass;
+begin
+  playerData := PlayerDataClass.Create;
+  playerData.Load(PacketData);
+  m_dataList.Add(playerData);
+
   Exit(playerData);
 end;
 
@@ -92,12 +114,12 @@ begin
   // TODO: should rethink that
   if TypeInfo(GenericCounter) = TypeInfo(TMascotCounter) then
   begin
-    data.Write(dataCount, SizeOf(GenericCounter));
+    data.Write(dataCount, 1);
   end
   else if TypeInfo(GenericCounter) = TypeInfo(TDoubleCounter) then
   begin
-    data.Write(dataCount, SizeOf(GenericCounter));
-    data.Write(dataCount, SizeOf(GenericCounter));
+    data.Write(dataCount, 2);
+    data.Write(dataCount, 2);
   end;
 
   for playerData in m_dataList do
@@ -125,12 +147,12 @@ begin
   // TODO: should rethink that
   if TypeInfo(GenericCounter) = TypeInfo(TMascotCounter) then
   begin
-    ClientPacket.Read(count, SizeOf(GenericCounter));
+    ClientPacket.Read(count, 1);
   end
   else if TypeInfo(GenericCounter) = TypeInfo(TDoubleCounter) then
   begin
-    ClientPacket.Read(count, SizeOf(GenericCounter));
-    ClientPacket.Read(count, SizeOf(GenericCounter));
+    ClientPacket.Read(count, 2);
+    ClientPacket.Read(count, 2);
   end;
 
   setlength(tmp, sizeof(DataType));
@@ -139,8 +161,7 @@ begin
   begin
     if ClientPacket.Read(tmp[1], sizeof(DataType)) then
     begin
-      playerData := self.Add;
-      playerData.Load(tmp);
+      playerData := self.Add(tmp);
     end;
   end;
   ClientPacket.Free;
@@ -158,6 +179,38 @@ begin
   end;
 
   playerData.Clear;
+end;
+
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.
+  getById(Id: Uint32): PlayerDataClass;
+var
+  entry: PlayerDataClass;
+begin
+  // TODO: Should optimize that to something else
+  for entry in m_dataList do
+  begin
+    if entry.getId = Id then
+    begin
+      Exit(entry);
+    end;
+  end;
+  raise NotFoundException.CreateFmt('Item with Id (%d) not found', [Id]);
+end;
+
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.
+  getByIffId(IffId: Uint32): PlayerDataClass;
+var
+  entry: PlayerDataClass;
+begin
+  // TODO: Should optimize that to something else
+  for entry in m_dataList do
+  begin
+    if entry.getIffId = IffId then
+    begin
+      Exit(entry);
+    end;
+  end;
+  raise NotFoundException.CreateFmt('Item with IffId (%d) not found', [IffId]);
 end;
 
 end.

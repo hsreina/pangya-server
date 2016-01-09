@@ -17,16 +17,27 @@ type
     var IffId: Uint32;
   end;
 
-  TPlayerGenericData<DataType: record> = class
+  TGenericPacketData = class
+    public
+      function ToPacketData: AnsiString; virtual; abstract;
+  end;
+
+  TPlayerGenericData<DataType: record> = class (TGenericPacketData)
     protected
       var m_data: DataType;
     public
       constructor Create;
       destructor Destroy; override;
+
       procedure Clear;
-      function ToPacketData: AnsiString;
+      function ToPacketData: AnsiString; override;
       function Load(packetData: AnsiString): Boolean;
       function GetData: DataType;
+
+      function GetIffId: UInt32; virtual; abstract;
+      procedure SetIffId(iffId: UInt32); virtual; abstract;
+      function GetId: UInt32; virtual; abstract;
+      procedure SetId(id: UInt32); virtual; abstract;
   end;
 
 implementation

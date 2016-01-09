@@ -247,9 +247,7 @@ begin
   playerData.Load(m_database.GetPlayerMainSave(playerId));
 
   // basic club
-  item := items.Add;
-  item.SetIffId($10000061);
-  item.SetId(Random(9999999999));
+  item := items.Add($10000061);
   playerData.witems.clubSetId := item.GetId;
 
   with playerData.equipedClub do
@@ -259,19 +257,16 @@ begin
   end;
 
   // basic aztec
-  item := items.Add;
-  item.SetIffId($14000000);
-  item.SetId(Random(9999999999));
-
-  playerData.witems.aztecIffID := item.GetIffId;
+  with items.Add($14000000) do
+  begin
+    playerData.witems.aztecIffID := GetIffId;
+  end;
 
   // Add a debug mascot
-  with mascots.Add do
+  with mascots.Add($40000000) do
   begin
-    SetIffId($40000002);
-    SetId(12231221);
     playerData.equipedMascot := GetData;
-    playerData.witems.mascotId := 12231221;
+    playerData.witems.mascotId := GetId;
   end;
 
   m_database.SavePlayerItems(playerId, items);
