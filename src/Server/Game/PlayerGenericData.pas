@@ -34,6 +34,7 @@ implementation
 constructor TPlayerGenericData<DataType>.Create;
 begin
   inherited;
+  self.Clear;
 end;
 
 destructor TPlayerGenericData<DataType>.Destroy;

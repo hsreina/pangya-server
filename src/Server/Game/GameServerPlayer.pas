@@ -11,7 +11,7 @@ unit GameServerPlayer;
 interface
 
 uses PlayerData, PlayerCharacters, Client, PlayerAction, PlayerItems,
-  PlayerCaddies, PlayerQuest;
+  PlayerCaddies, PlayerQuest, PlayerMascots;
 
 type
 
@@ -33,6 +33,7 @@ type
       var m_data: TPlayerData;
       var m_characters: TPlayerCharacters;
       var m_caddies: TPlayerCaddies;
+      var m_mascots: TPlayerMascots;
       var m_items: TPlayerItems;
       var m_quest: TPlayerQuest;
 
@@ -51,6 +52,7 @@ type
       property Characters: TPlayerCharacters read m_characters;
       property Items: TPlayerItems read m_items;
       property Caddies: TPlayerCaddies read m_caddies;
+      property Mascots: TPlayerMascots read m_mascots;
       property Quests: TPlayerQuest read m_quest;
 
       var InGameList: Boolean;
@@ -73,6 +75,7 @@ begin
   m_characters := TPlayerCharacters.Create;
   m_items := TPlayerItems.Create;
   m_caddies := TPlayerCaddies.Create;
+  m_mascots := TPlayerMascots.Create;
   m_lobby := $FF;
   InGameList := false;
   m_quest := TPlayerQuest.Create;
@@ -84,6 +87,7 @@ begin
   m_characters.Free;
   m_items.Free;
   m_caddies.Free;
+  m_mascots.Free;
   m_quest.Free;
 end;
 

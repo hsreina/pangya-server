@@ -24,7 +24,7 @@ To make it work with your project, "pangya.dll" must share some functions the se
   - _pangya_client_decrypt
   - _pangya_server_encrypt
   - _pangya_client_encrypt
-  - _pangya_server_decrypt (not used bust must be present)
+  - _pangya_server_decrypt (not used but must be present)
   - _deserialize
   - _pangya_free (used to free buffout pointer allocated by the library)
 

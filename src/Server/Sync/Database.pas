@@ -16,7 +16,8 @@ uses
   FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, Data.DB,
   FireDAC.Comp.Client, FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteDef,
   FireDAC.Phys.SQLite, FireDAC.ConsoleUI.Wait, FireDac.Dapt, sysUtils,
-  PacketData, PlayerCharacters, Classes, PlayerData, PlayerItems, PlayerCaddies;
+  PacketData, PlayerCharacters, Classes, PlayerData, PlayerItems, PlayerCaddies,
+  PlayerMascots;
 
 type
   TDatabase = class
@@ -41,6 +42,9 @@ type
 
       procedure SavePlayerItems(playerId: integer; playerItems: TPlayerItems);
       function GetPlayerItems(playerId: integer): AnsiString;
+
+      procedure SavePlayerMascots(playerId: integer; playerMascots: TPlayerMascots);
+      function GetPlayerMascots(playerId: integer): AnsiString;
 
       procedure SavePlayerCaddies(playerId: integer; playerCaddies: TPlayerCaddies);
       function GetPlayerCaddies(playerId: integer): AnsiString;
@@ -374,7 +378,6 @@ begin
   end;
 end;
 
-
 procedure TDatabase.SavePlayerCaddies(playerId: integer; playerCaddies: TPlayerCaddies);
 var
   query: TFDQuery;
@@ -400,6 +403,43 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'SELECT "data" FROM "caddies" WHERE "player_id" = :player_id LIMIT 1;';
+    query.ParamByName('player_id').AsInteger := playerId;
+    query.Open();
+    if query.RowsAffected = 1 then
+    begin
+      Result := query.FieldByName('data').AsString;
+    end;
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+procedure TDatabase.SavePlayerMascots(playerId: integer; playerMascots: TPlayerMascots);
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'INSERT OR REPLACE INTO "mascots" ("player_id", "data") VALUES (:player_id, :data)';
+    query.ParamByName('data').AsBlob := playerMascots.ToPacketData;
+    query.ParamByName('player_id').AsInteger := playerId;
+    query.ExecSQL;
+  finally
+    query.Close;
+    query.DisposeOf;
+  end;
+end;
+
+function TDatabase.GetPlayerMascots(playerId: integer): AnsiString;
+var
+  query: TFDQuery;
+begin
+  query := TFDQuery.Create(nil);
+  try
+    query.Connection := m_connection;
+    query.SQL.Text := 'SELECT "data" FROM "mascots" WHERE "player_id" = :player_id LIMIT 1;';
     query.ParamByName('player_id').AsInteger := playerId;
     query.Open();
     if query.RowsAffected = 1 then

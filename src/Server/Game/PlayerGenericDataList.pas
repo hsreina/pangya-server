@@ -14,8 +14,19 @@ uses
   Generics.Collections, PacketData, ClientPacket, PlayerGenericData;
 
 type
+
+  // theses are just helper
+  TMascotCounter = Packed record
+    count: UInt8;
+  end;
+
+  TDoubleCounter = Packed record
+    count1: UInt16;
+    count2: UInt16;
+  end;
+
   TPlayerGenericDataList<DataType: record;
-    PlayerDataClass: TPlayerGenericData<DataType>, constructor> = class
+    PlayerDataClass: TPlayerGenericData<DataType>, constructor; GenericCounter> = class
   private
     m_dataList: TList<PlayerDataClass>;
   public
@@ -35,12 +46,12 @@ implementation
 
 uses ConsolePas, SysUtils;
 
-constructor TPlayerGenericDataList<DataType, PlayerDataClass>.Create;
+constructor TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Create;
 begin
   m_dataList := TList<PlayerDataClass>.Create;
 end;
 
-destructor TPlayerGenericDataList<DataType, PlayerDataClass>.Destroy;
+destructor TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Destroy;
 var
   character: PlayerDataClass;
 begin
@@ -51,7 +62,7 @@ begin
   m_dataList.Free;
 end;
 
-function TPlayerGenericDataList<DataType, PlayerDataClass>.Add: PlayerDataClass;
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Add: PlayerDataClass;
 var
   playerData: PlayerDataClass;
 begin
@@ -60,14 +71,14 @@ begin
   Exit(playerData);
 end;
 
-procedure TPlayerGenericDataList<DataType, PlayerDataClass>.Remove
+procedure TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Remove
   (entry: PlayerDataClass);
 begin
   m_dataList.Remove(entry);
   entry.free;
 end;
 
-function TPlayerGenericDataList<DataType, PlayerDataClass>.ToPacketData
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.ToPacketData
   : TPacketData;
 var
   data: TClientPacket;
@@ -78,8 +89,16 @@ begin
 
   dataCount := m_dataList.Count;
 
-  data.Write(dataCount, 2);
-  data.Write(dataCount, 2);
+  // TODO: should rethink that
+  if TypeInfo(GenericCounter) = TypeInfo(TMascotCounter) then
+  begin
+    data.Write(dataCount, SizeOf(GenericCounter));
+  end
+  else if TypeInfo(GenericCounter) = TypeInfo(TDoubleCounter) then
+  begin
+    data.Write(dataCount, SizeOf(GenericCounter));
+    data.Write(dataCount, SizeOf(GenericCounter));
+  end;
 
   for playerData in m_dataList do
   begin
@@ -91,22 +110,32 @@ begin
   data.Free;
 end;
 
-procedure TPlayerGenericDataList<DataType, PlayerDataClass>.Load
+procedure TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Load
   (PacketData: TPacketData);
 var
   ClientPacket: TClientPacket;
   playerData: PlayerDataClass;
-  count1, count2: word;
+  count: UInt16;
   i: integer;
   tmp: AnsiString;
 begin
   ClientPacket := TClientPacket.Create(PacketData);
 
-  ClientPacket.ReadUInt16(count1);
-  ClientPacket.ReadUInt16(count2);
+  count := 0;
+  // TODO: should rethink that
+  if TypeInfo(GenericCounter) = TypeInfo(TMascotCounter) then
+  begin
+    ClientPacket.Read(count, SizeOf(GenericCounter));
+  end
+  else if TypeInfo(GenericCounter) = TypeInfo(TDoubleCounter) then
+  begin
+    ClientPacket.Read(count, SizeOf(GenericCounter));
+    ClientPacket.Read(count, SizeOf(GenericCounter));
+  end;
+
   setlength(tmp, sizeof(DataType));
 
-  for i := 1 to count1 do
+  for i := 1 to count do
   begin
     if ClientPacket.Read(tmp[1], sizeof(DataType)) then
     begin
@@ -117,7 +146,7 @@ begin
   ClientPacket.Free;
 end;
 
-procedure TPlayerGenericDataList<DataType, PlayerDataClass>.Clear;
+procedure TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Clear;
 var
   playerData: PlayerDataClass;
 begin

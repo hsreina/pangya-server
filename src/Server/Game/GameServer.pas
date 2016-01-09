@@ -108,7 +108,7 @@ implementation
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
   PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment,
-  PlayerQuest;
+  PlayerQuest, PlayerMascot;
 
 constructor TGameServer.Create(cryptLib: TCryptLib);
 begin
@@ -2293,6 +2293,7 @@ var
   actionId: TSSAPID;
   buffer: AnsiString;
   d: AnsiString;
+  mascot: TPlayerMascot;
 begin
   self.Log('TGameServer.PlayerSync', TLogType_not);
   if clientPacket.Read(actionId, 2) then
@@ -2305,9 +2306,7 @@ begin
       SSAPID_PLAYER_MAIN_SAVE:
       begin
         buffer := clientPacket.GetRemainingData;
-
         client.Data.Data.Load(buffer);
-
         client.Data.Data.playerInfo1.ConnectionId := client.ID;
         client.Send(
           WriteHeader(SGPID_PLAYER_MAIN_DATA) +
@@ -2338,19 +2337,32 @@ begin
       end;
       SSAPID_PLAYER_CADDIES:
       begin
-        Console.Log('Caddies');
+        Console.Log('caddies');
         client.Data.Caddies.Load(clientPacket.GetRemainingData);
-        Console.WriteDump(client.Data.Caddies.ToPacketData);
         client.Send(
           WriteHeader(SGPID_PLAYER_CADDIES_DATA) +
           client.Data.Caddies.ToPacketData
         );
+      end;
+      SSAPID_PLAYER_MASCOTS:
+      begin
+        Console.Log('mascots');
+        client.Data.Mascots.Load(clientPacket.GetRemainingData);
 
-        // mascot list
-        client.Send(#$E1#$00#$00);
+        console.WriteDump(
+          WriteHeader(SGPID_PLAYER_MASCOTS_DATA) +
+          client.Data.Mascots.ToPacketData
+
+        );
+
+        client.Send(
+          WriteHeader(SGPID_PLAYER_MASCOTS_DATA) +
+          client.Data.Mascots.ToPacketData
+        );
       end;
       SSAPID_PLAYER_COOKIES:
       begin
+        Console.Log('cookies');
         clientPacket.ReadInt64(client.Data.Cookies);
         client.Send(#$96#$00 + Write(client.Data.Cookies, 8));
       end;

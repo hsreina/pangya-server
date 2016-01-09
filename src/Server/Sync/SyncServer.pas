@@ -63,7 +63,8 @@ type
 implementation
 
 uses Logging, ConsolePas, PlayerCharacters, PlayerCharacter,
-  PacketData, utils, PlayerData, PlayerItems, PlayerItem, PlayerCaddies;
+  PacketData, utils, PlayerData, PlayerItems, PlayerItem, PlayerCaddies,
+  PlayerMascots;
 
 constructor TSyncServer.Create(cryptLib: TCryptLib);
 begin
@@ -235,11 +236,13 @@ procedure TSyncServer.InitPlayerData(playerId: integer);
 var
   items: TPlayerItems;
   caddies: TPlayerCaddies;
+  mascots: TPlayerMascots;
   item: TPlayerItem;
   playerData: TPlayerData;
 begin
   items := TPlayerItems.Create;
   caddies := TPlayerCaddies.Create;
+  mascots := TPlayerMascots.create;
 
   playerData.Load(m_database.GetPlayerMainSave(playerId));
 
@@ -262,13 +265,24 @@ begin
 
   playerData.witems.aztecIffID := item.GetIffId;
 
+  // Add a debug mascot
+  with mascots.Add do
+  begin
+    SetIffId($40000002);
+    SetId(12231221);
+    playerData.equipedMascot := GetData;
+    playerData.witems.mascotId := 12231221;
+  end;
+
   m_database.SavePlayerItems(playerId, items);
   m_database.SavePlayerCaddies(playerId, caddies);
+  m_database.SavePlayerMascots(playerId, mascots);
 
   m_database.SavePlayerMainSave(playerid, playerData);
 
   items.Free;
   caddies.Free;
+  mascots.Free
 end;
 
 function TSyncServer.CreatePlayer(login: AnsiString; password: AnsiString): integer;
@@ -366,6 +380,13 @@ begin
     client,
     playerUID,
     WriteAction(SSAPID_PLAYER_CADDIES) + m_database.GetPlayerCaddies(playerUID.id)
+  );
+
+  // player mascots
+  self.PlayerAction(
+    client,
+    playerUID,
+    WriteAction(SSAPID_PLAYER_MASCOTS) + m_database.GetPlayerMascots(playerUID.id)
   );
 
   cookies := 99999999;

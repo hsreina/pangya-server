@@ -19,7 +19,7 @@ type
   TPlayerClubData = packed record
     Id: UInt32;
     IffId: UInt32;
-    Un1: array [0..$13] of ansichar;
+    Un1: array [0..$9] of ansichar;
     Stats: TClubStats;
     function ToStr: AnsiString;
   end;

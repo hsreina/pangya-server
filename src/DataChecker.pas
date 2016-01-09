@@ -21,7 +21,7 @@ implementation
 
 uses
   PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData, ShotData,
-  PlayerEquipment;
+  PlayerEquipment, PlayerMascot;
 
 procedure TDataChecker.Validate;
 const
@@ -33,9 +33,16 @@ const
   playerCaddieDataSize = SizeOf(TPlayerCaddieData);
   shotDataSize = SizeOf(TShotData);
   playerInfoSize = SizeOf(TPlayerInfo1);
+  playerMascotSize = SizeOf(TPlayerMascotData);
 begin
 
-  if not (playerClubDataSize = $26) then
+  if not (playerMascotSize = $3E) then
+  begin
+    raise Exception.CreateFmt('TPlayerMascotData Invalid Size (%x)', [playerMascotSize]);
+  end;
+
+  // Seem to be 1C  // 26 - 1C
+  if not (playerClubDataSize = $1C) then
   begin
     raise Exception.CreateFmt('TPlayerClubData Invalid Size (%x)', [playerClubDataSize]);
   end;

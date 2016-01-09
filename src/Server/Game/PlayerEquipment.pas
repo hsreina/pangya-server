@@ -40,7 +40,9 @@ type
     var un22: UInt32;
     var un23: UInt32;
     var un24: UInt32;
-    var un25: UInt32;
+
+    var mascotId: UInt32;
+
     var un26: UInt32;
     var un27: UInt32;
 

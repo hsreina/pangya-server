@@ -112,6 +112,7 @@ type
     SGPID_PLAYER_1ST_SHOT_READY               = $0090,
     SFPID_PLAYER_COOKIES                      = $0096,
     SGPID_PLAYER_LOADING_INFO                 = $00A3,
+    SGPID_PLAYER_MASCOTS_DATA                 = $00E1,
     SGPID_NOTHING                             = $FFFF
   );
 
@@ -132,6 +133,7 @@ type
     SSAPID_PLAYER_ITEMS               = $0005,
     SSAPID_PLAYER_CADDIES             = $0006,
     SSAPID_PLAYER_COOKIES             = $0007,
+    SSAPID_PLAYER_MASCOTS             = $0008,
     SSAPID_NOTHING                    = $FFFF
   );
 

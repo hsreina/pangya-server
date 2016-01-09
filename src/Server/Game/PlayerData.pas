@@ -11,7 +11,7 @@ unit PlayerData;
 interface
 
 uses PlayerCharacter, PacketData, Math, PlayerClubData, PlayerCaddie, defs,
-  PlayerEquipment;
+  PlayerEquipment, PlayerMascot;
 
 type
 
@@ -74,8 +74,10 @@ type
     var equipedCaddie: TPlayerCaddieData;
     var equipedClub: TPlayerClubData;
 
+    var equipedMascot: TPlayerMascotData;
+
     // A part of this is equiped mascot data
-    var un0000: array [0..$44] of AnsiChar;
+    var un0000: array [0..$10] of AnsiChar;
 
     // now sound like something related to guilds
     var un0001: array [0..$12F] of AnsiChar;

@@ -10,11 +10,11 @@ unit PlayerCaddies;
 
 interface
 
-uses PlayerGenericDataList, PlayerCaddie, SyncableServer;
+uses PlayerGenericDataList, PlayerCaddie;
 
 type
   TPlayerCaddies = TPlayerGenericDataList<TPlayerCaddieData,
-    TPlayerCaddie>;
+    TPlayerCaddie, TDoubleCounter>;
 
 implementation
 

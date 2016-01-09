@@ -10,6 +10,12 @@ unit PlayerMascots;
 
 interface
 
+uses PlayerGenericDataList, PlayerMascot;
+
+type
+  TPlayerMascots = TPlayerGenericDataList<TPlayerMascotData,
+    TPlayerMascot, TMascotCounter>;
+
 implementation
 
 end.
