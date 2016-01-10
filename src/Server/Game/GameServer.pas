@@ -60,7 +60,6 @@ type
       procedure HandlePlayerUpgrade(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerNotice(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
@@ -870,114 +869,6 @@ begin
       clientPacket.Log;
     end;
   end;
-end;
-
-procedure TGameServer.HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
-var
-  action: TPLAYER_ACTION;
-  subAction: TPLAYER_ACTION_SUB;
-  game: TGame;
-  pos: TVector3;
-  res: AnsiString;
-  animationName: AnsiString;
-  gamePlayer: TGameServerPlayer;
-  test: TPlayerAction;
-begin
-  Console.Log('TGameServer.HandlePlayerAction', C_BLUE);
-
-  Console.Log(Format('ConnectionId : %x', [client.Data.Data.playerInfo1.ConnectionId]));
-
-  res := clientPacket.GetRemainingData;
-
-  if not clientPacket.Read(action, 1) then
-  begin
-    Console.Log('Failed to read player action', C_RED);
-    Exit;
-  end;
-
-  try
-    game := m_lobbies.GetPlayerGame(client);
-  except
-    on e: Exception do
-    begin
-      Console.Log(e.Message, C_RED);
-      Exit;
-    end;
-  end;
-
-  gamePlayer := client.Data;
-
-  case action of
-    TPLAYER_ACTION.PLAYER_ACTION_APPEAR: begin
-
-      console.log('Player appear');
-      if not clientPacket.Read(gamePlayer.Action.pos.x, 12) then begin
-        console.log('Failed to read player appear position', C_RED);
-        Exit;
-      end;
-
-      with client.Data.Action do begin
-        console.log(Format('pos : %f, %f, %f', [pos.x, pos.y, pos.z]));
-      end;
-
-    end;
-    TPLAYER_ACTION.PLAYER_ACTION_SUB: begin
-
-      console.log('player sub action');
-
-      if not clientPacket.Read(subAction, 1) then begin
-        console.log('Failed to read sub action', C_RED);
-      end;
-
-      client.Data.Action.lastAction := byte(subAction);
-
-      case subAction of
-        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_STAND: begin
-          console.log('stand');
-        end;
-        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SIT: begin
-          console.log('sit');
-        end;
-        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SLEEP: begin
-          console.log('sleep');
-        end else begin
-          console.log('Unknow sub action : ' + IntToHex(byte(subAction), 2));
-          Exit;
-        end;
-      end;
-    end;
-    TPLAYER_ACTION.PLAYER_ACTION_MOVE: begin
-
-        console.log('player move');
-
-        if not clientPacket.Read(pos.x, 12) then begin
-          console.log('Failed to read player moved position', C_RED);
-          Exit;
-        end;
-
-        client.Data.Action.pos.x := client.Data.Action.pos.x + pos.x;
-        client.Data.Action.pos.y := client.Data.Action.pos.y + pos.y;
-        client.Data.Action.pos.z := pos.z;
-
-        with client.Data.Action do begin
-          console.log(Format('pos : %f, %f, %f', [pos.x, pos.y, pos.z]));
-        end;
-    end;
-    TPLAYER_ACTION.PLAYER_ACTION_ANIMATION: begin
-      console.log('play animation');
-      clientPacket.ReadPStr(animationName);
-      console.log('Animation : ' + animationName);
-    end else begin
-      console.log('Unknow action ' + inttohex(byte(action), 2));
-      Exit;
-    end;
-  end;
-
-  SendToGame(client,
-    #$C4#$00 +
-    Write(client.Data.Data.playerInfo1.ConnectionId, 4) +
-    res
-  );
 end;
 
 procedure TGameServer.HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
@@ -2086,10 +1977,6 @@ begin
     begin
       self.HandlePlayerNotice(client, clientPacket);
     end;
-    CGPID_PLAYER_ACTION:
-    begin
-      self.HandlePlayerAction(client, clientPacket);
-    end;
     CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST:
     begin
       self.HandlePlayerJoinMultiplayerGamesList(client, clientPacket);
@@ -2291,6 +2178,14 @@ begin
     CGPID_PLAYER_CHANGE_EQUPMENT:
     begin
       game.HandlePlayerChangeEquipment(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION:
+    begin
+      game.HandlePlayerAction(client, clientPacket);
+    end;
+    CGPID_MASTER_KICK_PLAYER:
+    begin
+      game.HandleMasterKickPlayer(client, clientPacket);
     end
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);

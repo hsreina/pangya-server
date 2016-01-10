@@ -25,6 +25,7 @@ type
     var Holedistance: Single;
     var HoleComplete: Boolean;
     var ReadyForgame: Boolean;
+    var Role: UInt8;
   end;
 
   TGameServerPlayer = class
@@ -138,9 +139,11 @@ begin
       #$06#$01#$80#$39
     );
 
-    packet.WriteStr(
-      #$08 // user mode
-    );
+    packet.WriteUInt8(self.GameInfo.Role);
+
+    //packet.WriteStr(
+    //  #$08 // user mode
+    //);
 
     packet.WriteUInt8(
       TGeneric.Iff<UInt8>(gameInfo.ReadyForgame, 2, 0)

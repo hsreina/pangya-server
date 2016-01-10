@@ -71,7 +71,8 @@ uses
   GenericDataRecord in 'Server\Game\GenericDataRecord.pas',
   BongdatriShop in 'Server\Game\MiniGames\Bongdari\BongdatriShop.pas',
   PlayerEquipment in 'Server\Game\PlayerEquipment.pas',
-  PlayerQuest in 'Server\Game\PlayerQuest.pas';
+  PlayerQuest in 'Server\Game\PlayerQuest.pas',
+  PlayersList in 'Server\Game\PlayersList.pas';
 
 {$R *.res}
 

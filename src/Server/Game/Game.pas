@@ -12,7 +12,7 @@ interface
 
 uses
   Generics.Collections, GameServerPlayer, defs, PangyaBuffer, utils, ClientPacket, SysUtils,
-  GameHoleInfo, Vector3, System.TypInfo;
+  GameHoleInfo, Vector3, System.TypInfo, PlayersList;
 
 type
 
@@ -57,7 +57,7 @@ type
   TGame = class
     private
       var m_id: UInt16;
-      var m_players: TList<TGameClient>;
+      var m_players: TPlayersList;
       var m_name: AnsiString;
       var m_password: AnsiString;
       var m_gameInfo: TPlayerCreateGameInfo;
@@ -99,6 +99,7 @@ type
       function GameInformation: AnsiString;
       function GameResume: AnsiString;
       procedure GoToNextHole;
+      procedure ReorderPlayers(setRoomMaster: Boolean);
 
       procedure Send(data: AnsiString); overload;
       procedure Send(data: TPangyaBuffer); overload;
@@ -123,13 +124,14 @@ type
       procedure HandlePlayerShotData(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerShotSync(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerHoleComplete(const client: TGameClient; const clientPacket: TClientPacket);
-
+      procedure HandleMasterKickPlayer(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
   end;
 
 implementation
 
 uses GameServerExceptions, Buffer, ConsolePas, PangyaPacketsDef, ShotData,
-  PlayerGenericData;
+  PlayerGenericData, PlayerAction;
 
 constructor TGameGenericEvent.Create;
 begin
@@ -191,7 +193,7 @@ begin
   m_password := password;
   m_gameInfo := gameInfo;
   m_artifact := artifact;
-  m_players := TList<TGameClient>.Create;
+  m_players := TPlayersList.Create;
   m_gameStarted := false;
   m_rain_drop_ratio := 10;
   generateKey;
@@ -248,11 +250,12 @@ begin
   // tmp fix, should create the list of player when a player leave the game
   with player.Data.gameInfo do
   begin
-    GameSlot := playerIndex + 1;
     ReadyForgame := false;
   end;
 
   player.Data.Action.clear;
+
+  ReorderPlayers(false);
 
   m_onUpdateGame.Trigger(self);
 
@@ -294,6 +297,8 @@ begin
 end;
 
 function TGame.RemovePlayer(player: TGameClient): Boolean;
+var
+  client: TGameClient;
 begin
   if m_players.Remove(player) = -1 then
   begin
@@ -308,6 +313,8 @@ begin
     Exit;
   end;
 
+  ReorderPlayers(true);
+
   self.Send(
     #$48#$00 + #$02 + #$FF#$FF +
     player.Data.GameInformation(0)
@@ -318,6 +325,37 @@ begin
   m_onUpdateGame.Trigger(self);
 
   Exit(true);
+end;
+
+procedure TGame.ReorderPlayers(setRoomMaster: Boolean);
+var
+  player: TGameClient;
+  index: UInt8;
+  res: TClientPacket;
+begin
+  index := 0;
+  for player in m_players do
+  begin
+    if index = 0 then
+    begin
+      player.Data.GameInfo.Role := 8;
+      if setRoomMaster then
+      begin
+        // Send the new master
+        res := TClientPacket.Create;
+        res.WriteStr(#$7C#$00);
+        res.WriteUint32(player.Data.Data.playerInfo1.ConnectionId);
+        res.WriteStr(#$FF#$FF);
+        self.Send(res);
+        res.Free;
+      end;
+    end else
+    begin
+      player.Data.GameInfo.Role := 1;
+    end;
+    inc(index);
+    player.Data.GameInfo.GameSlot := index;
+  end;
 end;
 
 procedure TGame.generateKey;
@@ -618,6 +656,8 @@ begin
   Console.Log('TGame.HandlePlayerReady', C_BLUE);
 
   clientPacket.ReadUInt8(status);
+
+  client.Data.GameInfo.ReadyForgame := status > 0;
 
   reply := TClientPacket.Create;
 
@@ -1078,13 +1118,18 @@ begin
     5: begin
       Console.Log('mascot');
 
-      try
-        equipment := client.Data.Mascots.getById(header.id);
-      except
-        Console.Log('Should make this part more generic', C_RED);
+      if header.id > 0 then
+      begin
+        try
+          equipment := client.Data.Mascots.getById(header.id);
+        except
+          Console.Log('Should make this part more generic', C_RED);
+        end;
+        res.WriteStr(equipment.ToPacketData);
+      end else
+      begin
+        res.WriteUInt32(header.Id);
       end;
-
-      res.WriteStr(equipment.ToPacketData);
 
     end
     else begin
@@ -1096,10 +1141,16 @@ begin
   if ok then
   begin
     client.Send(res);
+    if self.Id > 0 then
+    begin
+      // Update game profile
+      self.Send(
+        #$48#$00 + #$03 + #$FF#$FF +
+        client.Data.GameInformation(0)
+      );
+    end;
   end;
-
   res.Free;
-
 end;
 
 procedure TGame.HandlePlayerPowerShot(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1329,5 +1380,151 @@ begin
 
   res.Free;
 end;
+
+procedure TGame.HandleMasterKickPlayer(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  playerId: UInt32;
+  playerToKick: TGameClient;
+begin
+  Console.Log('TGame.HandleMasterKickPlayer', C_BLUE);
+
+  if not clientPacket.ReadUInt32(playerId) then
+  begin
+    Exit;
+  end;
+
+  if not (client.Data.GameInfo.Role = 8) then
+  begin
+    Console.Log('player is not a master', C_RED);
+    Exit;
+  end;
+
+  Console.Log('should kick out the player', C_RED);
+
+  try
+    playerToKick := m_players.GetById(playerId);
+  Except
+    on e: NotFoundException do
+    begin
+      Console.Log(e.Message, C_RED);
+      Exit;
+    end;
+  end;
+
+  // TODO: kick the player out of the game
+  Console.Log('Should kick the player now', C_RED);
+
+end;
+
+procedure TGame.HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  action: TPLAYER_ACTION;
+  subAction: TPLAYER_ACTION_SUB;
+  pos: TVector3;
+  tmp: AnsiString;
+  animationName: AnsiString;
+  gamePlayer: TGameServerPlayer;
+  test: TPlayerAction;
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerAction', C_BLUE);
+  Console.Log(Format('ConnectionId : %x', [client.Data.Data.playerInfo1.ConnectionId]));
+
+  if self.Id = 0 then
+  begin
+    Exit;
+  end;
+
+  tmp := clientPacket.GetRemainingData;
+
+  if not clientPacket.Read(action, 1) then
+  begin
+    Console.Log('Failed to read player action', C_RED);
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$C4#$00);
+  res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
+  res.WriteStr(tmp);
+
+  gamePlayer := client.Data;
+
+  case action of
+    // This action is used in vs mode
+    // The original version seem to don't have initial value loaded when player join the game
+    // Should check about that
+    TPLAYER_ACTION.PLAYER_ACTION_NULL: begin
+      console.log('rotate?');
+      // Just forward the data
+    end;
+    TPLAYER_ACTION.PLAYER_ACTION_APPEAR: begin
+
+      console.log('Player appear');
+      if not clientPacket.Read(gamePlayer.Action.pos.x, 12) then begin
+        console.log('Failed to read player appear position', C_RED);
+        Exit;
+      end;
+
+      with client.Data.Action do begin
+        console.log(Format('pos : %f, %f, %f', [pos.x, pos.y, pos.z]));
+      end;
+
+    end;
+    TPLAYER_ACTION.PLAYER_ACTION_SUB: begin
+
+      console.log('player sub action');
+
+      if not clientPacket.Read(subAction, 1) then begin
+        console.log('Failed to read sub action', C_RED);
+      end;
+
+      client.Data.Action.lastAction := byte(subAction);
+
+      case subAction of
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_STAND: begin
+          console.log('stand');
+        end;
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SIT: begin
+          console.log('sit');
+        end;
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SLEEP: begin
+          console.log('sleep');
+        end else begin
+          console.log('Unknow sub action : ' + IntToHex(byte(subAction), 2));
+          Exit;
+        end;
+      end;
+    end;
+    TPLAYER_ACTION.PLAYER_ACTION_MOVE: begin
+
+        console.log('player move');
+
+        if not clientPacket.Read(pos.x, 12) then begin
+          console.log('Failed to read player moved position', C_RED);
+          Exit;
+        end;
+
+        client.Data.Action.pos.x := client.Data.Action.pos.x + pos.x;
+        client.Data.Action.pos.y := client.Data.Action.pos.y + pos.y;
+        client.Data.Action.pos.z := pos.z;
+
+        with client.Data.Action do begin
+          console.log(Format('pos : %f, %f, %f', [pos.x, pos.y, pos.z]));
+        end;
+    end;
+    TPLAYER_ACTION.PLAYER_ACTION_ANIMATION: begin
+      console.log('play animation');
+      clientPacket.ReadPStr(animationName);
+      console.log('Animation : ' + animationName);
+    end else begin
+      console.log('Unknow action ' + inttohex(byte(action), 2));
+    end;
+  end;
+
+  self.Send(res);
+  res.Free;
+end;
+
 
 end.

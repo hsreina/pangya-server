@@ -59,6 +59,7 @@ type
     CGPID_PLAYER_SHOT_SYNC                    = $001C,
     CGPID_PLAYER_BUY_ITEM                     = $001D,
     CGPID_PLAYER_CHANGE_EQUIP                 = $0020,
+    CGPID_MASTER_KICK_PLAYER                  = $0026,
     CGPID_PLAYER_WHISPER                      = $002A,
     CGPID_PLAYER_REQUEST_INFO                 = $002F,
     CGPID_PLAYER_HOLE_COMPLETE                = $0031,
