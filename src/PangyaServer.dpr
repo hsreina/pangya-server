@@ -72,7 +72,13 @@ uses
   BongdatriShop in 'Server\Game\MiniGames\Bongdari\BongdatriShop.pas',
   PlayerEquipment in 'Server\Game\PlayerEquipment.pas',
   PlayerQuest in 'Server\Game\PlayerQuest.pas',
-  PlayersList in 'Server\Game\PlayersList.pas';
+  PlayersList in 'Server\Game\PlayersList.pas',
+  IffManager in 'Iff\IffManager.pas',
+  IffManager.Part in 'Iff\IffManager.Part.pas',
+  IffManager.SetItem in 'Iff\IffManager.SetItem.pas',
+  IffManager.IffEntry in 'Iff\IffManager.IffEntry.pas',
+  IffManager.IffEntryList in 'Iff\IffManager.IffEntryList.pas',
+  IffManager.IffEntrybase in 'Iff\IffManager.IffEntrybase.pas';
 
 {$R *.res}
 

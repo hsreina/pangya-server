@@ -13,7 +13,8 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, LoginServer, Server, Logging, CryptLib,
-  gameServer, SyncUser, SyncServer, Vcl.StdCtrls, ShellApi, DataChecker;
+  gameServer, SyncUser, SyncServer, Vcl.StdCtrls, ShellApi, DataChecker,
+  IffManager;
 
 type
   TMain = class(TForm)
@@ -27,6 +28,7 @@ type
     var m_synServer: TSyncServer;
     var m_cryptLib: TCryptLib;
     var m_dataChecker: TDataChecker;
+    var m_iffManager: TIffManager;
 
     procedure OnServerLog(sender: TObject; msg: string; logType: TLogType);
     procedure Init;
@@ -41,7 +43,7 @@ implementation
 
 {$R *.dfm}
 
-uses ConsolePas, Buffer, utils;
+uses ConsolePas, Buffer, utils, IffManager.IffEntrybase;
 
 procedure TMain.FormCreate(Sender: TObject);
 begin
@@ -65,6 +67,7 @@ begin
   m_synServer.Free;
 {$ENDIF}
 
+  m_iffManager.Free;
   m_cryptLib.Free;
   m_dataChecker.Free;
 end;
@@ -117,6 +120,9 @@ begin
 end;
 
 procedure TMain.Init;
+var
+  iffEntry: TIffEntrybase;
+  test: Boolean;
 begin
   Console.Log('PANGYA SERVER by HSReina', C_GREEN);
 
@@ -140,6 +146,14 @@ begin
   end else
   begin
     Console.Log('CryptLib init Ok', C_GREEN);
+  end;
+
+  m_iffManager := TIffManager.Create;
+
+  if not m_iffManager.Load then
+  begin
+    Console.Log('Failed to load Iffs');
+    Exit;
   end;
 
 {$IFDEF SYNC_SERVER}

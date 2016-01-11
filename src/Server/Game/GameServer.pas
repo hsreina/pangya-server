@@ -511,7 +511,7 @@ begin
   end;
 
   playerGame.RemovePlayer(client);
-  playerLobby.NullGame.AddPlayer(client);
+  //playerLobby.NullGame.AddPlayer(client);
 
   {
     // Game lobby info
