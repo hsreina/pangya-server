@@ -11,7 +11,8 @@ unit GameServer;
 interface
 
 uses Client, GameServerPlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib,
-  SyncableServer, PangyaBuffer, PangyaPacketsDef, Lobby, Game, IniFiles;
+  SyncableServer, PangyaBuffer, PangyaPacketsDef, Lobby, Game, IniFiles,
+  IffManager;
 
 type
 
@@ -40,6 +41,8 @@ type
       var m_host: AnsiString;
       var m_port: Integer;
       var m_name: AnsiString;
+
+      var m_iffManager: TIffManager;
 
       function LobbiesList: AnsiString;
 
@@ -99,7 +102,7 @@ type
       procedure RegisterServer;
 
     public
-      constructor Create(cryptLib: TCryptLib);
+      constructor Create(cryptLib: TCryptLib; iffManager: TIffManager);
       destructor Destroy; override;
   end;
 
@@ -108,13 +111,14 @@ implementation
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
   PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment,
-  PlayerQuest, PlayerMascot;
+  PlayerQuest, PlayerMascot, IffManager.IffEntryBase;
 
-constructor TGameServer.Create(cryptLib: TCryptLib);
+constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
 begin
-  inherited;
+  inherited create(cryptLib);
   Console.Log('TGameServer.Create');
-  m_lobbies:= TLobbiesList.Create;
+  m_lobbies := TLobbiesList.Create;
+  m_iffManager := iffManager;
 end;
 
 destructor TGameServer.Destroy;
@@ -554,6 +558,7 @@ var
   successCount: uint16;
   test: TITEM_TYPE;
   itemId: UInt32;
+  iffEntry: TIffEntrybase;
 begin
   self.Log('TGameServer.HandlePlayerBuyItem', TLogType_not);
 
@@ -573,6 +578,20 @@ begin
   begin
     clientPacket.Read(shopItem.un1, sizeof(TShopItemDesc));
 
+    try
+      iffEntry := self.m_iffManager.GetByIffId(shopItem.IffId.id)
+    Except
+      on E: NotFoundException do
+      begin
+        Console.Log(E.Message, C_RED);
+        Console.Log('Should send items not found', C_RED);
+        Exit;
+      end;
+    end;
+
+    Console.Log('item found');
+
+    {
     case TITEM_TYPE(shopItem.IffId.typ) of
       ITEM_TYPE_CHARACTER:
       begin
@@ -581,10 +600,12 @@ begin
       ITEM_TYPE_FASHION:
       begin
         Console.Log('ITEM_TYPE_FASHION');
+
         with client.Data.Items.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
         end;
+
       end;
       ITEM_TYPE_CLUB:
       begin
@@ -679,6 +700,7 @@ begin
         Console.Log(Format('Unknow item type %x', [shopItem.IffId.typ]));
       end;
     end;
+    }
 
     inc(successCount);
     shopResult := shopResult +

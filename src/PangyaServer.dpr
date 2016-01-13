@@ -78,7 +78,13 @@ uses
   IffManager.SetItem in 'Iff\IffManager.SetItem.pas',
   IffManager.IffEntry in 'Iff\IffManager.IffEntry.pas',
   IffManager.IffEntryList in 'Iff\IffManager.IffEntryList.pas',
-  IffManager.IffEntrybase in 'Iff\IffManager.IffEntrybase.pas';
+  IffManager.IffEntrybase in 'Iff\IffManager.IffEntrybase.pas',
+  IffManager.Item in 'Iff\IffManager.Item.pas',
+  IffManager.DataCheck in 'Iff\IffManager.DataCheck.pas',
+  IffManager.Ball in 'Iff\IffManager.Ball.pas',
+  IffManager.Caddie in 'Iff\IffManager.Caddie.pas',
+  IffManager.ClubSet in 'Iff\IffManager.ClubSet.pas',
+  IffManager.Club in 'Iff\IffManager.Club.pas';
 
 {$R *.res}
 

@@ -15,7 +15,7 @@ uses
 
 type
 
-  TPartData = packed Record
+  TPartData = packed Record // $220
     var base: TIffbase;
     var un: array [0..$217] of AnsiChar;
   End;
@@ -28,6 +28,7 @@ type
   TPart = class (TIffEntryList<TPartData, TPartDataClass>)
     private
     public
+      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -39,5 +40,9 @@ begin
   inherited;
 end;
 
+function TPart.GetDataSize: UInt32;
+begin
+  Result := $220;
+end;
 
 end.

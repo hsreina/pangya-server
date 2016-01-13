@@ -152,8 +152,7 @@ begin
 
   if not m_iffManager.Load then
   begin
-    Console.Log('Failed to load Iffs');
-    Exit;
+    Console.Log('Failed to load Iffs!!');
   end;
 
 {$IFDEF SYNC_SERVER}
@@ -170,7 +169,7 @@ begin
 {$ENDIF}
 
 {$IFDEF GAME_SERVER}
-  m_gameServer := TGameServer.Create(m_cryptLib);
+  m_gameServer := TGameServer.Create(m_cryptLib, m_iffManager);
   m_gameServer.OnLog := self.OnServerLog;
   m_gameServer.Start;
 {$ENDIF}

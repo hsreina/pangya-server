@@ -95,7 +95,7 @@ constructor TClient<ClientType>.Create(Socket: TCustomWinSocket; cryptLib: TCryp
 var
   rnd: Byte;
 begin
-  //rnd := Byte(Random(255));
+  //rnd := Byte(Random(9));
   m_key := 2;
   m_cryptLib := cryptLib;
   m_socket := socket;

@@ -161,6 +161,12 @@
         <DCCReference Include="Iff\IffManager.IffEntry.pas"/>
         <DCCReference Include="Iff\IffManager.IffEntryList.pas"/>
         <DCCReference Include="Iff\IffManager.IffEntrybase.pas"/>
+        <DCCReference Include="Iff\IffManager.Item.pas"/>
+        <DCCReference Include="Iff\IffManager.DataCheck.pas"/>
+        <DCCReference Include="Iff\IffManager.Ball.pas"/>
+        <DCCReference Include="Iff\IffManager.Caddie.pas"/>
+        <DCCReference Include="Iff\IffManager.ClubSet.pas"/>
+        <DCCReference Include="Iff\IffManager.Club.pas"/>
         <None Include="Libs\Fast\FastMM4Options.inc"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
@@ -593,13 +599,13 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
-                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME).app"/>
                 <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
-                <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <ModelSupport>False</ModelSupport>
         </BorlandProject>

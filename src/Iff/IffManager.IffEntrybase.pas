@@ -6,7 +6,7 @@
 {                                                       }
 {*******************************************************}
 
-unit IffManager.IffEntrybase;
+unit IffManager.IffEntryBase;
 
 interface
 

@@ -11,10 +11,11 @@ unit IffManager.IffEntryList;
 interface
 
 uses
-  IffManager.IffEntry, Generics.Collections, SysUtils, IffManager.IffEntrybase;
+  IffManager.IffEntry, Generics.Collections, SysUtils, IffManager.IffEntrybase,
+  IffManager.DataCheck;
 
 type
-  TIffEntryList<PartData: record; DataClass: TIffEntry<PartData>, constructor> = class
+  TIffEntryList<PartData: record; DataClass: TIffEntry<PartData>, constructor> = class (TDataCheck)
     private
       var m_entriesCount: UInt16;
       var m_entries: TList<DataClass>;
@@ -26,11 +27,13 @@ type
       destructor Destroy; override;
       function Load(filePath: string): Boolean;
       function GetByIffId(iffId: UInt32): TIffEntrybase;
+      function TryGetByIffId(iffid: UInt32; var entry: TIffEntrybase): Boolean;
+
   end;
 
 implementation
 
-uses ConsolePas;
+uses ConsolePas, GameServerExceptions;
 
 constructor TIffEntryList<PartData, DataClass>.Create;
 begin
@@ -92,6 +95,17 @@ begin
     begin
       Exit(entry);
     end;
+  end;
+  raise NotFoundException.CreateFmt('item with IffId %x not found', [iffId]);
+end;
+
+function TIffEntryList<PartData, DataClass>.TryGetByIffId(iffid: UInt32; var entry: TIffEntrybase): Boolean;
+begin
+  Result := true;
+  try
+    entry := GetByIffId(iffId);
+  Except
+    Result := false;
   end;
 end;
 
