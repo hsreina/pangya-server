@@ -26,6 +26,7 @@ type
       var m_timer: TTimer;
       var m_cryptLib: TCryptLib;
       var m_key: Byte;
+      var m_haveKey: Boolean;
 
       var FOnRead: TSyncClientReadEvent;
       procedure TriggerOnRead(const clientPacket: TClientPacket);
@@ -43,6 +44,8 @@ type
       procedure OnClientRead(Sender: TObject; Socket: TCustomWinSocket);
       procedure OnClientWrite(Sender: TObject; Socket: TCustomWinSocket);
       procedure OnClientError(Sender: TObject; Socket: TCustomWinSocket; ErrorEvent: TErrorEvent; var ErrorCode: Integer);
+
+      procedure HandleReadKey(clientPacket: TClientPacket);
 
     public
       constructor Create(cryptLib: TCryptLib);
@@ -76,7 +79,8 @@ end;
 
 constructor TSyncClient.Create(cryptLib: TCryptLib);
 begin
-  m_key := 2;
+  m_haveKey := false;
+  m_key := 3;
   m_clientSocket := TClientSocket.Create(nil);
   m_cryptLib := cryptLib;
 
@@ -157,12 +161,22 @@ end;
 procedure TSyncClient.OnClientConnect(Sender: TObject; Socket: TCustomWinSocket);
 begin
   self.Log('TSyncClient.OnClientConnect', TLogType_not);
-  self.TriggerOnConnect;
 end;
 
 procedure TSyncClient.OnClientDisconnect(Sender: TObject; Socket: TCustomWinSocket);
 begin
   self.Log('TSyncClient.OnClientDisconnect', TLogType_not);
+end;
+
+procedure TSyncClient.HandleReadKey(clientPacket: TClientPacket);
+begin
+  clientPacket.Skip(4);
+  if not clientPacket.ReadUInt8(m_key) then
+  begin
+    Console.Log('Failed to get Key', C_RED);
+    Exit;
+  end;
+  m_haveKey := true;
 end;
 
 procedure TSyncClient.OnClientRead(Sender: TObject; Socket: TCustomWinSocket);
@@ -191,11 +205,18 @@ begin
     buffer := m_buffin.Read(0, realPacketSize);
     m_buffin.Delete(0, realPacketSize);
 
-    buffer := m_cryptLib.ClientDecrypt(buffer, m_key);
 
-    clientPacket := TClientPacket.Create(buffer);
-
-    TriggerOnRead(clientPacket);
+    if not m_haveKey then
+    begin
+      clientPacket := TClientPacket.Create(buffer);
+      HandleReadKey(clientPacket);
+      self.TriggerOnConnect;
+    end else
+    begin
+      buffer := m_cryptLib.ClientDecrypt(buffer, m_key);
+      clientPacket := TClientPacket.Create(buffer);
+      TriggerOnRead(clientPacket);
+    end;
 
     clientPacket.Free;
 

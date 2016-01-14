@@ -27,7 +27,7 @@ type
       destructor Destroy; override;
 
       function GetKey: Byte;
-      procedure Send(data: TPangyaBuffer); overload;
+      procedure Send(data: TPangyaBuffer; encrypt: Boolean = True); overload;
       procedure Send(data: AnsiString); overload;
       procedure Send(data: AnsiString; encrypt: Boolean); overload;
       function HasUID(playerUID: TPlayerUID): Boolean;
@@ -51,7 +51,7 @@ begin
   //Exit(m_socket.RemoteHost);
 end;
 
-procedure TClient<ClientType>.Send(data: TPangyaBuffer);
+procedure TClient<ClientType>.Send(data: TPangyaBuffer; encrypt: Boolean = True);
 var
   oldPos: Integer;
   size: integer;
@@ -61,7 +61,7 @@ begin
   data.Seek(0, 0);
   size := data.GetSize;
   data.ReadStr(buff, size);
-  self.Send(buff);
+  self.Send(buff, encrypt);
   data.Seek(oldPos, 0);
 end;
 
@@ -95,8 +95,8 @@ constructor TClient<ClientType>.Create(Socket: TCustomWinSocket; cryptLib: TCryp
 var
   rnd: Byte;
 begin
-  //rnd := Byte(Random(9));
-  m_key := 2;
+  rnd := Byte(Random(9));
+  //m_key := 2;
   m_cryptLib := cryptLib;
   m_socket := socket;
   m_buffout := TPangyaBuffer.Create;

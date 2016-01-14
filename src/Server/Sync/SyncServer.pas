@@ -98,11 +98,18 @@ end;
 procedure TSyncServer.OnClientConnect(const client: TSyncClient);
 var
   user: TSyncUser;
+  res: TClientPacket;
 begin
   self.Log('TSyncServer.OnClientConnect', TLogType_not);
   client.UID.login := 'Sync';
   user := TSyncUser.Create;
   client.Data := user;
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$00#$01#$00#$00);
+  res.WriteUInt8(client.GetKey);
+  client.Send(res, false);
+  res.Free;
 end;
 
 procedure TSyncServer.OnClientDisconnect(const client: TSyncClient);
