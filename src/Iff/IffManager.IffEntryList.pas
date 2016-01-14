@@ -59,16 +59,26 @@ var
   handler: Integer;
   buff: PAnsiChar;
   entry: DataClass;
+  totalSize: UInt32;
 begin
 
   handler := fileOpen(filePath, fmOpenRead);
 
+  totalSize := FileSeek(handler, 0, 2);
+  FileSeek(handler, 0, 0);
+
   fileRead(handler, m_entriesCount, 2);
+
+  if not (totalSize = m_entriesCount * self.GetDataSize + 8) then
+  begin
+    FileClose(handler);
+    Result := false;
+  end;
+
   fileSeek(handler, 6, 1);
   console.Log(Format('m_count : %d', [m_entriesCount]));
 
   // Should check the data Size
-
   buff := allocMem(SizeOf(PartData));
 
   while fileRead(handler, buff^, SizeOf(PartData)) > 0 do

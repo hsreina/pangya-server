@@ -1,3 +1,11 @@
+{*******************************************************}
+{                                                       }
+{       Pangya Server                                   }
+{                                                       }
+{       Copyright (C) 2015 Shad'o Soft tm               }
+{                                                       }
+{*******************************************************}
+
 unit IffManager.Club;
 
 interface
@@ -20,7 +28,7 @@ type
   TClub = class (TIffEntryList<TClubData, TClubDataClass>)
     private
     public
-      function GetDataSize: UInt32;
+      function GetDataSize: UInt32; override;
   end;
 
 implementation

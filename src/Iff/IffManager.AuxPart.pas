@@ -6,7 +6,7 @@
 {                                                       }
 {*******************************************************}
 
-unit IffManager.Caddie;
+unit IffManager.AuxPart;
 
 interface
 
@@ -15,17 +15,17 @@ uses
 
 type
 
-  TCaddieData = packed Record // $E0
+  TAuxPartData = packed Record // $CC
     var base: TIffbase;
-    var un: array [0..$D7] of AnsiChar;
+    var un: array [0..$C3] of AnsiChar;
   End;
 
-  TCaddieDataClass = class (TIffEntry<TCaddieData>)
+  TAuxPartDataClass = class (TIffEntry<TAuxPartData>)
     public
       constructor Create(data: PAnsiChar);
   end;
 
-  TCaddie = class (TIffEntryList<TCaddieData, TCaddieDataClass>)
+  TAuxPart = class (TIffEntryList<TAuxPartData, TAuxPartDataClass>)
     private
     public
       function GetDataSize: UInt32; override;
@@ -35,14 +35,14 @@ implementation
 
 uses ConsolePas;
 
-constructor TCaddieDataClass.Create(data: PAnsiChar);
+constructor TAuxPartDataClass.Create(data: PAnsiChar);
 begin
   inherited;
 end;
 
-function TCaddie.GetDataSize: UInt32;
+function TAuxPart.GetDataSize: UInt32;
 begin
-  Result := $E0;
+  Result := $CC;
 end;
 
 end.

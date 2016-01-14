@@ -1,3 +1,11 @@
+{*******************************************************}
+{                                                       }
+{       Pangya Server                                   }
+{                                                       }
+{       Copyright (C) 2015 Shad'o Soft tm               }
+{                                                       }
+{*******************************************************}
+
 unit IffManager.Item;
 
 interface
@@ -20,7 +28,7 @@ type
   TItem = class (TIffEntryList<TItemData, TItemDataClass>)
     private
     public
-      function GetDataSize: UInt32;
+      function GetDataSize: UInt32; override;
   end;
 
 implementation

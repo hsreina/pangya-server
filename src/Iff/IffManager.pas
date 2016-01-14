@@ -12,7 +12,8 @@ interface
 
 uses IffManager.Part, IffManager.IffEntry, IffManager.IffEntrybase,
   IffManager.Item, IffManager.Ball, IffManager.Caddie, IffManager.ClubSet,
-  IffManager.Club;
+  IffManager.Club, IffManager.Skin, IffManager.Mascot, IffManager.AuxPart,
+  IffManager.SetItem;
 
 type
 
@@ -25,6 +26,10 @@ type
       var m_caddie: TCaddie;
       var m_clubSet: TClubSet;
       var m_club: TClub;
+      var m_skin: TSkin;
+      var m_mascot: TMascot;
+      var m_auxPart: TAuxPart;
+      var m_SetItem: TSetItem;
     public
       constructor Create;
       destructor Destroy; override;
@@ -34,6 +39,10 @@ type
       property Caddie: TCaddie read m_caddie;
       property ClubSet: TClubSet read m_clubSet;
       property Club: TClub read m_club;
+      property Skin: TSkin read m_skin;
+      property Mascot: TMascot read m_mascot;
+      property AuxPart: TAuxPart read m_auxPart;
+      property SetItem: TSetItem read m_setItem;
       function Load: Boolean;
       function GetByIffId(iffId: UInt32): TIffEntryBase;
   end;
@@ -52,6 +61,10 @@ begin
   m_caddie := TCaddie.Create;
   m_clubSet := TClubSet.Create;
   m_club := TClub.Create;
+  m_skin := TSkin.Create;
+  m_mascot := TMascot.Create;
+  m_auxPart := TAuxPart.Create;
+  m_SetItem := TSetItem.Create;
 end;
 
 destructor TIffManager.Destroy;
@@ -63,6 +76,10 @@ begin
   m_caddie.Free;
   m_clubSet.Free;
   m_club.Free;
+  m_skin.Free;
+  m_mascot.Free;
+  m_auxPart.Free;
+  m_SetItem.Free;
 end;
 
 function TIffManager.Load: Boolean;
@@ -73,7 +90,11 @@ begin
     m_ball.Load('../data/pangya_gb.iff/Ball.iff') and
     m_caddie.Load('../data/pangya_gb.iff/Caddie.iff') and
     m_clubSet.Load('../data/pangya_gb.iff/ClubSet.iff') and
-    m_club.Load('../data/pangya_gb.iff/Club.iff');
+    m_club.Load('../data/pangya_gb.iff/Club.iff') and
+    m_skin.Load('../data/pangya_gb.iff/Skin.iff') and
+    m_mascot.Load('../data/pangya_gb.iff/Mascot.iff') and
+    m_auxPart.Load('../data/pangya_gb.iff/AuxPart.iff') and
+    m_SetItem.Load('../data/pangya_gb.iff/SetItem.iff');
 end;
 
 function TIffManager.GetByIffId(iffId: Cardinal): TIffEntryBase;
@@ -86,7 +107,11 @@ begin
     m_ball.TryGetByIffId(iffId, Result) or
     m_caddie.TryGetByIffId(iffId, Result) or
     m_clubSet.TryGetByIffId(iffId, Result) or
-    m_club.TryGetByIffId(iffId, Result);
+    m_club.TryGetByIffId(iffId, Result) or
+    m_skin.TryGetByIffId(iffId, Result) or
+    m_mascot.TryGetByIffId(iffId, Result) or
+    m_auxPart.TryGetByIffId(iffId, Result) or
+    m_SetItem.TryGetByIffId(iffId, Result);
   if not res then
   begin
     raise NotFoundException.CreateFmt('Item with Id %x', [iffId]);

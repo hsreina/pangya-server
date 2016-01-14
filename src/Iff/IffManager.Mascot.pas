@@ -6,7 +6,7 @@
 {                                                       }
 {*******************************************************}
 
-unit IffManager.Caddie;
+unit IffManager.Mascot;
 
 interface
 
@@ -15,17 +15,17 @@ uses
 
 type
 
-  TCaddieData = packed Record // $E0
+  TMascotData = packed Record // $11C
     var base: TIffbase;
-    var un: array [0..$D7] of AnsiChar;
+    var un: array [0..$113] of AnsiChar;
   End;
 
-  TCaddieDataClass = class (TIffEntry<TCaddieData>)
+  TMascotDataClass = class (TIffEntry<TMascotData>)
     public
       constructor Create(data: PAnsiChar);
   end;
 
-  TCaddie = class (TIffEntryList<TCaddieData, TCaddieDataClass>)
+  TMascot = class (TIffEntryList<TMascotData, TMascotDataClass>)
     private
     public
       function GetDataSize: UInt32; override;
@@ -35,14 +35,14 @@ implementation
 
 uses ConsolePas;
 
-constructor TCaddieDataClass.Create(data: PAnsiChar);
+constructor TMascotDataClass.Create(data: PAnsiChar);
 begin
   inherited;
 end;
 
-function TCaddie.GetDataSize: UInt32;
+function TMascot.GetDataSize: UInt32;
 begin
-  Result := $E0;
+  Result := $11C;
 end;
 
 end.
