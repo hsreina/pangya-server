@@ -12,7 +12,8 @@ interface
 
 type
   TWindInformation = packed record
-    windpower, winddirection: UInt16;
+    var windPower: UInt16;
+    var windDirection: UInt16;
   end;
 
 implementation

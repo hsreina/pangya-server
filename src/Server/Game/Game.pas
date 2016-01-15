@@ -12,7 +12,7 @@ interface
 
 uses
   Generics.Collections, GameServerPlayer, defs, PangyaBuffer, utils, ClientPacket, SysUtils,
-  GameHoleInfo, Vector3, System.TypInfo, PlayersList;
+  GameHoleInfo, Vector3, System.TypInfo, PlayersList, GameHoles;
 
 type
 
@@ -65,8 +65,11 @@ type
       var m_gameStarted: Boolean;
       var m_rain_drop_ratio: UInt8;
       var m_gameKey: array [0 .. $F] of ansichar;
-      var m_game_holes: TList<TGameHoleInfo>;
-      var m_currentHole: UInt8;
+
+      //var m_game_holes: TList<TGameHoleInfo>;
+      var m_gameHoles: TGameHoles;
+
+      //var m_currentHole: UInt8;
 
       var m_onUpdateGame: TGameGenericEvent;
       var m_onPlayerJoinGame: TGamePlayerGenericEvent;
@@ -78,10 +81,7 @@ type
       procedure generateKey;
       function FGetPlayerCount: UInt16;
       procedure TriggerGameUpdated;
-      procedure RandomizeWeather;
-      procedure RandomizeWind;
       procedure DecryptShot(data: PansiChar; size: UInt32);
-      procedure InitGameHoles;
       procedure SendGameResult;
 
     public
@@ -100,6 +100,7 @@ type
       function GameResume: AnsiString;
       procedure GoToNextHole;
       procedure ReorderPlayers(setRoomMaster: Boolean);
+      procedure SendWind;
 
       procedure Send(data: AnsiString); overload;
       procedure Send(data: TPangyaBuffer); overload;
@@ -178,13 +179,6 @@ begin
   m_onPlayerJoinGame := TGamePlayerGenericEvent.Create;
   m_onPlayerLeaveGame := TGamePlayerGenericEvent.Create;
 
-  m_game_holes := TList<TGameHoleInfo>.Create;
-
-  for I := 1 to 18 do
-  begin
-    m_game_holes.Add(TGameHoleInfo.Create);
-  end;
-
   Console.Log(Format('mode : %s', [GetEnumName(TypeInfo(TGAME_MODE), Integer(gameInfo.mode))]));
   Console.Log(Format('type : %s', [GetEnumName(TypeInfo(TGAME_TYPE), Integer(gameInfo.gameType))]));
 
@@ -197,6 +191,7 @@ begin
   m_gameStarted := false;
   m_rain_drop_ratio := 10;
   generateKey;
+  m_gameHoles := TGameHoles.Create;
 end;
 
 destructor TGame.Destroy;
@@ -205,16 +200,11 @@ var
 begin
   inherited;
 
-  for holeInfo in m_game_holes do
-  begin
-    TObject(holeInfo).Free;
-  end;
-
-  m_game_holes.free;
   m_players.Free;
   m_onUpdateGame.Free;
   m_onPlayerJoinGame.Free;
   m_onPlayerLeaveGame.Free;
+  m_gameHoles.Free;
 end;
 
 function TGame.AddPlayer(player: TGameClient): Boolean;
@@ -302,7 +292,7 @@ var
 begin
   if m_players.Remove(player) = -1 then
   begin
-    raise PlayerNotFoundException.CreateFmt('Game (%d) can''t remove player with id %d', [player.Data.Data.playerInfo1.PlayerID]);
+    raise PlayerNotFoundException.CreateFmt('Game (%d) can''t remove player with id %d', [self.m_id, player.Data.Data.playerInfo1.PlayerID]);
     Exit(false);
   end;
 
@@ -560,6 +550,24 @@ begin
   m_currentHolePos.z := data.z;
 end;
 
+procedure Tgame.SendWind;
+var
+  res: TClientPacket;
+begin
+  with self.m_gameHoles.CurrentHole do
+  begin
+    res := TClientPacket.Create;
+    res.WriteStr(#$5B#$00);
+    res.WriteUInt16(Wind.windpower);
+    res.WriteUInt8(byte(random(255)));
+    res.WriteStr(#$00#$01);
+
+    self.Send(res);
+
+    res.Free;
+  end;
+end;
+
 procedure TGame.HandlePlayerLoadOk(const client: TGameClient; const clientPacket: TClientPacket);
 var
   reply: TClientPacket;
@@ -599,8 +607,7 @@ begin
   // Weather informations
   self.Send(#$9E#$00 + #$00#$00#$00);
 
-  // Wind informations
-  self.Send(#$5B#$00 + #$02#$00#$E4#$02#$01);
+  self.SendWind;
 
   reply := TClientPacket.Create;
 
@@ -687,10 +694,11 @@ begin
   res.WriteStr(#$76#$00 + #$00);
   res.WriteUInt8(UInt8(PlayerCount));
 
-  m_currentHole := 0;
-  self.RandomizeWeather;
-  self.RandomizeWind;
-  self.InitGameHoles;
+  m_gameHoles.Init(
+    self.m_gameInfo.mode,
+    self.m_gameInfo.map,
+    self.m_gameInfo.holeCount
+  );
 
   for player in m_players do
   begin
@@ -716,7 +724,7 @@ begin
   res.WriteInt32(self.m_gameInfo.gameTime);
 
   // Holes informations
-  for gameHoleInfo in self.m_game_holes do
+  for gameHoleInfo in m_gameHoles.Holes do
   begin
     res.WriteStr(
       #$DA#$09#$FA#$2A#$00
@@ -884,42 +892,6 @@ begin
 
   // Send lobby update
   self.m_onUpdateGame.Trigger(self);
-end;
-
-procedure TGame.RandomizeWeather;
-var
-  holeInfo: TGameHoleInfo;
-  flagged: Boolean;
-begin
-  flagged := false;
-  for holeInfo in m_game_holes do
-  begin
-    if flagged then
-    begin
-      holeInfo.weather := 2;
-      break;
-    end;
-    if random(100) <= m_rain_drop_ratio then
-    begin
-      holeInfo.weather := 1;
-      flagged := true;
-    end else
-    begin
-      holeInfo.weather := 0;
-    end;
-  end;
-end;
-
-procedure TGame.RandomizeWind;
-var
-  holeInfo: TGameHoleInfo;
-  flagged: Boolean;
-begin
-  flagged := false;
-  for holeInfo in m_game_holes do
-  begin
-    holeInfo.Wind.windpower := UInt8(random(9));
-  end;
 end;
 
 procedure TGame.HandlePlayer1stShotReady;
@@ -1282,6 +1254,7 @@ begin
 
     if not (nil = nextPlayer) then
     begin
+      self.SendWind;
       res := TClientPacket.Create;
       res.WriteStr(WriteAction(SGPID_PLAYER_NEXT));
       res.WriteInt32(nextPlayer.Data.Data.playerInfo1.ConnectionId);
@@ -1317,27 +1290,10 @@ begin
   m_holeComplete := true;
 end;
 
-procedure TGame.InitGameHoles;
-var
-  gameHoleInfo: TGameHoleInfo;
-  hole: UInt8;
-begin
-  hole := 1;
-  for gameHoleInfo in self.m_game_holes do
-  begin
-    gameHoleInfo.Hole := hole;
-    gameHoleInfo.Map := self.m_gameInfo.map;
-    inc(hole);
-  end;
-end;
-
 procedure TGame.GoToNextHole;
 begin
   Console.Log('TGame.GoToNextHole', C_BLUE);
-
-  inc(m_currentHole);
-
-  if m_currentHole < m_gameInfo.holeCount then
+  if self.m_gameHoles.GoToNext then
   begin
     self.Send(#$65#$00);
   end else

@@ -359,7 +359,6 @@ var
   artifact: UInt32;
   playerLobby: TLobby;
   game: TGame;
-  currentGame: Tgame;
   d: AnsiString;
   res: TClientPacket;
 begin
@@ -401,8 +400,6 @@ begin
 
   try
     game := playerLobby.CreateGame(gamename, gamePassword, gameInfo, artifact);
-    currentGame := m_lobbies.GetPlayerGame(client);
-    currentGame.RemovePlayer(client);
     game.AddPlayer(client);
   except
     on E: Exception do

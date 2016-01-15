@@ -17,7 +17,7 @@ type
 
   TPartData = packed Record // $220
     var base: TIffbase;
-    var un: array [0..$217] of AnsiChar;
+    var un: array [0..$18F] of AnsiChar;
   End;
 
   TPartDataClass = class (TIffEntry<TPartData>)
@@ -28,7 +28,6 @@ type
   TPart = class (TIffEntryList<TPartData, TPartDataClass>)
     private
     public
-      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -38,11 +37,6 @@ uses ConsolePas;
 constructor TPartDataClass.Create(data: PAnsiChar);
 begin
   inherited;
-end;
-
-function TPart.GetDataSize: UInt32;
-begin
-  Result := $220;
 end;
 
 end.

@@ -15,7 +15,7 @@ uses
   IffManager.DataCheck;
 
 type
-  TIffEntryList<PartData: record; DataClass: TIffEntry<PartData>, constructor> = class (TDataCheck)
+  TIffEntryList<PartData: record; DataClass: TIffEntry<PartData>, constructor> = class
     private
       var m_entriesCount: UInt16;
       var m_entries: TList<DataClass>;
@@ -69,10 +69,10 @@ begin
 
   fileRead(handler, m_entriesCount, 2);
 
-  if not (totalSize = m_entriesCount * self.GetDataSize + 8) then
+  if not (totalSize = m_entriesCount * SizeOf(PartData) + 8) then
   begin
     FileClose(handler);
-    Result := false;
+    Exit(false);
   end;
 
   fileSeek(handler, 6, 1);

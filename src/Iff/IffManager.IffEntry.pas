@@ -15,9 +15,23 @@ uses IffManager.IffEntrybase;
 type
 
   PIffbase = ^TIffbase;
-  TIffbase = packed record
+  TIffbase = packed record // $90
     var enabled: UInt32;
     var iffId: UInt32;
+    var name: array [0..$27] of AnsiChar;
+    var minLVL: Byte;
+    var preview: array [0..$27] of AnsiChar;
+    var un1: array [0..2] of AnsiChar;
+    var itemPrice: UInt32;
+    var discountPrice: UInt32;
+    var usedPrice: UInt32;
+    var priceType: UInt8;
+    var itemFlag: UInt8; // 0x01 in stock; 0x02 disable gift; 0x03 Special; 0x08 new; 0x10 hot;
+    var timeFlag: UInt8;
+    var time: UInt8;
+    var tpItemCount: UInt32;
+    var tpCount: UInt32;
+    var un2: array [0..$1B] of AnsiChar;
   end;
 
   TIffEntry<EntryDataType: record> = class (TIffEntrybase)

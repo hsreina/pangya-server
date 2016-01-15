@@ -240,6 +240,7 @@ begin
   begin
     Exit(False);
   end;
+
   setLength(dst, size);
   Exit(Read(dst[1], size));
 end;

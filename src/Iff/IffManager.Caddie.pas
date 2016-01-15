@@ -17,7 +17,7 @@ type
 
   TCaddieData = packed Record // $E0
     var base: TIffbase;
-    var un: array [0..$D7] of AnsiChar;
+    var un: array [0..$4F] of AnsiChar;
   End;
 
   TCaddieDataClass = class (TIffEntry<TCaddieData>)
@@ -28,7 +28,6 @@ type
   TCaddie = class (TIffEntryList<TCaddieData, TCaddieDataClass>)
     private
     public
-      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -38,11 +37,6 @@ uses ConsolePas;
 constructor TCaddieDataClass.Create(data: PAnsiChar);
 begin
   inherited;
-end;
-
-function TCaddie.GetDataSize: UInt32;
-begin
-  Result := $E0;
 end;
 
 end.

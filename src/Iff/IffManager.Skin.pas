@@ -17,7 +17,7 @@ type
 
   TSkinData = packed Record // $DC
     var base: TIffbase;
-    var un: array [0..$D3] of AnsiChar;
+    var un: array [0..$4B] of AnsiChar;
   End;
 
   TSkinDataClass = class (TIffEntry<TSkinData>)
@@ -28,7 +28,6 @@ type
   TSkin = class (TIffEntryList<TSkinData, TSkinDataClass>)
     private
     public
-      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -38,11 +37,6 @@ uses ConsolePas;
 constructor TSkinDataClass.Create(data: PAnsiChar);
 begin
   inherited;
-end;
-
-function TSkin.GetDataSize: UInt32;
-begin
-  Result := $DC;
 end;
 
 end.

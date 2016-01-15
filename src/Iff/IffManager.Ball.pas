@@ -17,7 +17,7 @@ type
 
   TBallData = packed Record // $318
     var base: TIffbase;
-    var un: array [0..$30F] of AnsiChar;
+    var un: array [0..$287] of AnsiChar;
   End;
 
   TBallDataClass = class (TIffEntry<TBallData>)
@@ -28,7 +28,6 @@ type
   TBall = class (TIffEntryList<TBallData, TBallDataClass>)
     private
     public
-      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -38,11 +37,6 @@ uses ConsolePas;
 constructor TBallDataClass.Create(data: PAnsiChar);
 begin
   inherited;
-end;
-
-function TBall.GetDataSize: UInt32;
-begin
-  Result := $318;
 end;
 
 end.

@@ -17,7 +17,7 @@ type
 
   TClubData = packed Record // $DC
     var base: TIffbase;
-    var un: array [0..$D3] of AnsiChar;
+    var un: array [0..$4B] of AnsiChar;
   End;
 
   TClubDataClass = class (TIffEntry<TClubData>)
@@ -28,7 +28,6 @@ type
   TClub = class (TIffEntryList<TClubData, TClubDataClass>)
     private
     public
-      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -38,11 +37,6 @@ uses ConsolePas;
 constructor TClubDataClass.Create(data: PAnsiChar);
 begin
   inherited;
-end;
-
-function TClub.GetDataSize: UInt32;
-begin
-  Result := $DC;
 end;
 
 end.

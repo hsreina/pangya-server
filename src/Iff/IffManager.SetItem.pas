@@ -17,7 +17,7 @@ type
 
   TSetItemData = packed Record // $F4
     var base: TIffbase;
-    var un: array [0..$EB] of AnsiChar;
+    var un: array [0..$63] of AnsiChar;
   End;
 
   TSetItemDataClass = class (TIffEntry<TSetItemData>)
@@ -27,8 +27,6 @@ type
 
   TSetItem = class (TIffEntryList<TSetItemData, TSetItemDataClass>)
     private
-    public
-      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -38,11 +36,6 @@ uses ConsolePas;
 constructor TSetItemDataClass.Create(data: PAnsiChar);
 begin
   inherited;
-end;
-
-function TSetItem.GetDataSize: UInt32;
-begin
-  Result := $F4;
 end;
 
 end.

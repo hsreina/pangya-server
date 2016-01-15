@@ -17,7 +17,7 @@ type
 
   TMascotData = packed Record // $11C
     var base: TIffbase;
-    var un: array [0..$113] of AnsiChar;
+    var un: array [0..$8B] of AnsiChar;
   End;
 
   TMascotDataClass = class (TIffEntry<TMascotData>)
@@ -28,7 +28,6 @@ type
   TMascot = class (TIffEntryList<TMascotData, TMascotDataClass>)
     private
     public
-      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -38,11 +37,6 @@ uses ConsolePas;
 constructor TMascotDataClass.Create(data: PAnsiChar);
 begin
   inherited;
-end;
-
-function TMascot.GetDataSize: UInt32;
-begin
-  Result := $11C;
 end;
 
 end.

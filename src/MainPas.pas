@@ -152,7 +152,8 @@ begin
 
   if not m_iffManager.Load then
   begin
-    Console.Log('Failed to load Iffs!!');
+    Console.Log('Failed to load Iffs!!', C_RED);
+    Exit;
   end;
 
 {$IFDEF SYNC_SERVER}

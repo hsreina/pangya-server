@@ -17,7 +17,7 @@ type
 
   TAuxPartData = packed Record // $CC
     var base: TIffbase;
-    var un: array [0..$C3] of AnsiChar;
+    var un: array [0..$3B] of AnsiChar;
   End;
 
   TAuxPartDataClass = class (TIffEntry<TAuxPartData>)
@@ -28,7 +28,6 @@ type
   TAuxPart = class (TIffEntryList<TAuxPartData, TAuxPartDataClass>)
     private
     public
-      function GetDataSize: UInt32; override;
   end;
 
 implementation
@@ -38,11 +37,6 @@ uses ConsolePas;
 constructor TAuxPartDataClass.Create(data: PAnsiChar);
 begin
   inherited;
-end;
-
-function TAuxPart.GetDataSize: UInt32;
-begin
-  Result := $CC;
 end;
 
 end.
