@@ -88,7 +88,8 @@ uses
   IffManager.Skin in 'Iff\IffManager.Skin.pas',
   IffManager.Mascot in 'Iff\IffManager.Mascot.pas',
   IffManager.AuxPart in 'Iff\IffManager.AuxPart.pas',
-  GameHoles in 'Server\Game\GameHoles.pas';
+  GameHoles in 'Server\Game\GameHoles.pas',
+  IffManager.Character in 'Iff\IffManager.Character.pas';
 
 {$R *.res}
 

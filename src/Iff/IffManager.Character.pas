@@ -6,7 +6,7 @@
 {                                                       }
 {*******************************************************}
 
-unit IffManager.SetItem;
+unit IffManager.Character;
 
 interface
 
@@ -15,21 +15,17 @@ uses
 
 type
 
-  TSetItemData = packed Record // $F4
+  TCharacterData = packed Record // $18C
     var base: TIffbase;
-    var un1: array [0..$17] of AnsiChar;
-    var nbOfItems : cardinal;
-    var IffIds: array [0..$7] of cardinal;
-    var un2: array [0..7] of AnsiChar;
-    var counts: array [0..$7] of cardinal;
+    var un1: array [0..$FB] of AnsiChar;
   End;
 
-  TSetItemDataClass = class (TIffEntry<TSetItemData>)
+  TCharacterDataClass = class (TIffEntry<TCharacterData>)
     public
       constructor Create(data: PAnsiChar);
   end;
 
-  TSetItem = class (TIffEntryList<TSetItemData, TSetItemDataClass>)
+  TCharacter = class (TIffEntryList<TCharacterData, TCharacterDataClass>)
     private
   end;
 
@@ -37,7 +33,7 @@ implementation
 
 uses ConsolePas;
 
-constructor TSetItemDataClass.Create(data: PAnsiChar);
+constructor TCharacterDataClass.Create(data: PAnsiChar);
 begin
   inherited;
 end;

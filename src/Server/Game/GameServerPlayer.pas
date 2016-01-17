@@ -59,6 +59,12 @@ type
       var InGameList: Boolean;
       var GameInfo: TGameInfo;
 
+      procedure EquipCharacterById(Id: UInt32);
+      procedure EquipMascotById(Id: UInt32);
+      procedure EquipCaddieById(Id: UInt32);
+      procedure EquipClubById(Id: UInt32);
+      procedure EquipAztecByIffId(IffId: UInt32);
+
 
       constructor Create;
       destructor Destroy; override;
@@ -237,6 +243,53 @@ begin
   Result := packet.ToStr;
 
   packet.free;
+end;
+
+procedure TGameServerPlayer.EquipCharacterById(Id: Cardinal);
+begin
+  with self.m_characters.getById(Id) do
+  begin
+    Data.witems.CharacterId := GetIffId;
+    Data.equipedCharacter := GetData;
+  end;
+end;
+
+procedure TGameServerPlayer.EquipMascotById(Id: Cardinal);
+begin
+  with self.m_mascots.getById(Id) do
+  begin
+    Data.witems.mascotId := GetIffId;
+    Data.equipedMascot := GetData;
+  end;
+end;
+
+procedure TGameServerPlayer.EquipCaddieById(Id: Cardinal);
+begin
+  with self.m_caddies.getById(Id) do
+  begin
+    Data.witems.CaddieId := Id;
+    Data.equipedCaddie := GetData;
+  end;
+end;
+
+procedure TGameServerPlayer.EquipClubById(Id: Cardinal);
+begin
+  // TODO: Should check if the item is really a club
+  with self.m_items.getById(Id) do
+  begin
+    Data.witems.ClubSetId := Id;
+    Data.equipedClub.Id := Id;
+    Data.equipedClub.IffId := GetIffId;
+  end;
+end;
+
+procedure TGameServerPlayer.EquipAztecByIffId(IffId: Cardinal);
+begin
+  // TODO: Should check if the item is really a club
+  with self.m_items.getByIffId(IffId) do
+  begin
+    Data.witems.AztecIffID := IffId;
+  end;
 end;
 
 end.

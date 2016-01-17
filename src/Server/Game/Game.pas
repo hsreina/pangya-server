@@ -120,6 +120,7 @@ type
       procedure HandlePlayerActionChangeClub(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerFastForward(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerChangeEquipment2(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerPowerShot(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUseItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerShotData(const client: TGameClient; const clientPacket: TClientPacket);
@@ -132,7 +133,7 @@ type
 implementation
 
 uses GameServerExceptions, Buffer, ConsolePas, PangyaPacketsDef, ShotData,
-  PlayerGenericData, PlayerAction;
+  PlayerGenericData, PlayerAction, PlayerCharacter, PlayerEquipment;
 
 constructor TGameGenericEvent.Create;
 begin
@@ -1034,6 +1035,82 @@ begin
   res.Free;
 end;
 
+procedure TGame.HandlePlayerChangeEquipment2(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  itemType: UInt8;
+  IffId: UInt32;
+  characterData: TPlayerCharacterData;
+  equipedItem: TPlayerEquipedItems;
+  decorations: TDecorations;
+  character: TPlayerCharacter;
+  ok: Boolean;
+begin
+  Console.Log('TGame.HandlePlayerChangeEquipment2', C_BLUE);
+
+  Ok := False;
+
+  clientPacket.ReadUint8(itemType);
+
+  case itemType of
+    0: begin
+      if clientPacket.Read(characterData, SizeOf(TPlayerCharacterData)) then
+      begin
+        if (client.Data.Characters.TryGetById(characterData.Data.Id, character)) then
+        begin
+          client.Data.Data.equipedCharacter := characterData;
+          character.Load(characterData.ToPacketData);
+        end;
+
+        client.Send(
+          #$6B#$00 +
+          #$04 + // no clue about it for now
+          AnsiChar(itemType) + // the above action?
+          characterData.ToPacketData
+        );
+        Ok := true;
+      end;
+    end;
+    2: begin
+      Console.Log('look like equiped items');
+      if clientPacket.Read(equipedItem, SizeOf(TPlayerEquipedItems)) then
+      begin
+        client.Data.Data.witems.items := equipedItem;
+        client.Send(
+          #$6B#$00 +
+          #$04 + // no clue about it for now
+          AnsiChar(itemType) + // the above action?
+          equipedItem.ToPacketData
+        );
+      end;
+    end;
+    4: begin // Decoration
+      Console.Log('Look like decorations');
+      if clientPacket.Read(decorations, SizeOf(TDecorations)) then
+      begin
+        client.Data.Data.witems.decorations := decorations;
+      end;
+    end
+    else;
+    begin
+      Console.Log(Format('Unknow item type %x', [itemType]), C_RED);
+      clientPacket.Log;
+    end;
+  end;
+
+  if ok then
+  begin
+    if self.Id > 0 then
+    begin
+      // Update game profile
+      self.Send(
+        #$48#$00 + #$03 + #$FF#$FF +
+        client.Data.GameInformation(1)
+      );
+    end;
+  end;
+
+end;
+
 procedure TGame.HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
 type
   THeader = packed record
@@ -1065,6 +1142,8 @@ begin
   case header.Action of
     1: begin // Caddie
       Console.Log('Caddie');
+      client.Data.EquipCaddieById(header.Id);
+
       // Equiped caddie data
       res.WriteStr(
         client.Data.Data.equipedCaddie.ToStr
@@ -1072,37 +1151,27 @@ begin
     end;
     2: begin
       Console.Log('Aztec');
-      client.Data.Data.witems.AztecIffID := header.Id;
+      client.Data.EquipAztecByIffId(header.Id);
       res.WriteUint32(header.Id);
     end;
     3: begin
       Console.Log('Club');
+      client.Data.EquipClubById(header.Id);
       res.WriteStr(
         client.Data.Data.equipedClub.ToStr
       );
     end;
     4: begin
       Console.Log('Character');
+      client.Data.EquipCharacterById(header.Id);
       res.WriteStr(
         client.Data.Data.equipedCharacter.ToPacketData
       );
     end;
     5: begin
       Console.Log('mascot');
-
-      if header.id > 0 then
-      begin
-        try
-          equipment := client.Data.Mascots.getById(header.id);
-        except
-          Console.Log('Should make this part more generic', C_RED);
-        end;
-        res.WriteStr(equipment.ToPacketData);
-      end else
-      begin
-        res.WriteUInt32(header.Id);
-      end;
-
+      client.Data.EquipMascotById(header.id);
+      res.WriteStr(client.Data.Data.equipedMascot.ToStr);
     end
     else begin
       Console.Log(Format('Unknow action %x', [header.Action]));
@@ -1112,7 +1181,7 @@ begin
 
   if ok then
   begin
-    client.Send(res);
+    self.Send(res);
     if self.Id > 0 then
     begin
       // Update game profile

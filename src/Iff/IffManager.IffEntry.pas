@@ -43,6 +43,7 @@ type
       destructor Destroy; override;
       function GetIffId: UInt32; override;
       function IsEnabled: Boolean; override;
+      function GetPrice: UInt32; override;
   end;
 
 implementation
@@ -73,6 +74,11 @@ var
   base: PIffBase;
 begin
   Result := self.GetBase.enabled = 1;
+end;
+
+function TIffEntry<EntryDataType>.GetPrice: UInt32;
+begin
+  Result := self.GetBase.itemPrice;
 end;
 
 end.

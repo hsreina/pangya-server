@@ -12,10 +12,19 @@ interface
 
 type
 
-  PPlaterEquipedItems = ^TPlaterEquipedItems;
-  TPlaterEquipedItems = packed record
+  PPlayerEquipedItems = ^TPlayerEquipedItems;
+  TPlayerEquipedItems = packed record
     var ItemIffId : array [0..9] of UInt32;
     function ToPacketData: AnsiString;
+  end;
+
+  TDecorations = packed record
+    background: cardinal;
+    frame: cardinal;
+    sticker: cardinal;
+    slot: cardinal;
+    un25: cardinal;
+    title: cardinal;
   end;
 
   PPlayerEquipment = ^TPlayerEquipment;
@@ -25,7 +34,7 @@ type
     var ClubSetId: UInt32;
     var AztecIffID: UInt32;
 
-    var Items: TPlaterEquipedItems;
+    var Items: TPlayerEquipedItems;
 
     var un13: UInt32;
     var un14: UInt32;
@@ -34,12 +43,7 @@ type
     var un17: UInt32;
     var un18: UInt32;
 
-    var un19: UInt32;
-    var un20: UInt32;
-    var un21: UInt32;
-    var un22: UInt32;
-    var un23: UInt32;
-    var un24: UInt32;
+    var decorations: TDecorations;
 
     var mascotId: UInt32;
 
@@ -57,10 +61,10 @@ begin
   move(caddieId, result[1], sizeof(TPlayerEquipment));
 end;
 
-function TPlaterEquipedItems.ToPacketData: AnsiString;
+function TPlayerEquipedItems.ToPacketData: AnsiString;
 begin
-  setLength(result, sizeof(TPlaterEquipedItems));
-  move(ItemIffId[0], result[1], sizeof(TPlaterEquipedItems));
+  setLength(result, sizeof(TPlayerEquipedItems));
+  move(ItemIffId[0], result[1], sizeof(TPlayerEquipedItems));
 end;
 
 end.

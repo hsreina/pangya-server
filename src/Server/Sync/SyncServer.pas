@@ -64,7 +64,7 @@ implementation
 
 uses Logging, ConsolePas, PlayerCharacters, PlayerCharacter,
   PacketData, utils, PlayerData, PlayerItems, PlayerItem, PlayerCaddies,
-  PlayerMascots;
+  PlayerMascots, PlayerEquipment;
 
 constructor TSyncServer.Create(cryptLib: TCryptLib);
 begin
@@ -152,7 +152,7 @@ begin
   self.Log(Format('hairColor : %x', [hairColor]));
 
   playerCharacters := TPlayerCharacters.Create;
-  playerCharacter := playerCharacters.Add;
+  playerCharacter := playerCharacters.Add(characterId);
 
   characterData := GetDataFromFile(Format('../data/c_%x.dat', [characterId]));
   Console.Log(Format('Load "../data/c_%x.dat"', [characterId]));

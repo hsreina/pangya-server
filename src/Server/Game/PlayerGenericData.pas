@@ -12,6 +12,7 @@ interface
 
 type
 
+  PPlayerItemBase = ^TPlayerItemBase;
   TPlayerItemBase = packed record
     var Id: Uint32;
     var IffId: Uint32;
@@ -22,7 +23,17 @@ type
       function ToPacketData: AnsiString; virtual; abstract;
   end;
 
-  TPlayerGenericData<DataType: record> = class (TGenericPacketData)
+  TGenericPacketDatabase = class (TGenericPacketData)
+    public
+      function GetIffId: UInt32; virtual; abstract;
+      procedure SetIffId(iffId: UInt32); virtual; abstract;
+      function GetId: UInt32; virtual; abstract;
+      procedure SetId(id: UInt32); virtual; abstract;
+  end;
+
+  TPlayerGenericData<DataType: record> = class (TGenericPacketDatabase)
+    private
+      function GetBase: PPlayerItemBase;
     protected
       var m_data: DataType;
     public
@@ -34,10 +45,10 @@ type
       function Load(packetData: AnsiString): Boolean;
       function GetData: DataType;
 
-      function GetIffId: UInt32; virtual; abstract;
-      procedure SetIffId(iffId: UInt32); virtual; abstract;
-      function GetId: UInt32; virtual; abstract;
-      procedure SetId(id: UInt32); virtual; abstract;
+      function GetIffId: UInt32; override;
+      procedure SetIffId(iffId: UInt32); override;
+      function GetId: UInt32; override;
+      procedure SetId(id: UInt32); override;
   end;
 
 implementation
@@ -81,6 +92,31 @@ end;
 function TPlayerGenericData<DataType>.GetData: DataType;
 begin
   Exit(m_data);
+end;
+
+function TPlayerGenericData<DataType>.GetBase: PPlayerItemBase;
+begin
+  Result := @m_data;
+end;
+
+function TPlayerGenericData<DataType>.GetIffId: UInt32;
+begin
+  Result := self.GetBase.IffId;
+end;
+
+function TPlayerGenericData<DataType>.GetId: UInt32;
+begin
+  Result := self.GetBase.Id;
+end;
+
+procedure TPlayerGenericData<DataType>.SetId(Id: UInt32);
+begin
+  self.GetBase.Id := Id;
+end;
+
+procedure TPlayerGenericData<DataType>.SetIffId(IffId: UInt32);
+begin
+  self.GetBase.IffId := IffId;
 end;
 
 end.

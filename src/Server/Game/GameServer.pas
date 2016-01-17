@@ -62,7 +62,6 @@ type
       procedure HandlePlayerRequestServerList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUpgrade(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerNotice(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
@@ -97,6 +96,7 @@ type
       procedure SendToLobby(const client: TGameClient; data: AnsiString); overload;
       procedure SendToLobby(const client: TGameClient; data: TPangyaBuffer); overload;
 
+      function TryGetPlayerById(Id: UInt32; var player: TGameClient): Boolean;
       function GetPlayerByNickname(nickname: AnsiString): TGameClient;
 
       procedure RegisterServer;
@@ -239,6 +239,21 @@ begin
     end;
   end;
   Exit(nil);
+end;
+
+function TGameServer.TryGetPlayerById(Id: UInt32; var player: TGameClient): Boolean;
+var
+  currentPlayer: TGameClient;
+begin
+  Result := false;
+  for currentPlayer in Clients do
+  begin
+    if currentPlayer.Data.Data.playerInfo1.PlayerID = Id then
+    begin
+      player := currentPlayer;
+      Exit(True);
+    end;
+  end;
 end;
 
 procedure TGameServer.HandlerPlayerWhisper(const client: TGameClient; const clientPacket: TClientPacket);
@@ -575,34 +590,36 @@ begin
   begin
     clientPacket.Read(shopItem.un1, sizeof(TShopItemDesc));
 
-    try
-      iffEntry := self.m_iffManager.GetByIffId(shopItem.IffId.id)
-    Except
-      on E: NotFoundException do
-      begin
-        Console.Log(E.Message, C_RED);
-        Console.Log('Should send items not found', C_RED);
-        Exit;
-      end;
+    if not self.m_iffManager.TryGetByIffId(shopItem.IffId.id, iffEntry) then
+    begin
+      client.Send(
+        #$68#$00 +
+        #$03#$00#$00#$00
+      );
+      Exit;
     end;
 
     Console.Log('item found');
 
-    {
     case TITEM_TYPE(shopItem.IffId.typ) of
       ITEM_TYPE_CHARACTER:
       begin
         Console.Log('ITEM_TYPE_CHARACTER');
+        with client.Data.Characters.Add(GetDataFromFile(Format('../data/c_%X.dat', [shopItem.IffId.id]))) do
+        begin
+          SetIffId(shopItem.IffId.id);
+          SetId(itemId);
+          client.Data.EquipCharacterById(GetId);
+        end;
       end;
       ITEM_TYPE_FASHION:
       begin
         Console.Log('ITEM_TYPE_FASHION');
-
         with client.Data.Items.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
+          Console.WriteDump(ToPacketData);
         end;
-
       end;
       ITEM_TYPE_CLUB:
       begin
@@ -639,14 +656,14 @@ begin
       ITEM_TYPE_CADDIE:
       begin
         Console.Log('ITEM_TYPE_CADDIE');
-      end;
-      ITEM_TYPE_CADDIE_ITEM:
-      begin
-        Console.Log('ITEM_TYPE_CADDIE_ITEM');
         with client.Data.Caddies.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
         end;
+      end;
+      ITEM_TYPE_CADDIE_ITEM:
+      begin
+        Console.Log('ITEM_TYPE_CADDIE_ITEM');
       end;
       ITEM_TYPE_ITEM_SET:
       begin
@@ -683,6 +700,10 @@ begin
       ITEM_TYPE_FURNITURE:
       begin
         Console.Log('ITEM_TYPE_FURNITURE');
+        with client.Data.Mascots.Add(shopItem.IffId.id) do
+        begin
+          itemId := getId;
+        end;
       end;
       ITEM_TYPE_CARD_SET:
       begin
@@ -697,7 +718,6 @@ begin
         Console.Log(Format('Unknow item type %x', [shopItem.IffId.typ]));
       end;
     end;
-    }
 
     inc(successCount);
     shopResult := shopResult +
@@ -726,9 +746,32 @@ begin
     self.Write(client.Data.Cookies, 8)
   );
 
+  {
+    0x01: purchase failed
+    0x02: you do not have enough pang
+    0x03: wrong item code
+    0x04: you already have that item
+    0x09: check the time limit of your item
+    0x0b: please check sale times
+    0x10: you are using a timed item
+    0x11: you are using a consumable item
+    0x12: you cannot purchase any more items
+    0x13: item is not for sale
+    0x15: you are purchasing too many items at once
+    0x17: you do not have enough points
+    0x18: points update failed
+    0x22: you cannot own this item any more
+    0x23: purchase cannot be made due to traffic. please try again
+    0x24: you already have that item
+    0x2A: you already have this item in Dolphini's locker
+    0x2B: you cannot purchase that item at your level
+    0x2D: you cannot purchase because channeling service have ended
+  }
+
   // Pangs and cookies info
   client.Send(
-    #$68#$00#$00#$00#$00#$00 +
+    #$68#$00 +
+    #$00#$00#$00#$00 +
     self.Write(client.Data.data.playerInfo2.pangs, 8) +
     self.Write(client.Data.Cookies, 8)
   );
@@ -837,56 +880,6 @@ begin
       #$41#$00 +
       WritePStr(notice)
     );
-  end;
-end;
-
-procedure TGameServer.HandlePlayerChangeEquipment(const client: TGameClient; const clientPacket: TClientPacket);
-var
-  packetData: TPacketData;
-  itemType: UInt8;
-  IffId: UInt32;
-  characterData: TPlayerCharacterData;
-  equipedItem: TPlaterEquipedItems;
-begin
-  self.Log('TGameServer.HandlePlayerChangeEquipment', TLogType_not);
-
-  clientPacket.ReadUint8(itemType);
-
-  case itemType of
-    0: begin
-      console.Log('should fix that', C_ORANGE);
-      if clientPacket.Read(characterData, SizeOf(TPlayerCharacterData)) then
-      begin
-        client.Data.Data.equipedCharacter := characterData;
-        client.Send(
-          #$6B#$00 +
-          #$04 + // no clue about it for now
-          AnsiChar(itemType) + // the above action?
-          characterData.ToPacketData
-        );
-      end;
-    end;
-    2: begin
-      Console.Log('look like equiped items');
-      if clientPacket.Read(equipedItem, SizeOf(TPlaterEquipedItems)) then
-      begin
-        client.Data.Data.witems.items := equipedItem;
-        client.Send(
-          #$6B#$00 +
-          #$04 + // no clue about it for now
-          AnsiChar(itemType) + // the above action?
-          equipedItem.ToPacketData
-        );
-      end;
-    end;
-    4: begin // Character
-      Console.Log('Look like character');
-    end
-    else;
-    begin
-      Console.Log(Format('Unknow item type %x', [itemType]), C_RED);
-      clientPacket.Log;
-    end;
   end;
 end;
 
@@ -1111,7 +1104,7 @@ end;
 
 procedure TGameServer.HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
 begin
-  Console.Log('TGameServer.HandlePlayerRequestInfo', C_BLUE);
+  Console.Log('TGameServer.HandlePlayerRequestAchievements', C_BLUE);
 
   {
     supposed to send all achievement data here
@@ -1789,8 +1782,10 @@ var
   res: TClientPacket;
   playerId: UInt32;
   un1: UInt8;
+  targetPlayer: TGameClient;
 begin
   Console.Log('TGameServer.HandlePlayerRequestInfo', C_BLUE);
+
 
   if not clientPacket.ReadUInt32(playerId) then
   begin
@@ -1802,6 +1797,11 @@ begin
     Exit;
   end;
 
+  if not TryGetPlayerById(playerId, targetPlayer) then
+  begin
+    Exit;
+  end;
+
   // Always send current player for now
   res := TClientPacket.Create;
 
@@ -1809,7 +1809,7 @@ begin
   res.WriteStr(#$57#$01);
   res.WriteUInt8(un1);
   res.WriteUInt32(playerId);
-  res.Write(client.Data.Data.playerInfo1, SizeOf(TPlayerInfo1));
+  res.Write(targetPlayer.Data.Data.playerInfo1, SizeOf(TPlayerInfo1));
   res.WriteUInt32(0); // have some more data at the end
   client.Send(res);
   res.Clear;
@@ -1817,7 +1817,7 @@ begin
   // Equiped character
   res.WriteStr(#$5E#$01);
   res.WriteUInt32(playerId);
-  res.Write(client.Data.Data.equipedCharacter, SizeOf(TPlayerCharacterData));
+  res.Write(targetPlayer.Data.Data.equipedCharacter, SizeOf(TPlayerCharacterData));
   client.Send(res);
   res.Clear;
 
@@ -1825,7 +1825,7 @@ begin
   res.WriteStr(#$56#$01);
   res.WriteUInt8(un1);
   res.WriteUInt32(playerId);
-  res.Write(client.Data.Data.witems, SizeOf(TPlayerEquipment));
+  res.Write(targetPlayer.Data.Data.witems, SizeOf(TPlayerEquipment));
   client.Send(res);
   res.Clear;
 
@@ -1833,7 +1833,7 @@ begin
   res.WriteStr(#$58#$01);
   res.WriteUInt8(un1);
   res.WriteUInt32(playerId);
-  res.Write(client.Data.Data.playerInfo2, SizeOf(TPlayerInfo2));
+  res.Write(targetPlayer.Data.Data.playerInfo2, SizeOf(TPlayerInfo2));
   client.Send(res);
   res.Clear;
 
@@ -1975,10 +1975,6 @@ begin
     CGPID_PLAYER_BUY_ITEM:
     begin
       self.HandlePlayerBuyItem(client, clientPacket);
-    end;
-    CGPID_PLAYER_CHANGE_EQUIP:
-    begin
-      self.HandlePlayerChangeEquipment(client, clientPacket);
     end;
     CGPID_PLAYER_REQUEST_IDENTITY:
     begin
@@ -2194,10 +2190,6 @@ begin
     begin
       game.HandlePlayerPowerShot(client, clientPacket);
     end;
-    CGPID_PLAYER_CHANGE_EQUPMENT:
-    begin
-      game.HandlePlayerChangeEquipment(client, clientPacket);
-    end;
     CGPID_PLAYER_ACTION:
     begin
       game.HandlePlayerAction(client, clientPacket);
@@ -2205,7 +2197,11 @@ begin
     CGPID_MASTER_KICK_PLAYER:
     begin
       game.HandleMasterKickPlayer(client, clientPacket);
-    end
+    end;
+    CGPID_PLAYER_CHANGE_EQUIP:
+    begin
+      game.HandlePlayerChangeEquipment2(client, clientPacket);
+    end;
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;
@@ -2443,7 +2439,10 @@ begin
       Exit;
     end;
   end;
-  game.Send(data);
+  if not (game.Id = $FFFF) then
+  begin
+    game.Send(data);
+  end;
 end;
 
 procedure TGameServer.SendToLobby(const client: TGameClient; data: AnsiString);

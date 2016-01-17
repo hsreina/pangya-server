@@ -15,6 +15,7 @@ type
     public
       function GetIffId: UInt32; virtual; abstract;
       function IsEnabled: Boolean; virtual; abstract;
+      function GetPrice: UInt32; virtual; abstract;
   end;
 
 implementation

@@ -29,6 +29,9 @@ type
     PlayerDataClass: TPlayerGenericData<DataType>, constructor; GenericCounter> = class
   private
     m_dataList: TList<PlayerDataClass>;
+
+    // m_emptyData is used as item 0 when a player unequip something
+    m_emptyData: PlayerDataClass;
   public
     constructor Create;
     destructor Destroy; override;
@@ -41,7 +44,9 @@ type
     function ToPacketData: TPacketData;
 
     function getById(Id: Uint32): PlayerDataClass;
+    function TryGetById(Id: Uint32; var data: PlayerDataClass): Boolean;
     function getByIffId(IffId: Uint32): PlayerDataClass;
+    function TryGetByIffId(IffId: Uint32; var data: PlayerDataClass): Boolean;
 
     procedure Load(PacketData: TPacketData);
 
@@ -55,17 +60,19 @@ uses ConsolePas, SysUtils, GameServerExceptions;
 constructor TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Create;
 begin
   m_dataList := TList<PlayerDataClass>.Create;
+  m_emptyData := PlayerDataClass.Create;
 end;
 
 destructor TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Destroy;
 var
-  character: PlayerDataClass;
+  playerData: PlayerDataClass;
 begin
-  for character in m_dataList do
+  for playerData in m_dataList do
   begin
-    character.Free;
+    playerData.Free;
   end;
   m_dataList.Free;
+  m_emptyData.Free;
 end;
 
 function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Add(IffId: UInt32): PlayerDataClass;
@@ -186,6 +193,12 @@ function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.
 var
   entry: PlayerDataClass;
 begin
+
+  if id = 0 then
+  begin
+    Exit(m_emptyData);
+  end;
+
   // TODO: Should optimize that to something else
   for entry in m_dataList do
   begin
@@ -202,6 +215,11 @@ function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.
 var
   entry: PlayerDataClass;
 begin
+  if IffId = 0 then
+  begin
+    Exit(m_emptyData);
+  end;
+
   // TODO: Should optimize that to something else
   for entry in m_dataList do
   begin
@@ -211,6 +229,28 @@ begin
     end;
   end;
   raise NotFoundException.CreateFmt('Item with IffId (%d) not found', [IffId]);
+end;
+
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.
+  TryGetByIffId(IffId: Uint32; var data: PlayerDataClass): Boolean;
+begin
+  Result := true;
+  try
+    data := self.getByIffId(IffId);
+  Except
+    Result := false;
+  end;
+end;
+
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.
+  TryGetById(Id: Uint32; var data: PlayerDataClass): Boolean;
+begin
+  Result := true;
+  try
+    data := self.getById(Id);
+  Except
+    Result := false;
+  end;
 end;
 
 end.

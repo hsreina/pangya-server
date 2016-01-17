@@ -25,8 +25,10 @@ type
 
   TPlayerCharacter = class (TPlayerGenericData<TPlayerCharacterData>)
     public
-      procedure SetIffId(iffId: UInt32);
-      procedure SetID(id: UInt32);
+      procedure SetIffId(iffId: UInt32); override;
+      function GetIffId: UInt32; override;
+      procedure SetId(id: UInt32); override;
+      function GetId: UInt32; override;
       procedure SetHairColor(color: UInt32);
   end;
 
@@ -37,7 +39,7 @@ begin
   self.m_data.Data.IffId := IffId;
 end;
 
-procedure TPlayerCharacter.SetID(id: Cardinal);
+procedure TPlayerCharacter.SetId(id: Cardinal);
 begin
   self.m_data.Data.Id := id;
 end;
@@ -45,6 +47,16 @@ end;
 procedure TPlayerCharacter.SetHairColor(color: UInt32);
 begin
   self.m_data.Data.hairColor := color;
+end;
+
+function TPlayerCharacter.GetIffId: UInt32;
+begin
+  Result := self.m_data.Data.IffId;
+end;
+
+function TPlayerCharacter.GetId: UInt32;
+begin
+  Result := self.m_data.Data.Id;
 end;
 
 end.

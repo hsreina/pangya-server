@@ -14,22 +14,22 @@ uses PlayerGenericData;
 
 type
   TPlayerCaddieData = packed record
-    var Id: Uint32;
-    var IffId: Uint32;
+    var base: TPlayerItemBase;
     var Un: array [0..$10] of AnsiChar;
     function ToStr: AnsiString;
   end;
 
   TPlayerCaddie = class (TPlayerGenericData<TPlayerCaddieData>)
     public
-      function GetIffId: UInt32; override;
-      procedure SetIffId(iffId: UInt32); override;
-      function GetId: UInt32; override;
-      procedure SetId(id: UInt32); override;
+      //function GetIffId: UInt32; override;
+      //procedure SetIffId(iffId: UInt32); override;
+      //function GetId: UInt32; override;
+      //procedure SetId(id: UInt32); override;
   end;
 
 implementation
 
+{
 procedure TPlayerCaddie.SetIffId(iffId: Cardinal);
 begin
   self.m_data.IffId := IffId;
@@ -49,6 +49,7 @@ function TPlayerCaddie.GetId;
 begin
   Result := self.m_data.Id;
 end;
+}
 
 function TPlayerCaddieData.ToStr: AnsiString;
 begin
