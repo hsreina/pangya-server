@@ -79,6 +79,12 @@ type
       procedure HandlePlayerRecycleItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInbox(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlerPlayerPangsTransaction(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestLockerPage(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestLockerPangs(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerChangeLockerPassword(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlerPlayerRequestLockerAccess(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestLocker(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSetMascotText(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerClearQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerDeleteMail(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1363,6 +1369,122 @@ begin
   res.Free;
 end;
 
+procedure TGameServer.HandlerPlayerPangsTransaction(const client: TGameClient; const clientPacket: TClientPacket);
+type
+  TACTION_TYPE = (
+    ACTION_TYPE_REMOVE = 0,
+    ACTION_TYPE_ADD = 1
+  );
+var
+  action: TACTION_TYPE;
+  pangsAmount: UInt64;
+begin
+  Console.Log('TGameServer.HandlerPlayerPangsTransaction', C_BLUE);
+
+  clientPacket.Log;
+
+  if not clientPacket.Read(action, 1) then
+  begin
+    Exit;
+  end;
+
+  if not clientPacket.ReadUInt64(pangsAmount) then
+  begin
+    Exit;
+  end;
+
+  case action of
+    ACTION_TYPE_REMOVE:
+    begin
+      console.Log(Format('Should remove %d pangs', [pangsAmount]));
+    end;
+    ACTION_TYPE_ADD:
+    begin
+      console.Log(Format('Should add %d pangs', [pangsAmount]));
+    end;
+  end;
+
+  // you entered a higher amount than allowed
+  client.Send(#$71#$01#$78#$00#$00#$00);
+
+  // entered value greater than what you have
+  //client.Send(#$71#$01#$6F#$00#$00#$00);
+
+end;
+
+procedure TGameServer.HandlePlayerRequestLockerPage(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerRequestLockerPage', C_BLUE);
+  client.Send(
+    #$6D#$01 +
+    #$03#$00 + // Pages
+    #$02#$00 + // current page
+    #$00 // count
+    // + list of TPlayerLockerItemData
+    );
+end;
+
+procedure TGameServer.HandlePlayerRequestLockerPangs(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  pangs: UInt64;
+  res: TCLientpacket;
+
+begin
+  Console.Log('TGameServer.HandlePlayerChangeLockerPassword', C_BLUE);
+
+  pangs := 99999999;
+
+  res := TCLientpacket.Create;
+  res.WriteStr(#$72#$01);
+  res.WriteUInt64(pangs);
+
+  client.Send(res);
+
+  res.Free;
+end;
+
+procedure TGameServer.HandlePlayerChangeLockerPassword(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  oldPassword: AnsiString;
+  newPassword: AnsiString;
+begin
+  Console.Log('TGameServer.HandlePlayerChangeLockerPassword', C_BLUE);
+
+  if not clientPacket.ReadPStr(oldPassword) then
+  begin
+    Console.Error('Failed to read old password');
+  end;
+
+  if not clientPacket.ReadPStr(newPassword) then
+  begin
+    Console.Error('Failed to read new password');
+  end;
+
+  Console.Log(Format('old: %s; new: %s', [oldPassword, newPassword]));
+
+end;
+
+procedure TGameServer.HandlerPlayerRequestLockerAccess(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  password: AnsiString;
+begin
+  Console.Log('TGameServer.HandlerPlayerRequestLockerAccess', C_BLUE);
+  if not clientPacket.ReadPStr(password) then
+  begin
+    Exit;
+  end;
+  console.log(Format('Access code: %s', [password]));
+
+  client.Send(#$6C#$01#$00#$00#$00#$00);
+
+end;
+
+procedure TGameServer.HandlePlayerRequestLocker(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerRequestLocker', C_BLUE);
+  client.Send(#$70#$01#$00#$00#$00#$00#$4C#$00#$00#$00);
+end;
+
 procedure TGameServer.HandlePlayerSetMascotText(const client: TGameClient; const clientPacket: TClientPacket);
 var
   mascotId: UInt32;
@@ -2100,6 +2222,30 @@ begin
     begin
       self.HandlePlayerSetMascotText(client, clientpacket);
     end;
+    CGPID_PLAYER_REQUEST_LOCKER:
+    begin
+      self.HandlePlayerRequestLocker(client, clientpacket);
+    end;
+    CGPID_PLAYER_REQUEST_LOCKER_ACCESS:
+    begin
+      self.HandlerPlayerRequestLockerAccess(client, clientPacket);
+    end;
+    CGPID_PLAYER_CHANGE_LOCKER_PASSWORD:
+    begin
+      self.HandlePlayerChangeLockerPassword(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_LOCKER_PANGS:
+    begin
+      self.HandlePlayerRequestLockerPangs(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_LOCKER_PAGE:
+    begin
+      self.HandlePlayerRequestLockerPage(client, clientPacket);
+    end;
+    CGPID_PLAYER_LOCKER_PANGS_TRANSACTION:
+    begin
+      self.HandlerPlayerPangsTransaction(client, clientPacket);
+    end
     else begin
       try
         playerGame := lobby.GetPlayerGame(client);

@@ -89,7 +89,8 @@ uses
   IffManager.Mascot in 'Iff\IffManager.Mascot.pas',
   IffManager.AuxPart in 'Iff\IffManager.AuxPart.pas',
   GameHoles in 'Server\Game\GameHoles.pas',
-  IffManager.Character in 'Iff\IffManager.Character.pas';
+  IffManager.Character in 'Iff\IffManager.Character.pas',
+  PlayerLockerItem in 'Server\Game\PlayerLockerItem.pas';
 
 {$R *.res}
 

@@ -10,7 +10,7 @@ unit DataChecker;
 
 interface
 
-uses PlayerCaddie, PlayerItem;
+uses PlayerCaddie, PlayerItem, PlayerLockerItem;
 
 type
   TDataChecker = class
@@ -35,7 +35,13 @@ const
   playerInfoSize = SizeOf(TPlayerInfo1);
   playerMascotSize = SizeOf(TPlayerMascotData);
   playerItemSize = SizeOf(TPlayerItemData);
+  playerLockerItemSize = SizeOf(TPlayerLockerItemData);
 begin
+
+  if not (playerLockerItemSize = $B0) then
+  begin
+    raise Exception.CreateFmt('TPlayerLockerItemData Invalid Size (%x)', [playerLockerItemSize]);
+  end;
 
   if not (playerItemSize = $C4) then
   begin

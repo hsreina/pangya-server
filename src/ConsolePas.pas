@@ -50,6 +50,7 @@ type
     function Log(data: string): ansistring; overload;
     function Log(data: string; pColor: Tcolor): ansistring; overload;
     function Log(data: string; pColor: TColor; bold: boolean): ansistring; overload;
+    procedure Error(data: string);
     function WriteDump(data:ansistring): ansistring;
     procedure Clear;
     property Title: string read getTitle write setTitle;
@@ -106,6 +107,11 @@ end;
 function TConsole.log: ansistring;
 begin
   result := log('');
+end;
+
+procedure TConsole.Error(data: string);
+begin
+  self.Log(data, C_RED);
 end;
 
 function TConsole.log(data: string; p_color: cardinal): ansistring;
