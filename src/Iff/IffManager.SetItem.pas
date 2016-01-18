@@ -15,6 +15,11 @@ uses
 
 type
 
+  TItemSetDetail = packed record
+    var IffId: UInt32;
+    var Count: UInt32;
+  end;
+
   TSetItemData = packed Record // $F4
     var base: TIffbase;
     var un1: array [0..$17] of AnsiChar;
@@ -27,6 +32,10 @@ type
   TSetItemDataClass = class (TIffEntry<TSetItemData>)
     public
       constructor Create(data: PAnsiChar);
+
+      // Will do better later
+      function GetItem(index: UInt32): TItemSetDetail;
+      function GetCount: UInt32;
   end;
 
   TSetItem = class (TIffEntryList<TSetItemData, TSetItemDataClass>)
@@ -40,6 +49,20 @@ uses ConsolePas;
 constructor TSetItemDataClass.Create(data: PAnsiChar);
 begin
   inherited;
+end;
+
+function TSetItemDataClass.GetItem(index: Cardinal): TItemSetDetail;
+begin
+  if (index >= 0) and (index < m_data.nbOfItems) then
+  begin
+    Result.IffId := m_data.IffIds[index];
+    Result.Count := m_data.counts[index];
+  end;
+end;
+
+function TSetItemDataClass.GetCount: UInt32;
+begin
+  Result := m_data.nbOfItems;
 end;
 
 end.

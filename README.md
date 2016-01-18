@@ -10,6 +10,10 @@ The server is as always, an experiment on trying to code strange things. And hop
 # How to compile?
 I created the project with Delphi XE8, you should be able to open the project with the same version or above and compile it.
 
+# External files
+To run the server, you should provide extracted Iff files from the original US game into the directory ./data/pangya_gb.iff/
+The structure are based on the latest Pangya US version.
+
 # Pangya Crypt library
 In the project files, you'll see references to a library "pang.dll"
 
@@ -48,3 +52,9 @@ defined as:
 "pangya_server_decrypt" this function is not used by the server it must be present but its content can be empty
 
 If you need more details about dll format, you still can send an e-mail to bugreport@shadosoft-tm.com
+
+# Pull Requests
+Commits should contain description for what you are modifying or working on. 
+
+More rules will be added later.
+

@@ -1038,7 +1038,7 @@ end;
 procedure TGame.HandlePlayerChangeEquipment2(const client: TGameClient; const clientPacket: TClientPacket);
 var
   itemType: UInt8;
-  IffId: UInt32;
+  IffId, Id: UInt32;
   characterData: TPlayerCharacterData;
   equipedItem: TPlayerEquipedItems;
   decorations: TDecorations;
@@ -1089,11 +1089,18 @@ begin
       begin
         client.Data.Data.witems.decorations := decorations;
       end;
+    end;
+    5: begin
+      if clientPacket.ReadUint32(Id) then
+      begin
+        client.Data.EquipCharacterById(Id);
+      end;
     end
     else;
     begin
       Console.Log(Format('Unknow item type %x', [itemType]), C_RED);
       clientPacket.Log;
+      Exit;
     end;
   end;
 

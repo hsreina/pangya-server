@@ -153,6 +153,7 @@ begin
   if not m_iffManager.Load then
   begin
     Console.Log('Failed to load Iffs!!', C_RED);
+    Console.Log('You should have valid US pangya_gb.iff content in ../data/pangya_gb.iff directory');
     Exit;
   end;
 

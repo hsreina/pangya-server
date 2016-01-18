@@ -53,6 +53,7 @@ type
       procedure HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket; msg: AnsiString);
       procedure HandlerPlayerWhisper(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlerPlayerException(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
@@ -117,7 +118,7 @@ implementation
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
   PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment,
-  PlayerQuest, PlayerMascot, IffManager.IffEntryBase;
+  PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem;
 
 constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
 begin
@@ -341,6 +342,19 @@ begin
   SendToGame(client, reply);
 
   reply.Free;
+end;
+
+procedure TGameServer.HandlerPlayerException(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  msg: AnsiString;
+begin
+  self.Log('TGameServer.HandlerPlayerException', TLogType_not);
+  clientPacket.Log;
+  clientPacket.Skip(1);
+  if clientPacket.ReadPStr(msg) then
+  begin
+    Console.Error(Format('Exception : %s', [msg]));
+  end;
 end;
 
 procedure TGameServer.HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
@@ -569,7 +583,7 @@ type
 var
   rental: Byte;
   count: UInt16;
-  I: integer;
+  I, J: integer;
   shopItem: TShopItemDesc;
 
   shopResult: AnsiString;
@@ -577,6 +591,9 @@ var
   test: TITEM_TYPE;
   itemId: UInt32;
   iffEntry: TIffEntrybase;
+  iffEntry2: TIffEntrybase;
+  itemSetDetails: TItemSetDetail;
+  writeInfo: Boolean;
 begin
   self.Log('TGameServer.HandlePlayerBuyItem', TLogType_not);
 
@@ -606,6 +623,9 @@ begin
     end;
 
     Console.Log('item found');
+    writeInfo := true;
+
+    // TODO: Should work on another way to detect items
 
     case TITEM_TYPE(shopItem.IffId.typ) of
       ITEM_TYPE_CHARACTER:
@@ -674,6 +694,34 @@ begin
       ITEM_TYPE_ITEM_SET:
       begin
         Console.Log('ITEM_TYPE_ITEM_SET');
+        with TSetItemDataClass(iffEntry) do
+        begin
+          for J := 0 to GetCount - 1 do
+          begin
+            itemSetDetails := GetItem(J);
+
+            if m_iffManager.TryGetByIffId(itemSetDetails.IffId, iffEntry2) then
+            begin
+              with client.Data.Items.Add(shopItem.IffId.id) do
+              begin
+                itemId := getId;
+                Console.WriteDump(ToPacketData);
+
+                inc(successCount);
+                shopResult := shopResult +
+                  self.Write(itemSetDetails.IffId, 4) + // IffId
+                  self.Write(itemId, 4) + // Id
+                  self.Write(shopItem.lifeTime, 2) + // time
+                  #$00 +
+                  #$01#$00#$00#$00 + // qty left
+                  #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+                  #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00;
+
+              end;
+            end;
+          end;
+        end;
+        writeInfo := false;
       end;
       ITEM_TYPE_CADDIE_ITEM2:
       begin
@@ -725,15 +773,18 @@ begin
       end;
     end;
 
-    inc(successCount);
-    shopResult := shopResult +
-      self.Write(shopItem.IffId, 4) + // IffId
-      self.Write(itemId, 4) + // Id
-      self.Write(shopItem.lifeTime, 4) + // time
-      #$00 +
-      #$01#$00#$00#$00 + // qty left
-      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00;
+    if writeInfo then
+    begin
+      inc(successCount);
+      shopResult := shopResult +
+        self.Write(shopItem.IffId, 4) + // IffId
+        self.Write(itemId, 4) + // Id
+        self.Write(shopItem.lifeTime, 2) + // time
+        #$00 +
+        #$01#$00#$00#$00 + // qty left
+        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+        #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00;
+    end;
   end;
 
   // shop result
@@ -2245,7 +2296,7 @@ begin
     CGPID_PLAYER_LOCKER_PANGS_TRANSACTION:
     begin
       self.HandlerPlayerPangsTransaction(client, clientPacket);
-    end
+    end;
     else begin
       try
         playerGame := lobby.GetPlayerGame(client);
@@ -2348,6 +2399,14 @@ begin
     begin
       game.HandlePlayerChangeEquipment2(client, clientPacket);
     end;
+    CGPID_PLAYER_CHANGE_EQUPMENT_A:
+    begin
+      game.HandlePlayerChangeEquipment(client, clientPacket);
+    end;
+    CGPID_PLAYER_CHANGE_EQUPMENT_B:
+    begin
+      game.HandlePlayerChangeEquipment(client, clientPacket);
+    end;
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;
@@ -2375,6 +2434,10 @@ begin
       begin
         self.HandlePlayerJoinLobby(client, clientPacket);
       end;
+      CGPID_PLAYER_EXCEPTION:
+      begin
+        self.HandlerPlayerException(client, clientpacket);
+      end
       else
       begin
         try
