@@ -128,12 +128,21 @@ type
       procedure HandlerPlayerHoleComplete(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandleMasterKickPlayer(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
+
+      procedure HandlePlayerRequestShopIncome(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestShopVisitorsCount(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerEditShopItems(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerCloseShop(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerEditShopName(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerEditShop(const client: TGameClient; const clientPacket: TClientPacket);
+
   end;
 
 implementation
 
 uses GameServerExceptions, Buffer, ConsolePas, PangyaPacketsDef, ShotData,
-  PlayerGenericData, PlayerAction, PlayerCharacter, PlayerEquipment;
+  PlayerGenericData, PlayerAction, PlayerCharacter, PlayerEquipment,
+  PlayerShopItem;
 
 constructor TGameGenericEvent.Create;
 begin
@@ -1115,6 +1124,163 @@ begin
       );
     end;
   end;
+end;
+
+procedure TGame.HandlePlayerRequestShopIncome(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerRequestShopIncome', C_BLUE);
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$EA#$00);
+  res.WriteUInt32(1); // return code
+  res.WriteUInt64(99); // income
+
+  client.Send(res);
+
+  res.Free;
+end;
+
+procedure TGame.HandlePlayerRequestShopVisitorsCount(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerRequestShopVisitorCount', C_BLUE);
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$E9#$00);
+  res.WriteUInt32(1); // return code
+  res.WriteUInt32(1); // count
+
+  client.Send(res);
+
+  res.Free;
+end;
+
+procedure TGame.HandlePlayerEditShopItems(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  entries: array of TPlayerShopItem;
+  count: UInt32;
+  entry: TPlayerShopItem;
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerEditShopItems', C_BLUE);
+
+  if not clientPacket.ReadUInt32(count) then
+  begin
+    Exit;
+  end;
+
+  // TODO: should check if count is not too crazy
+  setLength(entries, count);
+
+  if not clientPacket.Read(entries[0], count * SizeOf(TPlayerShopItem)) then
+  begin
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$EB#$00);
+  res.WriteUInt32(1);
+  with client.Data.Data.playerInfo1 do
+  begin
+    res.Write(nickname[0], $16);
+    res.WriteUInt32(PlayerID);
+  end;
+
+  res.WriteUInt32(count);
+  res.Write(entries[0], count * SizeOf(TPlayerShopItem));
+
+  res.Log;
+
+  // TODO: Should Send that to all player in this game
+  client.Send(res);
+
+  res.Free;
+
+end;
+
+procedure TGame.HandlePlayerCloseShop(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerCloseShop', C_BLUE);
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$E4#$00);
+  res.WriteUInt32(1); // return code
+
+  with client.Data.Data.playerInfo1 do
+  begin
+    res.WritePStr(client.Data.Data.playerInfo1.nickname);
+    res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+  end;
+
+  client.Send(res);
+
+  res.Free;
+end;
+
+procedure TGame.HandlePlayerEditShopName(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  shopName: AnsiString;
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerEditShopName', C_BLUE);
+  if not clientPacket.ReadPStr(shopName) then
+  begin
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$E8#$00);
+  res.WriteUInt32(1);
+  res.WritePStr(shopname);
+
+  with client.Data.Data.playerInfo1 do
+  begin
+    res.WriteUInt32(PlayerId);
+    res.WritePStr(nickname);
+  end;
+
+  client.Send(res);
+
+  res.Free;
+end;
+
+procedure TGame.HandlePlayerEditShop(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerEditShop', C_BLUE);
+
+  res := TClientPacket.Create;
+
+  if m_gameInfo.gameType = GAME_TYPE_CHAT_ROOM then
+  begin
+
+    res.WriteStr(#$E5#$00);
+    res.WriteUInt32(1); // return code
+
+    with client.Data.Data.playerInfo1 do
+    begin
+      res.WritePStr(client.Data.Data.playerInfo1.nickname);
+      res.WriteUInt32(client.Data.Data.playerInfo1.PlayerID);
+    end;
+
+  end else
+  begin
+    res.WriteStr(#$E5#$00);
+    res.WriteUInt32($1B);
+  end;
+
+
+  client.Send(res);
+
+  res.Free;
 
 end;
 

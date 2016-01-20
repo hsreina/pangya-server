@@ -118,7 +118,8 @@ implementation
 uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
   PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment,
-  PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem;
+  PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem,
+  IffManager.HairStyle;
 
 constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
 begin
@@ -594,6 +595,7 @@ var
   iffEntry2: TIffEntrybase;
   itemSetDetails: TItemSetDetail;
   writeInfo: Boolean;
+  character: TPlayerCharacter;
 begin
   self.Log('TGameServer.HandlePlayerBuyItem', TLogType_not);
 
@@ -713,7 +715,7 @@ begin
                   self.Write(itemId, 4) + // Id
                   self.Write(shopItem.lifeTime, 2) + // time
                   #$00 +
-                  #$01#$00#$00#$00 + // qty left
+                  self.Write(shopItem.qty, 4) + // qty left
                   #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
                   #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00;
 
@@ -735,13 +737,23 @@ begin
       begin
         Console.Log('ITEM_TYPE_TITLE');
       end;
-      ITEM_TYPE_HAIR_COLOR1:
-      begin
-        Console.Log('ITEM_TYPE_HAIR_COLOR1');
-      end;
+      ITEM_TYPE_HAIR_COLOR1,
       ITEM_TYPE_HAIR_COLOR2:
       begin
-        Console.Log('ITEM_TYPE_HAIR_COLOR2');
+        Console.Log('ITEM_TYPE_HAIR_COLOR');
+
+        with THairStyleDataClass(IffEntry) do
+        begin
+          if client.Data.Characters.TryGetByIffId(GetCharacterIffId, character) then
+          begin
+            character.SetHairColor(GetColor);
+            if client.Data.Data.witems.CharacterId = character.GetId then
+            begin
+              client.Data.EquipCharacterById(character.GetId);
+            end;
+          end;
+        end;
+
       end;
       ITEM_TYPE_MASCOT:
       begin
@@ -781,7 +793,7 @@ begin
         self.Write(itemId, 4) + // Id
         self.Write(shopItem.lifeTime, 2) + // time
         #$00 +
-        #$01#$00#$00#$00 + // qty left
+        self.Write(shopItem.qty, 4) + // qty left
         #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
         #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00;
     end;
@@ -2407,6 +2419,30 @@ begin
     begin
       game.HandlePlayerChangeEquipment(client, clientPacket);
     end;
+    CGPID_PLAYER_EDIT_SHOP:
+    begin
+      game.HandlePlayerEditShop(client, clientPacket);
+    end;
+    CGPID_PLAYER_EDIT_SHOP_NAME:
+    begin
+      game.HandlePlayerEditShopName(client, clientPacket);
+    end;
+    CGPID_PLAYER_CLOSE_SHOP:
+    begin
+      game.HandlePlayerCloseShop(client, clientPacket);
+    end;
+    CGPID_PLAYER_EDIT_SHOP_ITEMS:
+    begin
+      game.HandlePlayerEditShopItems(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_SHOP_VISITORS_COUNT:
+    begin
+      game.HandlePlayerRequestShopVisitorsCount(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_INCOME:
+    begin
+      game.HandlePlayerRequestShopIncome(client, clientPacket);
+    end
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;

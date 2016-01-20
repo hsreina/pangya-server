@@ -90,7 +90,9 @@ uses
   IffManager.AuxPart in 'Iff\IffManager.AuxPart.pas',
   GameHoles in 'Server\Game\GameHoles.pas',
   IffManager.Character in 'Iff\IffManager.Character.pas',
-  PlayerLockerItem in 'Server\Game\PlayerLockerItem.pas';
+  PlayerLockerItem in 'Server\Game\PlayerLockerItem.pas',
+  IffManager.HairStyle in 'Iff\IffManager.HairStyle.pas',
+  PlayerShopItem in 'Server\Game\PlayerShopItem.pas';
 
 {$R *.res}
 

@@ -82,7 +82,7 @@ begin
   playerData := PlayerDataClass.Create;
 
   // For now, just set a random Id
-  playerData.setId(Random($FFFFFFFF));
+  playerData.setId(Random($4FFFFFFF));
   playerData.setIffId(IffId);
 
   m_dataList.Add(playerData);

@@ -254,7 +254,7 @@ begin
   playerData.Load(m_database.GetPlayerMainSave(playerId));
 
   // basic club
-  item := items.Add($10000061);
+  item := items.Add($10000012);
   playerData.witems.clubSetId := item.GetId;
 
   with playerData.equipedClub do

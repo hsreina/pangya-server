@@ -21,7 +21,8 @@ type
   TEvent<T> = procedure(enventObject: T) of object;
   TEvent2<T1, T2> = procedure(enventObject1: T1; eventObject2: T2) of object;
 
-function GetDataFromfile(filePath: string): AnsiString;
+function GetDataFromfile(filePath: string): AnsiString; overload;
+function GetDataFromfile(filePath: string; offset: UInt32): AnsiString; overload;
 procedure WriteDataToFile(filePath: string; data: AnsiString);
 
 implementation
@@ -38,6 +39,22 @@ begin
   setlength(data, size);
   fileread(x, data[1], size);
   fileclose(x);
+  Exit(data);
+end;
+
+function GetDataFromfile(filePath: string; offset: UInt32): AnsiString;
+var
+  x: THandle;
+  size: Integer;
+  data: AnsiString;
+begin
+  x := fileopen(filepath, $40);
+  size := fileseek(x, 0, 2);
+  fileseek(x, 0, 0);
+  setlength(data, size);
+  fileread(x, data[1], size);
+  fileclose(x);
+  delete(data, 1, offset);
   Exit(data);
 end;
 
