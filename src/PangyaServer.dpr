@@ -92,7 +92,8 @@ uses
   IffManager.Character in 'Iff\IffManager.Character.pas',
   PlayerLockerItem in 'Server\Game\PlayerLockerItem.pas',
   IffManager.HairStyle in 'Iff\IffManager.HairStyle.pas',
-  PlayerShopItem in 'Server\Game\PlayerShopItem.pas';
+  PlayerShopItem in 'Server\Game\PlayerShopItem.pas',
+  ClubStats in 'Server\Game\ClubStats.pas';
 
 {$R *.res}
 

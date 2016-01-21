@@ -74,7 +74,7 @@ type
 
 implementation
 
-uses ClientPacket, PlayerCharacter, utils;
+uses ClientPacket, PlayerCharacter, utils, PlayerEquipment;
 
 constructor TGameServerPlayer.Create;
 begin
@@ -130,26 +130,17 @@ begin
     packet.WriteUInt8(gameInfo.GameSlot);
 
     packet.WriteStr(
-      #$00#$00#$00#$00 +
-      #$06#$01#$80#$39
+      #$00#$00#$00#$00
     );
+
+    packet.WriteUInt32(data.witems.decorations.title);
 
     packet.WriteUInt32(Data.equipedCharacter.Data.IffId);
 
-    packet.WriteStr(
-      #$00#$00#$00#$00 +
-      #$00#$00#$00#$00 +
-      #$00#$00#$00#$00 +
-      #$00#$00#$00#$00 +
-      #$00#$00#$00#$00 +
-      #$06#$01#$80#$39
-    );
+    // Not sure 100%
+    packet.Write(data.witems.decorations, SizeOf(TDecorations));
 
     packet.WriteUInt8(self.GameInfo.Role);
-
-    //packet.WriteStr(
-    //  #$08 // user mode
-    //);
 
     packet.WriteUInt8(
       TGeneric.Iff<UInt8>(gameInfo.ReadyForgame, 2, 0)
@@ -171,6 +162,7 @@ begin
       #$00#$00#$00#$00 + // shop flag
       #$00#$00
     );
+
     packet.WriteStr(
       Action.toAnsiString
     );

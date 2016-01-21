@@ -257,6 +257,11 @@ begin
   item := items.Add($10000012);
   playerData.witems.clubSetId := item.GetId;
 
+  with items.Add($1A000264) do
+  begin
+    SetQty(50);
+  end;
+
   with playerData.equipedClub do
   begin
     IffId := item.GetIffId;
@@ -299,6 +304,7 @@ begin
   begin
     rank := TRANK.INFINITY_LEGEND_A;
     pangs := 99999999;
+    experience := 99999999;
   end;
 
   Result := m_database.CreatePlayer(login, password, playerData);

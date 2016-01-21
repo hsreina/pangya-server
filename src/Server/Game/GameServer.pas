@@ -53,6 +53,7 @@ type
       procedure HandleDebugCommands(const client: TGameClient; const clientPacket: TClientPacket; msg: AnsiString);
       procedure HandlerPlayerWhisper(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSendMessage(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestServerTime(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerException(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
@@ -63,6 +64,8 @@ type
       procedure HandlePlayerRequestServerList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUpgrade(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerNotice(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerLeaveGrandPrix(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerEnterGrandPrix(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
@@ -343,6 +346,20 @@ begin
   SendToGame(client, reply);
 
   reply.Free;
+end;
+
+procedure TGameServer.HandlePlayerRequestServerTime(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerRequestServerTime', C_BLUE);
+
+  Console.Log('Should analyse that better', C_ORANGE);
+
+  // Should check more about that, it's used with the time displayed
+  client.Send(
+    #$BA#$00 +
+    #$DF#$07#$0B#$00#$06#$00#$1C#$00#$15#$00#$1A#$00#$0D#$00#$01#$01
+  );
+
 end;
 
 procedure TGameServer.HandlerPlayerException(const client: TGameClient; const clientPacket: TClientPacket);
@@ -876,16 +893,23 @@ end;
 
 procedure TGameServer.HandlePlayerUpgrade(const client: TGameClient; const clientPacket: TClientPacket);
 type
+
+  TActionType = (
+    actionType_upgrade = 1,
+    actionType_downgrade = 2
+  );
+
   TPacketHeader = packed record
     action: UInt8;
     upType: UInt8;
-    itemId: UInt8;
+    itemId: UInt32;
   end;
 var
   header: TPacketHeader;
-  actionType: UInt8;
+  actionType: TActionType;
+  res: TClientPacket;
 begin
-  Console.Log('TGameServer.HandlePlayerNotice', C_BLUE);
+  Console.Log('TGameServer.HandlePlayerUpgrade', C_BLUE);
 
   if not clientPacket.Read(header, SizeOf(TPacketHeader)) then
   begin
@@ -893,48 +917,50 @@ begin
     Exit;
   end;
 
-  actionType := 0;
+  actionType := actionType_upgrade;
 
   case header.action of
     0: // character upgrade
     begin  
-      actionType := 1;
+      actionType := actionType_upgrade;
     end;
     1: // club upgrade
-    begin 
-      actionType := 1;
+    begin
+      actionType := actionType_upgrade;
     end;
     2: // charcater downgrade
     begin
-      actionType := 2;
+      actionType := actionType_downgrade;
     end;
     3: // club downgrade
     begin
-      actionType := 3;
+      actionType := actionType_downgrade;
     end;
     else begin
       Console.Log('Unknow action');
     end;
   end;
   
+  res := TClientPacket.Create;
 
   // upgrade result
-  client.Send(
-    #$A5#$00 +
-    AnsiChar(actionType) + // upgrade type (upgrade|downgrade)
-    AnsiChar(header.action) +
-    AnsiChar(header.upType) +
-    Write(header.itemId, 4) + // item id
-    #$A4#$06#$00#$00#$00#$00#$00#$00
-  );
+  res.WriteStr(#$A5#$00);
+  res.Write(actionType, 1); // upgrade type (upgrade|downgrade)
+  res.Write(header, SizeOf(TPacketHeader));
+  res.WriteStr(#$34#$08#$00#$00#$00#$00#$00#$00);
+
+  client.Send(res);
+
+  res.Clear;
 
   // Pangs and cookies info
-  client.Send(
-    #$C8#$00 +
-    self.Write(client.Data.data.playerInfo2.pangs, 8) +
-    self.Write(client.Data.Cookies, 8)
-  );
+  res.WriteStr(#$A5#$00);
+  res.WriteUInt64(client.Data.data.playerInfo2.pangs);
+  res.WriteUInt64(client.Data.Cookies);
 
+  client.Send(res);
+
+  res.Free;
 end;
 
 procedure TGameServer.HandlePlayerNotice(const client: TGameClient; const clientPacket: TClientPacket);
@@ -950,6 +976,46 @@ begin
       WritePStr(notice)
     );
   end;
+end;
+
+procedure TGameServer.HandlePlayerLeaveGrandPrix(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerLeaveGrandPrix', C_BLUE);
+
+  {
+    Should Send me leaving
+    46 00 02 01 ...
+  }
+
+  client.Send(
+    #$51#$02 +
+    #$00#$00#$00#$00
+  );
+
+end;
+
+procedure TGameServer.HandlePlayerEnterGrandPrix(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerEnterGrandPrix', C_BLUE);
+
+  {
+    Should Send
+    46 00 04 03 ...
+    47 00 02 00 FF FF ...
+    then myself
+    46 00 01 01 ...
+
+  }
+
+
+  client.Send(
+    #$50#$02 +
+    #$00#$00#$00#$00 +
+    #$01#$00#$00#$00 +
+    #$03#$00#$00#$00#$01#$00 +
+    #$00#$00#$00#$01#$00#$00#$02#$00#$00#$00#$00#$00#$84#$42
+  );
+
 end;
 
 procedure TGameServer.HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1172,8 +1238,18 @@ begin
 end;
 
 procedure TGameServer.HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  something: UInt32;
 begin
   Console.Log('TGameServer.HandlePlayerRequestAchievements', C_BLUE);
+
+  if not clientPacket.ReadUInt32(something) then
+  begin
+    Console.Error('Faield to read something');
+    Exit;
+  end;
+
+  console.Log(Format('something %x', [something]));
 
   {
     supposed to send all achievement data here
@@ -2177,6 +2253,14 @@ begin
     begin
       self.HandlePlayerNotice(client, clientPacket);
     end;
+    CGPID_PLAYER_ENTER_GRAND_PRIX:
+    begin
+      self.HandlePlayerEnterGrandPrix(client, clientPacket);
+    end;
+    CGPID_PLAYER_LEAVE_GRAND_PRIX:
+    begin
+      self.HandlePlayerLeaveGrandPrix(client, clientPacket);
+    end;
     CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST:
     begin
       self.HandlePlayerJoinMultiplayerGamesList(client, clientPacket);
@@ -2473,6 +2557,10 @@ begin
       CGPID_PLAYER_EXCEPTION:
       begin
         self.HandlerPlayerException(client, clientpacket);
+      end;
+      CGPID_PLAYER_REQUEST_SERVER_TIME:
+      begin
+        self.HandlePlayerRequestServerTime(client, clientpacket);
       end
       else
       begin
@@ -2520,6 +2608,7 @@ begin
         buffer := clientPacket.GetRemainingData;
         client.Data.Data.Load(buffer);
         client.Data.Data.playerInfo1.ConnectionId := client.ID;
+        client.Data.Data.aFlag := $8;
         client.Send(
           WriteHeader(SGPID_PLAYER_MAIN_DATA) +
           #$00 +

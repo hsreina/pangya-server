@@ -76,11 +76,13 @@ type
 
     var equipedMascot: TPlayerMascotData;
 
-    // A part of this is equiped mascot data
-    var un0000: array [0..$10] of AnsiChar;
+    var un0001: array [0..$28] of AnsiChar;
+
+    // this flag must be 8 to enable grand prix on the server for the player
+    var aFlag: UInt8;
 
     // now sound like something related to guilds
-    var un0001: array [0..$12F] of AnsiChar;
+    var un0004: array [0..$116] of AnsiChar;
 
     procedure Clear;
     function ToPacketData: TPacketData;

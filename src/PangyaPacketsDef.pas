@@ -72,6 +72,7 @@ type
     CGPID_PLAYER_LOADING_INFO                 = $0048,
     CGPID_PLAYER_UPGRADE                      = $004B,
     CGPID_PLAYER_NOTICE                       = $0057,
+    CGPID_PLAYER_REQUEST_SERVER_TIME          = $005C,
     CGPID_PLAYER_ACTION                       = $0063,
     CGPID_PLAYER_FAST_FORWARD                 = $0065,
     CGPID_PLAYER_ENTER_SCRATCHY_SERIAL        = $0071,
@@ -109,6 +110,8 @@ type
     CGPID_PLAYER_GIVEUP_DAILY_QUEST           = $0154,
     CGPID_PLAYER_REQUEST_ACHIEVEMENTS         = $0157,
     CGPID_PLAYER_REQUEST_DAILY_REWARD         = $016E,
+    CGPID_PLAYER_ENTER_GRAND_PRIX             = $0176,
+    CGPID_PLAYER_LEAVE_GRAND_PRIX             = $0177,
     CGPID_PLAYER_SET_ASSIST_MODE              = $0184,
     CGPID_PLAYER_RECYCLE_ITEM                 = $018D,
     CGPID_NOTHING                             = $FFFF
