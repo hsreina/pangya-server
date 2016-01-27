@@ -167,17 +167,26 @@ end;
 procedure TGameServer.OnClientConnect(const client: TGameClient);
 var
   player: TGameServerPlayer;
+  res: TClientPacket;
+  tmp: AnsiString;
 begin
   self.Log('TGameServer.OnConnectClient', TLogType_not);
+
+  res := TClientPacket.Create;
+
   player := TGameServerPlayer.Create;
   client.Data := player;
-  client.Send(
-    #$00#$16#$00#$00#$3F#$00#$01#$01 +
+
+  tmp := #$00#$3F#$00#$01#$01 +
     AnsiChar(client.GetKey()) +
-    // no clue about that.
-    WritePStr(client.Host),
-    false
-  );
+    WritePStr(client.Host);
+
+  res.WriteUint8(0);
+  res.WritePStr(tmp);
+
+  client.Send(res, false);
+
+  res.Free;
 end;
 
 procedure TGameServer.OnClientDisconnect(const client: TGameClient);
@@ -227,12 +236,11 @@ begin
   game := self.m_lobbies.GetPlayerGame(client);
 
   // Speed ugly way for debug command
-  if msg = ':debug' then
+  if msg = ':start' then
   begin
     game.HandlePlayerStartGame(client, clientPacket);
   end
   else if msg = ':next' then
-           
   begin
     game.GoToNextHole;
   end;

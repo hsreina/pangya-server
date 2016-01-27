@@ -1558,25 +1558,31 @@ begin
 
   for player in m_players do
   begin
+
     inc(index);
 
     res.WriteUInt32(player.Data.Data.playerInfo1.ConnectionId);
     res.WriteUInt8(index);
-    res.WriteUInt8(0); // total point
-    res.WriteUInt8(0); // course shot count
-    res.WriteUInt16(0); // player xp
+    res.WriteUInt8(2); // total point
+    res.WriteUInt8(5); // course shot count
+    res.WriteUInt16(1000); // player xp
     res.WriteStr(
       #$67#$00#$00#$00 + // pangs
       #$00#$00#$00#$00 +
-      #$D2#$00#$00#$00 +
+      #$D2#$00#$00#$00 + // pang bonus
+      #$00#$00#$00#$00 +
+
+      #$00#$00#$00#$00 +
       #$00#$00#$00#$00
-    )
+    );
 
   end;
 
   self.Send(res);
 
   res.Free;
+
+  m_gameStarted := false;
 end;
 
 procedure TGame.HandleMasterKickPlayer(const client: TGameClient; const clientPacket: TClientPacket);
