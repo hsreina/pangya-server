@@ -2531,9 +2531,25 @@ begin
     begin
       game.HandlePlayerRequestShopVisitorsCount(client, clientPacket);
     end;
+    CGPID_PLAYER_PAUSE_GAME:
+    begin
+      game.HandlePlayerPauseGame(client, clientPacket);
+    end;
+    CGPID_PLAYER_MOVE_AZTEC:
+    begin
+      game.HandlePlayerMoveAztec(client, clientPacket);
+    end;
+    CGPID_PLAYER_ENTER_SHOP:
+    begin
+      game.HandlerPlayerEnterShop(client, clientPacket);
+    end;
     CGPID_PLAYER_REQUEST_INCOME:
     begin
       game.HandlePlayerRequestShopIncome(client, clientPacket);
+    end;
+    CGPID_PLAYER_BUY_ITEMS:
+    begin
+      game.HandlePlayerBuyItem(client, clientPacket);
     end
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);

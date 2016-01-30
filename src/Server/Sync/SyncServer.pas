@@ -262,6 +262,12 @@ begin
     SetQty(50);
   end;
 
+  // banana for debug purpose
+  with items.Add($18000001) do
+  begin
+    SetQty(50);
+  end;
+
   with playerData.equipedClub do
   begin
     IffId := item.GetIffId;

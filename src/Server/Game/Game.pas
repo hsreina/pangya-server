@@ -128,7 +128,11 @@ type
       procedure HandlerPlayerHoleComplete(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandleMasterKickPlayer(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerMoveAztec(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerPauseGame(const client: TGameClient; const clientPacket: TClientPacket);
 
+      procedure HandlerPlayerEnterShop(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestShopIncome(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestShopVisitorsCount(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerEditShopItems(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1126,6 +1130,13 @@ begin
   end;
 end;
 
+procedure TGame.HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGame.HandlePlayerBuyItem', C_BLUE);
+  clientPacket.Log;
+
+end;
+
 procedure TGame.HandlePlayerRequestShopIncome(const client: TGameClient; const clientPacket: TClientPacket);
 var
   res: TClientPacket;
@@ -1138,6 +1149,101 @@ begin
   res.WriteUInt64(99); // income
 
   client.Send(res);
+
+  res.Free;
+end;
+
+procedure TGame.HandlerPlayerEnterShop(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  playerId: UInt32;
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlerPlayerEnterShop', C_BLUE);
+  if not clientPacket.ReadUInt32(playerId) then
+  begin
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(
+    #$E6#$00
+  );
+
+  res.WriteUInt32(1); // result
+
+  res.WriteStr(
+    #$68#$73#$72#$65#$69#$00#$61#$43#$61#$74 +
+    #$28#$65#$36#$34#$29#$00#$00#$54#$69#$6D#$65#$00
+  );
+
+  res.WritePStr('shop name');
+
+  res.WriteUInt32(12231); // shop owner id
+  res.WriteUInt32(1); // Number of items
+
+  res.WriteStr(
+    #$00#$00#$00#$00 + // item id in shop
+    #$01#$00#$00#$18 + // item IffId
+    #$11#$11#$11#$11 + // Id
+    #$02#$00#$00#$00 + // count
+    #$00#$00#$00 +
+    #$02#$00#$00#$00 + // price
+    #$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$11#$F0#$CE#$B6#$11#$20 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+  client.Send(res);
+
+  res.Free;
+end;
+
+procedure TGame.HandlePlayerMoveAztec(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  pos: TVector3;
+  res: TClientPacket;
+begin
+  Console.Log('TGame.HandlePlayerMoveAztec', C_BLUE);
+  if not clientPacket.Read(pos, SizeOf(TVector3)) then
+  begin
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$60#$00);
+  res.Write(pos, SizeOf(TVector3));
+  self.Send(res);
+
+  res.Free;
+end;
+
+procedure TGame.HandlePlayerPauseGame(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  status: UInt8;
+  res: TCLientPacket;
+begin
+  Console.Log('TGame.HandlePlayerPausegame', C_BLUE);
+  if not clientPacket.ReadUInt8(status) then
+  begin
+    Exit;
+  end;
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$8B#$00);
+  res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
+  res.WriteUInt8(status);
+
+  self.Send(res);
 
   res.Free;
 end;
@@ -1246,7 +1352,7 @@ begin
     res.WritePStr(nickname);
   end;
 
-  client.Send(res);
+  self.Send(res);
 
   res.Free;
 end;

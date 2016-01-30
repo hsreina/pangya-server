@@ -2,6 +2,8 @@
 Welcome to pangya-server an emulation server for Pangya FreshUp.
 The server is as always, an experiment on trying to code strange things. And hope someone will try to work on it instead of begging for release.
 
+![Alt text](https://cloud.githubusercontent.com/assets/7342613/12693090/612aed5e-c6cf-11e5-9650-fbfa190746f4.png "Optional title")
+
 # What is working?
     -You can login and select your 1st character and go to training
     -Create a chatroom walk and talk in it.
