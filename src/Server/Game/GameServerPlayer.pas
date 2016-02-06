@@ -105,7 +105,7 @@ end;
 
 function TGameServerPlayer.GameInformation: AnsiString;
 begin
-  Exit(GameInformation(1));
+  Exit(GameInformation(2));
 end;
 
 function TGameServerPlayer.GameInformation(level: UInt8): AnsiString;
@@ -181,10 +181,16 @@ begin
       #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
       #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
       #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+      #$00#$00#$00 +
+      #$9C#$00#$00#$7C#$42#$00#$00#$00
     );
 
-    packet.Write(Data.equipedCharacter.Data.IffId, SizeOf(TPlayerCharacterData));
+
+
+    if level >= 2 then
+    begin
+      packet.Write(Data.equipedCharacter.Data.IffId, SizeOf(TPlayerCharacterData));
+    end;
 
   end;
 

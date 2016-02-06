@@ -56,9 +56,6 @@ type
       procedure HandlePlayerRequestServerTime(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerException(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerJoinLobby(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestIdentity(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestServerList(const client: TGameClient; const clientPacket: TClientPacket);
@@ -410,189 +407,6 @@ begin
 
   client.Send(#$95#$00 + AnsiChar(lobbyId) + #$01#$00);
   client.Send(#$4E#$00 + #$01);
-end;
-
-procedure TGameServer.HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
-var
-  gameInfo: TPlayerCreateGameInfo;
-  gameName: AnsiString;
-  gamePassword: AnsiString;
-  artifact: UInt32;
-  playerLobby: TLobby;
-  game: TGame;
-  d: AnsiString;
-  res: TClientPacket;
-begin
-  Console.Log('TGameServer.HandlePlayerCreateGame', C_BLUE);
-  clientPacket.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
-
-  clientPacket.ReadPStr(gameName);
-  clientPacket.ReadPStr(gamePassword);
-  clientPacket.ReadUInt32(artifact);
-
-  try
-    playerLobby := m_lobbies.GetPlayerLobby(client);
-  except
-    on E: Exception do
-    begin
-      Console.Log(E.Message, C_RED);
-      Exit;
-    end;
-  end;
-
-  // Lets pprevent game creation for some type of unimplemented games
-  if
-    not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_VERSUS_STROKE) AND
-    not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_VERSUS_MATCH) AND
-    not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_CHIP_IN_PRACTICE) AND
-    not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_CHAT_ROOM)
-  then
-  begin
-    res := TClientPacket.Create;
-    // Can't create a game here
-    res.WriteStr(#$49#$00);
-    res.WriteUInt8(WriteGameCreateResult(TCREATE_GAME_RESULT.CREATE_GAME_CANT_CREATE));
-    client.Send(res);
-    res.Free;
-    Exit;
-  end;
-
-  //
-
-  try
-    game := playerLobby.CreateGame(gamename, gamePassword, gameInfo, artifact);
-    game.AddPlayer(client);
-  except
-    on E: Exception do
-    begin
-      Console.Log(E.Message, C_RED);
-      Exit;
-    end;
-  end;
-
-  // result
-  client.Send(
-    #$4A#$00 +
-    #$FF#$FF +
-    game.GameResume
-  );
-
-  // game game informations
-  client.Send(
-    #$49#$00 +
-    #$00#$00 +
-    game.GameInformation
-  );
-
-  // my player game info
-  client.Send(
-    #$48#$00#$00#$FF#$FF#$01 +
-    client.Data.GameInformation +
-    #$00
-  );
-end;
-
-procedure TGameServer.HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
-var
-  gameId: UInt16;
-  password: AnsiString;
-  game: TGame;
-  playerLobby: TLobby;
-begin
-  Console.Log('TGameServer.HandlePlayerJoinGame', C_BLUE);
-  {09 00 01 00 00 00  }
-  if not clientPacket.ReadUInt16(gameId) then
-  begin
-    Console.Log('Failed to get game Id', C_RED);
-    Exit;
-  end;
-  clientPacket.ReadPStr(password);
-
-  try
-    playerLobby := m_lobbies.GetPlayerLobby(client);
-    game := playerLobby.GetGameById(gameId);
-  Except
-    on e: Exception do
-    begin
-      Console.Log('well, i ll move that in another place one day or another', C_RED);
-      Exit;
-    end;
-  end;
-
-  try
-    game.AddPlayer(client);
-  except
-    on e: GameFullException do
-    begin
-      Console.Log(e.Message + ' should maybe tell to the user that the game is full?', C_RED);
-      Exit;
-    end;
-  end;
-
-  {
-  // my player game info
-  client.Send(
-    #$48#$00 + #$00#$FF#$FF#$01 +
-    client.Data.GameInformation
-  );
-
-  // Send my informations other player
-  game.Send(
-    #$48#$00 + #$01#$FF#$FF +
-    client.Data.GameInformation
-  );
-  }
-
-end;
-
-procedure TGameServer.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
-var
-  playergame: TGame;
-  playerLobby: TLobby;
-begin
-  Console.Log('TGameServer.HandlePlayerLeaveGame', C_BLUE);
-
-  try
-    playerLobby := m_lobbies.GetPlayerLobby(client);
-  except
-    on e: Exception do
-    begin
-      Console.Log(E.Message, C_RED);
-      Exit;
-    end;
-  end;
-
-  try
-    playerGame := playerLobby.GetPlayerGame(client);
-  except
-    on E: Exception do
-    begin
-      Console.Log(E.Message, C_RED);
-      Exit;
-    end;
-  end;
-
-  playerGame.RemovePlayer(client);
-  //playerLobby.NullGame.AddPlayer(client);
-
-  {
-    // Game lobby info
-    // if player count reach 0
-    client.Send(
-      #$47#$00#$01#$02#$FF#$FF +
-      game.LobbyInformation
-    );
-
-    // if player count reach 0
-    client.Send(
-      #$47#$00#$01#$03#$FF#$FF +
-      game.LobbyInformation
-    );
-
-  }
-
-  client.Send(#$4C#$00#$FF#$FF);
-
 end;
 
 procedure TGameServer.HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
@@ -2231,15 +2045,11 @@ begin
     end;
     CGPID_PLAYER_CREATE_GAME:
     begin
-      self.HandlePlayerCreateGame(client, clientPacket);
+      lobby.HandlePlayerCreateGame(client, clientPacket);
     end;
     CGPID_PLAYER_JOIN_GAME:
     begin
-      self.HandlePlayerJoinGame(client, clientPacket);
-    end;
-    CGPID_PLAYER_LEAVE_GAME:
-    begin
-      self.HandlePlayerLeaveGame(client, clientPacket);
+      lobby.HandlePlayerJoinGame(client, clientPacket);
     end;
     CGPID_PLAYER_BUY_ITEM:
     begin
@@ -2401,6 +2211,10 @@ begin
     begin
       self.HandlerPlayerPangsTransaction(client, clientPacket);
     end;
+    CGPID_ENTER_GRAND_PRIX_EVENT:
+    begin
+      lobby.HandlePlayerEnterGrandPrixEvent(client, clientPacket);;
+    end
     else begin
       try
         playerGame := lobby.GetPlayerGame(client);
@@ -2547,10 +2361,14 @@ begin
     begin
       game.HandlePlayerRequestShopIncome(client, clientPacket);
     end;
-    CGPID_PLAYER_BUY_ITEMS:
+    CGPID_PLAYER_BUY_SHOP_ITEM:
     begin
-      game.HandlePlayerBuyItem(client, clientPacket);
-    end
+      game.HandlePlayerShopBuyItem(client, clientPacket);
+    end;
+    CGPID_PLAYER_LEAVE_GAME:
+    begin
+      game.HandlePlayerLeaveGame(client, clientPacket);
+    end;
     else begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;
@@ -2631,7 +2449,7 @@ begin
       begin
         buffer := clientPacket.GetRemainingData;
         client.Data.Data.Load(buffer);
-        client.Data.Data.playerInfo1.ConnectionId := client.ID;
+        client.Data.Data.playerInfo1.ConnectionId := client.ID + 1;
         client.Data.Data.aFlag := $8;
         client.Send(
           WriteHeader(SGPID_PLAYER_MAIN_DATA) +

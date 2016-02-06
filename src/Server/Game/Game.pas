@@ -54,6 +54,14 @@ type
       destructor Destroy; override;
   end;
 
+  TGameCreateArgs = record
+    var Name: AnsiString;
+    var Password: AnsiString;
+    var GameInfo: TPlayerCreateGameInfo;
+    var Artifact: UInt32;
+    var GrandPrix: UInt32;
+  end;
+
   TGame = class
     private
       var m_id: UInt16;
@@ -65,6 +73,8 @@ type
       var m_gameStarted: Boolean;
       var m_rain_drop_ratio: UInt8;
       var m_gameKey: array [0 .. $F] of ansichar;
+
+      var m_grandPrix: Boolean;
 
       //var m_game_holes: TList<TGameHoleInfo>;
       var m_gameHoles: TGameHoles;
@@ -91,7 +101,7 @@ type
       property OnPlayerJoinGame: TGamePlayerGenericEvent read m_onPlayerJoinGame;
       property OnPlayerLeaveGame: TGamePlayerGenericEvent read m_onPlayerLeaveGame;
 
-      constructor Create(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent);
+      constructor Create(args: TGameCreateArgs; onUpdate: TGameEvent);
       destructor Destroy; override;
 
       function AddPlayer(player: TGameClient): Boolean;
@@ -130,9 +140,10 @@ type
       procedure HandlePlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerMoveAztec(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerPauseGame(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
 
       procedure HandlerPlayerEnterShop(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerShopBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestShopIncome(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestShopVisitorsCount(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerEditShopItems(const client: TGameClient; const clientPacket: TClientPacket);
@@ -184,7 +195,7 @@ begin
   end;
 end;
 
-constructor TGame.Create(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent);
+constructor TGame.Create(args: TGameCreateArgs; onUpdate: TGameEvent);
 var
   I: Integer;
 begin
@@ -193,17 +204,20 @@ begin
   m_onPlayerJoinGame := TGamePlayerGenericEvent.Create;
   m_onPlayerLeaveGame := TGamePlayerGenericEvent.Create;
 
-  Console.Log(Format('mode : %s', [GetEnumName(TypeInfo(TGAME_MODE), Integer(gameInfo.mode))]));
-  Console.Log(Format('type : %s', [GetEnumName(TypeInfo(TGAME_TYPE), Integer(gameInfo.gameType))]));
+  Console.Log(Format('mode : %s', [GetEnumName(TypeInfo(TGAME_MODE), Integer(args.GameInfo.mode))]));
+  Console.Log(Format('type : %s', [GetEnumName(TypeInfo(TGAME_TYPE), Integer(args.GameInfo.gameType))]));
 
   m_onUpdateGame.Event := onUpdate;
-  m_name := name;
-  m_password := password;
-  m_gameInfo := gameInfo;
-  m_artifact := artifact;
+  m_name := args.Name;
+  m_password := args.Password;
+  m_gameInfo := args.GameInfo;
+  m_artifact := args.Artifact;
   m_players := TPlayersList.Create;
   m_gameStarted := false;
   m_rain_drop_ratio := 10;
+
+  m_grandPrix := args.GrandPrix = 1;
+
   generateKey;
   m_gameHoles := TGameHoles.Create;
 end;
@@ -227,7 +241,10 @@ var
   playerIndex: integer;
   res: TClientPacket;
   gameId: UInt16;
+  playersCount: UInt32;
 begin
+  playersCount := m_players.Count;
+
   if m_players.Count >= m_gameInfo.maxPlayers then
   begin
     raise GameFullException.CreateFmt('Game (%d) is full', [Id]);
@@ -263,11 +280,7 @@ begin
 
   m_onUpdateGame.Trigger(self);
 
-  // my player info to others in game
-  self.Send(
-    #$48#$00 + #$01#$FF#$FF +
-    player.Data.GameInformation
-  );
+  self.TriggerGameUpdated;
 
   // game informations for me
   player.Send(
@@ -275,27 +288,36 @@ begin
     self.GameInformation
   );
 
-  self.TriggerGameUpdated;
-
   m_onPlayerJoinGame.Trigger(self, player);
+
+  // my player info to others in game
+  self.Send(
+    #$48#$00 + #$01#$FF#$FF +
+    player.Data.GameInformation
+  );
 
   res := TClientPacket.Create;
 
   res.WriteStr(#$48#$00 + #$00#$FF#$FF);
-
   res.WriteUInt8(UInt8(m_players.Count));
-
   // Other player in game information to me
   for gamePlayer in m_players do
   begin
     res.WriteStr(gamePlayer.Data.GameInformation);
   end;
-
   res.WriteUInt8(0); // <- seem important
+
 
   self.Send(res);
 
   res.Free;
+
+  player.Send(
+    #$48#$00#$00#$FF#$FF#$01 +
+    player.Data.GameInformation(1) +
+    #$00
+  );
+
 
   Exit(true);
 end;
@@ -342,7 +364,7 @@ begin
   begin
     if index = 0 then
     begin
-      player.Data.GameInfo.Role := 8;
+      player.Data.GameInfo.Role := TGeneric.Iff(m_grandPrix, $20, 8);
       if setRoomMaster then
       begin
         // Send the new master
@@ -385,11 +407,11 @@ begin
   packet := TClientPacket.Create;
 
   packet.WriteStr(
-    m_name, 27, #$00
+    m_name, 33, #$00
   );
 
   packet.WriteStr(
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00
   );
@@ -398,11 +420,14 @@ begin
   if m_gameinfo.gameType = TGAME_TYPE.GAME_TYPE_CHIP_IN_PRACTICE then
   begin
     gameType := $0B;
-    specialFlag := $0E;
+    specialFlag := $0E; // Chip in practice
   end else
   begin
     specialFlag := $FF;
   end;
+
+  // Grand prix
+  specialFlag := $14;
 
   pl := Length(m_password);
   plTest := pl > 0;
@@ -1130,11 +1155,90 @@ begin
   end;
 end;
 
-procedure TGame.HandlePlayerBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TGame.HandlePlayerShopBuyItem(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  ownerId: UInt32;
+  item: TPlayerShopItem;
+  res: TClientPacket;
 begin
-  Console.Log('TGame.HandlePlayerBuyItem', C_BLUE);
+  Console.Log('TGame.HandlePlayerShopBuyItem', C_BLUE);
   clientPacket.Log;
 
+  clientPacket.ReadUInt32(ownerId);
+  console.Log(Format('ownerId : %x', [ownerId]));
+
+  if not clientPacket.Read(item, SizeOf(TPlayerShopItem)) then
+  begin
+    Exit;
+  end;
+
+
+  res := TClientPacket.Create;
+
+  // Shop result
+  res.WriteStr(
+    #$EC#$00 +
+    #$01#$00#$00#$00 + // result
+    #$00#$5D#$15#$00#$00#$00#$00#$00#$00 +
+
+    #$00#$00#$00#$00 + // item shop id
+    #$01#$00#$00#$18#$F7#$6A#$5D#$04#$01#$00#$00#$00#$00 +
+    #$00#$00#$02#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$11#$F0#$CE#$B6#$11#$20#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00 +
+
+    #$00#$00#$00#$00#$01#$3C#$17#$53#$02 +
+    #$01#$00#$00#$18#$00#$00#$00#$00#$01#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$85#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$32#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$FF#$FF#$FF#$FF#$00#$00#$00#$00
+  );
+
+
+  client.Send(res);
+
+  res.Clear;
+
+  // decreasing items
+  res.WriteStr(
+    #$ED#$00 +
+    #$05#$00#$68#$73#$72#$65#$69 +
+    #$C0#$95#$12#$00 + // player id
+
+    #$00#$00#$00#$00 +
+    #$01#$00#$00#$18#$F7#$6A#$5D#$04#$01#$00#$00#$00#$00#$00#$00 +
+    #$02#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$11#$F0#$CE#$B6#$11#$20#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+
+    #$01#$00#$00#$00
+  );
+
+  client.Send(res);
+
+  res.Free;
 end;
 
 procedure TGame.HandlePlayerRequestShopIncome(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1836,5 +1940,31 @@ begin
   res.Free;
 end;
 
+procedure TGame.HandlePlayerLeaveGame(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  Console.Log('TGameServer.HandlePlayerLeaveGame', C_BLUE);
+
+  self.RemovePlayer(client);
+  //playerLobby.NullGame.AddPlayer(client);
+
+  {
+    // Game lobby info
+    // if player count reach 0
+    client.Send(
+      #$47#$00#$01#$02#$FF#$FF +
+      game.LobbyInformation
+    );
+
+    // if player count reach 0
+    client.Send(
+      #$47#$00#$01#$03#$FF#$FF +
+      game.LobbyInformation
+    );
+
+  }
+
+  client.Send(#$4C#$00#$FF#$FF);
+
+end;
 
 end.

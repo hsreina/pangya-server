@@ -32,7 +32,7 @@ type
 
       function GetGameById(gameId: UInt16): TGame;
       function getPlayerGame(player: TGameServerPlayer): TGame;
-      function CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent): TGame;
+      function CreateGame(args: TGameCreateArgs; onUpdate: TGameEvent): TGame;
       procedure DestroyGame(game: Tgame);
 
       property OnCreateGame: TGameGenericEvent read m_onCreateGame;
@@ -71,7 +71,7 @@ begin
   end;
 end;
 
-function TGamesList.CreateGame(name, password: AnsiString; gameInfo: TPlayerCreateGameInfo; artifact: UInt32; onUpdate: TGameEvent): TGame;
+function TGamesList.CreateGame(args: TGameCreateArgs; onUpdate: TGameEvent): TGame;
 var
   game: TGame;
 begin
@@ -80,7 +80,7 @@ begin
   begin
     raise LobbyGamesFullException.CreateFmt('oups, too much game', []);
   end;
-  game := TGame.Create(name, password, gameInfo, artifact, onUpdate);
+  game := TGame.Create(args, onUpdate);
   game.Id := m_games.Add(game);
   m_onCreateGame.Trigger(game);
   Result := game;
