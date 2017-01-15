@@ -12,7 +12,7 @@ interface
 
 uses
   Generics.Collections, GameServerPlayer, defs, PangyaBuffer, utils, ClientPacket, SysUtils,
-  GameHoleInfo, Vector3, System.TypInfo, PlayersList, GameHoles;
+  GameHoleInfo, Vector3, System.TypInfo, PlayersList, GameHoles, PangyaPacketsDef;
 
 type
 
@@ -94,26 +94,8 @@ type
       procedure DecryptShot(data: PansiChar; size: UInt32);
       procedure SendGameResult;
 
-    public
-      property Id: UInt16 read m_id write m_id;
-      property PlayerCount: Uint16 read FGetPlayerCount;
-
-      property OnPlayerJoinGame: TGamePlayerGenericEvent read m_onPlayerJoinGame;
-      property OnPlayerLeaveGame: TGamePlayerGenericEvent read m_onPlayerLeaveGame;
-
-      constructor Create(args: TGameCreateArgs; onUpdate: TGameEvent);
-      destructor Destroy; override;
-
-      function AddPlayer(player: TGameClient): Boolean;
-      function RemovePlayer(player: TGameClient): Boolean;
-      function GameInformation: AnsiString;
-      function GameResume: AnsiString;
-      procedure GoToNextHole;
       procedure ReorderPlayers(setRoomMaster: Boolean);
       procedure SendWind;
-
-      procedure Send(data: AnsiString); overload;
-      procedure Send(data: TPangyaBuffer); overload;
 
       function playersData: AnsiString;
 
@@ -121,7 +103,6 @@ type
       procedure HandlePlayerHoleInformations(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLoadOk(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerReady(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerStartGame(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerChangeGameSettings(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayer1stShotReady(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerActionShot(const client: TGameClient; const clientPacket: TClientPacket);
@@ -150,12 +131,35 @@ type
       procedure HandlePlayerCloseShop(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerEditShopName(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerEditShop(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerStartGame(const client: TGameClient; const clientPacket: TClientPacket);
+
+    public
+      property Id: UInt16 read m_id write m_id;
+      property PlayerCount: Uint16 read FGetPlayerCount;
+
+      property OnPlayerJoinGame: TGamePlayerGenericEvent read m_onPlayerJoinGame;
+      property OnPlayerLeaveGame: TGamePlayerGenericEvent read m_onPlayerLeaveGame;
+
+      constructor Create(args: TGameCreateArgs; onUpdate: TGameEvent);
+      destructor Destroy; override;
+
+      function AddPlayer(player: TGameClient): Boolean;
+      function RemovePlayer(player: TGameClient): Boolean;
+      function GameInformation: AnsiString;
+      function GameResume: AnsiString;
+      procedure GoToNextHole;
+      procedure Send(data: AnsiString); overload;
+      procedure Send(data: TPangyaBuffer); overload;
+
+      procedure HandleRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
+
+      procedure DebugStartGame(const client: TGameClient; const clientPacket: TClientPacket);
 
   end;
 
 implementation
 
-uses GameServerExceptions, Buffer, ConsolePas, PangyaPacketsDef, ShotData,
+uses GameServerExceptions, Buffer, ConsolePas, ShotData,
   PlayerGenericData, PlayerAction, PlayerCharacter, PlayerEquipment,
   PlayerShopItem;
 
@@ -278,23 +282,17 @@ begin
 
   ReorderPlayers(false);
 
-  m_onUpdateGame.Trigger(self);
-
-  self.TriggerGameUpdated;
-
   // game informations for me
   player.Send(
     #$49#$00 + #$00#$00 +
     self.GameInformation
   );
 
-  m_onPlayerJoinGame.Trigger(self, player);
+  self.TriggerGameUpdated;
 
-  // my player info to others in game
-  self.Send(
-    #$48#$00 + #$01#$FF#$FF +
-    player.Data.GameInformation
-  );
+  m_onUpdateGame.Trigger(self);
+
+  m_onPlayerJoinGame.Trigger(self, player);
 
   res := TClientPacket.Create;
 
@@ -307,17 +305,24 @@ begin
   end;
   res.WriteUInt8(0); // <- seem important
 
-
   self.Send(res);
 
   res.Free;
 
+  {
   player.Send(
     #$48#$00#$00#$FF#$FF#$01 +
-    player.Data.GameInformation(1) +
+    player.Data.GameInformation +
     #$00
   );
 
+  // my player info to others in game
+  {
+  self.Send(
+    #$48#$00 + #$01#$FF#$FF +
+    player.Data.GameInformation
+  );
+  }
 
   Exit(true);
 end;
@@ -427,7 +432,7 @@ begin
   end;
 
   // Grand prix
-  specialFlag := $14;
+  // specialFlag := $14;
 
   pl := Length(m_password);
   plTest := pl > 0;
@@ -714,6 +719,11 @@ begin
   self.Send(reply);
 
   reply.Free
+end;
+
+procedure TGame.DebugStartGame(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  self.HandlePlayerStartGame(client, clientPacket);
 end;
 
 procedure TGame.HandlePlayerStartGame(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1965,6 +1975,147 @@ begin
 
   client.Send(#$4C#$00#$FF#$FF);
 
+end;
+
+procedure TGame.HandleRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  case packetId of
+    CGPID_PLAYER_CHANGE_GAME_SETTINGS:
+    begin
+      game.HandlePlayerChangeGameSettings(client, clientPacket);
+    end;
+    CGPID_PLAYER_READY:
+    begin
+      game.HandlePlayerReady(client, clientPacket);
+    end;
+    CGPID_PLAYER_START_GAME:
+    begin
+      game.HandlePlayerStartGame(client, clientPacket);
+    end;
+    CGPID_PLAYER_LOADING_INFO:
+    begin
+      game.HandlePlayerLoadingInfo(client, clientPacket);
+    end;
+    CGPID_PLAYER_LOAD_OK:
+    begin
+      game.HandlePlayerLoadOk(client, clientPacket);
+    end;
+    CGPID_PLAYER_HOLE_INFORMATIONS:
+    begin
+      game.HandlePlayerHoleInformations(client, clientPacket);
+    end;
+    CGPID_PLAYER_1ST_SHOT_READY:
+    begin
+      game.HandlePlayer1stShotReady(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION_SHOT:
+    begin
+      game.HandlePlayerActionShot(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION_ROTATE:
+    begin
+      game.HandlePlayerActionRotate(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION_HIT:
+    begin
+      game.HandlePlayerActionHit(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION_CHANGE_CLUB:
+    begin
+      game.HandlePlayerActionChangeClub(client, clientPacket);
+    end;
+    CGPID_PLAYER_USE_ITEM:
+    begin
+      game.HandlePlayerUseItem(client, clientPacket);
+    end;
+    CGPID_PLAYER_SHOTDATA:
+    begin
+      game.HandlePlayerShotData(client, clientPacket);
+    end;
+    CGPID_PLAYER_SHOT_SYNC:
+    begin
+      game.HandlePlayerShotSync(client, clientPacket);
+    end;
+    CGPID_PLAYER_HOLE_COMPLETE:
+    begin
+      game.HandlerPlayerHoleComplete(client, clientPacket);
+    end;
+    CGPID_PLAYER_FAST_FORWARD:
+    begin
+      game.HandlePlayerFastForward(client, clientPacket);
+    end;
+    CGPID_PLAYER_POWER_SHOT:
+    begin
+      game.HandlePlayerPowerShot(client, clientPacket);
+    end;
+    CGPID_PLAYER_ACTION:
+    begin
+      game.HandlePlayerAction(client, clientPacket);
+    end;
+    CGPID_MASTER_KICK_PLAYER:
+    begin
+      game.HandleMasterKickPlayer(client, clientPacket);
+    end;
+    CGPID_PLAYER_CHANGE_EQUIP:
+    begin
+      game.HandlePlayerChangeEquipment2(client, clientPacket);
+    end;
+    CGPID_PLAYER_CHANGE_EQUPMENT_A:
+    begin
+      game.HandlePlayerChangeEquipment(client, clientPacket);
+    end;
+    CGPID_PLAYER_CHANGE_EQUPMENT_B:
+    begin
+      game.HandlePlayerChangeEquipment(client, clientPacket);
+    end;
+    CGPID_PLAYER_EDIT_SHOP:
+    begin
+      game.HandlePlayerEditShop(client, clientPacket);
+    end;
+    CGPID_PLAYER_EDIT_SHOP_NAME:
+    begin
+      game.HandlePlayerEditShopName(client, clientPacket);
+    end;
+    CGPID_PLAYER_CLOSE_SHOP:
+    begin
+      game.HandlePlayerCloseShop(client, clientPacket);
+    end;
+    CGPID_PLAYER_EDIT_SHOP_ITEMS:
+    begin
+      game.HandlePlayerEditShopItems(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_SHOP_VISITORS_COUNT:
+    begin
+      game.HandlePlayerRequestShopVisitorsCount(client, clientPacket);
+    end;
+    CGPID_PLAYER_PAUSE_GAME:
+    begin
+      game.HandlePlayerPauseGame(client, clientPacket);
+    end;
+    CGPID_PLAYER_MOVE_AZTEC:
+    begin
+      game.HandlePlayerMoveAztec(client, clientPacket);
+    end;
+    CGPID_PLAYER_ENTER_SHOP:
+    begin
+      game.HandlerPlayerEnterShop(client, clientPacket);
+    end;
+    CGPID_PLAYER_REQUEST_INCOME:
+    begin
+      game.HandlePlayerRequestShopIncome(client, clientPacket);
+    end;
+    CGPID_PLAYER_BUY_SHOP_ITEM:
+    begin
+      game.HandlePlayerShopBuyItem(client, clientPacket);
+    end;
+    CGPID_PLAYER_LEAVE_GAME:
+    begin
+      game.HandlePlayerLeaveGame(client, clientPacket);
+    end;
+    else begin
+      Console.Log(Format('Unknow packet Id %x', [Word(packetID)]), C_RED);
+    end;
+  end;
 end;
 
 end.

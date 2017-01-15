@@ -11,7 +11,7 @@ unit GameServerPlayer;
 interface
 
 uses PlayerData, PlayerCharacters, Client, PlayerAction, PlayerItems,
-  PlayerCaddies, PlayerQuest, PlayerMascots;
+  PlayerCaddies, PlayerQuest, PlayerMascots, IffManager.IffEntryBase;
 
 type
 
@@ -47,6 +47,12 @@ type
       function GameInformation(level: UInt8): AnsiString; overload;
       function LobbyInformations: AnsiString;
 
+      function SubStractIffEntryPrice(iffEntry: TIffEntrybase; quandtity: UInt32): Boolean;
+      function AddPangs(amount: UInt32): Boolean;
+      function RemovePangs(amount: Uint32): Boolean;
+      function AddCookies(amount: UInt32): Boolean;
+      function RemoveCookies(amount: UInt32): Boolean;
+
       property Lobby: Uint8 read m_lobby write m_lobby;
       property Data: PPlayerData read FGetPlayerData;
 
@@ -74,7 +80,7 @@ type
 
 implementation
 
-uses ClientPacket, PlayerCharacter, utils, PlayerEquipment;
+uses ClientPacket, PlayerCharacter, utils, PlayerEquipment, defs;
 
 constructor TGameServerPlayer.Create;
 begin
@@ -182,7 +188,7 @@ begin
       #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
       #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
       #$00#$00#$00 +
-      #$9C#$00#$00#$7C#$42#$00#$00#$00
+      #$00#$00#$00#$00#$00#$00#$00#$00
     );
 
 
@@ -247,7 +253,7 @@ procedure TGameServerPlayer.EquipCharacterById(Id: Cardinal);
 begin
   with self.m_characters.getById(Id) do
   begin
-    Data.witems.CharacterId := GetIffId;
+    Data.witems.CharacterId := GetId;
     Data.equipedCharacter := GetData;
   end;
 end;
@@ -288,6 +294,55 @@ begin
   begin
     Data.witems.AztecIffID := IffId;
   end;
+end;
+
+function TGameServerPlayer.SubStractIffEntryPrice(iffEntry: TIffEntrybase; quandtity: UInt32): Boolean;
+var
+  price: UInt32;
+  priceType: TPRICE_TYPE;
+begin
+  price := iffEntry.getPrice * quandtity;
+  case iffEntry.GetPriceType of
+    PRICE_TYPE_PANG:
+    begin
+      Result := RemovePangs(price);
+    end;
+    PRICE_TYPE_COOKIE:
+    begin
+      Result := RemoveCookies(price);
+    end;
+  end;
+end;
+
+function TGameServerPlayer.AddPangs(amount: Cardinal): Boolean;
+begin
+  inc(data.playerInfo2.pangs, amount);
+  Exit(true);
+end;
+
+function TGameServerPlayer.RemovePangs(amount: Cardinal): Boolean;
+begin
+  if data.playerInfo2.pangs - amount >= 0 then
+  begin
+    dec(data.playerInfo2.pangs, amount);
+    Exit(true);
+  end;
+  Exit(False);
+end;
+
+function TGameServerPlayer.AddCookies(amount: Cardinal): Boolean;
+begin
+  inc(Cookies, amount);
+end;
+
+function TGameServerPlayer.RemoveCookies(amount: Cardinal): Boolean;
+begin
+  if Cookies - amount >= 0 then
+  begin
+    dec(Cookies, amount);
+    Exit(true);
+  end;
+  Exit(false);
 end;
 
 end.

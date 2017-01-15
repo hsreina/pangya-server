@@ -107,7 +107,15 @@ begin
     );
 
     m_connection.ExecSQL(
+      'CREATE UNIQUE INDEX IF NOT EXISTS player_characters_index on character (player_id);'
+    );
+
+    m_connection.ExecSQL(
       'CREATE TABLE IF NOT EXISTS "items" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);'
+    );
+
+    m_connection.ExecSQL(
+      'CREATE UNIQUE INDEX IF NOT EXISTS player_items_index on items (player_id);'
     );
 
     m_connection.ExecSQL(
@@ -115,7 +123,15 @@ begin
     );
 
     m_connection.ExecSQL(
+      'CREATE UNIQUE INDEX IF NOT EXISTS player_caddies_index on caddies (player_id);'
+    );
+
+    m_connection.ExecSQL(
       'CREATE TABLE IF NOT EXISTS "mascots" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" INTEGER NOT NULL, "data" BLOB NOT NULL);'
+    );
+
+    m_connection.ExecSQL(
+      'CREATE UNIQUE INDEX IF NOT EXISTS player_mascots_index on mascots (player_id);'
     );
 
   except

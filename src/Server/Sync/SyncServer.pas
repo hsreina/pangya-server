@@ -38,6 +38,7 @@ type
 
       procedure SyncLoginPlayer(const client: TSyncClient; const clientPacket: TClientPacket);
       procedure SyncGamePlayer(const client: TSyncClient; const clientPacket: TClientPacket);
+      procedure HandleGameServerPlayerAction(const client: TSyncClient; const clientPacket: TClientPacket);
 
       procedure HandlePlayerSelectCharacter(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
       procedure HandlePlayerConfirmNickname(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
@@ -223,7 +224,7 @@ begin
     userId := CreatePlayer(login, md5Password);
     if 0 = userId then
     begin
-      self.SendToGame(client, playerUID, #$01#$00#$E2#$72#$D2#$4D#$00#$00#$00);
+      self.SendToGame(client, playerUID, #$01#$00#$E2#$72#$D2#$4D#$00#$00#$00); // 2 last char not present in JP
       Exit;
     end;
     self.InitPlayerData(userId);
@@ -257,6 +258,7 @@ begin
   item := items.Add($10000012);
   playerData.witems.clubSetId := item.GetId;
 
+  // Grand prix stuff
   with items.Add($1A000264) do
   begin
     SetQty(50);
@@ -449,7 +451,7 @@ begin
   if not m_database.PlayerHaveAnInitialCharacter(playerUID.login) then
   begin
     // Character selection menu
-    self.SendToGame(client, playerUID, #$01#$00#$D9#$00#$00);
+    self.SendToGame(client, playerUID, #$01#$00#$D9#$00#$00); // JP doesn't have two last char
     Exit;
   end;
 
@@ -460,6 +462,77 @@ begin
 
   // this is an action who can be performed from the sync server to any other server
   //self.PlayerAction(client, playerUID, #$01#$00);
+end;
+
+procedure TSyncServer.HandleGameServerPlayerAction(const client: TSyncClient; const clientPacket: TClientPacket);
+var
+  playerUID: TPlayerUID;
+  packetId: TSSAPID;
+  playerData: TPlayerData;
+  playerItems: TPlayerItems;
+  playerMascots: TPlayerMascots;
+  playerCharacters: TPlayerCharacters;
+  playerCaddies: TPlayerCaddies;
+  tmp: AnsiString;
+begin
+  Console.Log('TSyncServer.HandleGameServerPlayerAction', C_BLUE);
+
+  clientPacket.ReadUInt32(playerUID.id);
+  clientPacket.ReadPStr(playerUID.login);
+
+
+  if clientPacket.Read(packetId, 2) then
+  begin
+    case packetId of
+      SSAPID_PLAYER_MAIN_SAVE:
+      begin
+        Console.Log('SSAPID_PLAYER_MAIN_SAVE');
+        tmp := clientPacket.GetRemainingData;
+        //Console.WriteDump(tmp);
+        // playerData := TPlayerData.Create; // should create a class for this data
+        playerData.Load(tmp);
+        m_database.SavePlayerMainSave(playerUID.id, playerData);
+        // playerData.Free;
+      end;
+      SSAPID_PLAYER_CHARACTERS:
+      begin
+        Console.Log('SSAPID_PLAYER_CHARACTERS');
+        playerCharacters := TPlayerCharacters.Create;
+        playerCharacters.Load(clientPacket.GetRemainingData);
+        m_database.SavePlayerCharacters(playerUID.id, playerCharacters);
+        playerCharacters.Free;
+      end;
+      SSAPID_PLAYER_ITEMS:
+      begin
+        Console.Log('SSAPID_PLAYER_ITEMS');
+        playerItems := TPlayerItems.Create;
+        playerItems.Load(clientPacket.GetRemainingData);
+        m_database.SavePlayerItems(playerUID.id, playerItems);
+        playerItems.Free;
+      end;
+      SSAPID_PLAYER_CADDIES:
+      begin
+        Console.Log('SSAPID_PLAYER_CADDIES');
+        playerCaddies := TPlayerCaddies.Create;
+        playerCaddies.Load(clientPacket.GetRemainingData);
+        m_database.SavePlayerCaddies(playerUID.id, playerCaddies);
+        playerCaddies.Free;
+      end;
+      SSAPID_PLAYER_COOKIES:
+      begin
+        Console.Log('SSAPID_PLAYER_COOKIES');
+      end;
+      SSAPID_PLAYER_MASCOTS:
+      begin
+        Console.Log('SSAPID_PLAYER_MASCOTS');
+        playerMascots := TPlayerMascots.Create;
+        playerMascots.Load(clientPacket.GetRemainingData);
+        m_database.SavePlayerMascots(playerUID.id, playerMascots);
+        playerMascots.Free;
+      end;
+    end;
+
+  end;
 end;
 
 procedure TSyncServer.SyncGamePlayer(const client: TSyncClient; const clientPacket: TClientPacket);
@@ -554,6 +627,10 @@ begin
     begin
       self.SyncGamePlayer(client, clientPacket);
     end;
+    SSPID_PLAYER_ACTION:
+    begin
+      self.HandleGameServerPlayerAction(client, clientPacket);
+    end
     else
     begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);

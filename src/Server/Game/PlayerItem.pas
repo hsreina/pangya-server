@@ -30,6 +30,7 @@ type
       procedure SetQty(qty: UInt32);
       procedure AddQty(qty: UInt32);
       procedure RemQty(qty: UInt32);
+      function GetQty: UInt32; override;
   end;
 
 implementation
@@ -71,6 +72,11 @@ end;
 procedure TPlayerItem.RemQty(qty: Cardinal);
 begin
   Dec(m_data.qty, qty);
+end;
+
+function TPlayerItem.GetQty: UInt32;
+begin
+  Result := m_data.qty;
 end;
 
 end.

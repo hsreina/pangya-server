@@ -38,6 +38,7 @@ type
 
     function Add(PacketData: TPacketData): PlayerDataClass; overload;
     function Add(IffId: UInt32): PlayerDataClass; overload;
+    function GetOrAddByIffId(IffId: UInt32): PlayerDataClass;
 
     procedure Remove(entry: PlayerDataClass);
 
@@ -87,6 +88,14 @@ begin
 
   m_dataList.Add(playerData);
   Exit(playerData);
+end;
+
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.GetOrAddByIffId(IffId: UInt32): PlayerDataClass;
+begin
+  if not TryGetByIffId(IffId, Result) then
+  begin
+    Result := Add(IffId);
+  end;
 end;
 
 function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Add(PacketData: TPacketData): PlayerDataClass;

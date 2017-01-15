@@ -29,6 +29,8 @@ type
       procedure SetIffId(iffId: UInt32); virtual; abstract;
       function GetId: UInt32; virtual; abstract;
       procedure SetId(id: UInt32); virtual; abstract;
+      function GetQty: UInt32; virtual; abstract;
+      function GetLifeTime: UInt16; virtual; abstract;
   end;
 
   TPlayerGenericData<DataType: record> = class (TGenericPacketDatabase)
@@ -49,9 +51,21 @@ type
       procedure SetIffId(iffId: UInt32); override;
       function GetId: UInt32; override;
       procedure SetId(id: UInt32); override;
+      function GetQty: UInt32; override;
+      function GetLifeTime: UInt16; override;
   end;
 
 implementation
+
+function TPlayerGenericData<DataType>.GetQty: UInt32;
+begin
+  Result := 0;
+end;
+
+function TPlayerGenericData<DataType>.GetLifeTime: UInt16;
+begin
+  Result := 0;
+end;
 
 constructor TPlayerGenericData<DataType>.Create;
 begin

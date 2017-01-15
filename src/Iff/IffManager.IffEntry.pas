@@ -10,7 +10,7 @@ unit IffManager.IffEntry;
 
 interface
 
-uses IffManager.IffEntrybase;
+uses IffManager.IffEntrybase, defs;
 
 type
 
@@ -44,14 +44,18 @@ type
       function GetIffId: UInt32; override;
       function IsEnabled: Boolean; override;
       function GetPrice: UInt32; override;
+      function GetPriceType: TPRICE_TYPE; override;
   end;
 
 implementation
+
+uses ConsolePas, SysUtils;
 
 constructor TIffEntry<EntryDataType>.Create(data: PAnsiChar);
 begin
   inherited Create;
   move(data^, m_data, SizeOf(EntryDataType));
+  //Console.Log(Format('Id : %x', [GetBase.iffId]));
 end;
 
 destructor TIffEntry<EntryDataType>.Destroy;
@@ -79,6 +83,26 @@ end;
 function TIffEntry<EntryDataType>.GetPrice: UInt32;
 begin
   Result := self.GetBase.itemPrice;
+end;
+
+function TIffEntry<EntryDataType>.GetPriceType: TPRICE_TYPE;
+var
+  priceType: UInt8;
+begin
+  priceType := GetBase.priceType;
+  result := TPRICE_TYPE.PRICE_TYPE_UNKNOW;
+
+  if (pricetype and $0) = $0 then begin
+    result := TPRICE_TYPE.PRICE_TYPE_PANG;
+  end;
+
+  if (pricetype and $1) = $1 then begin
+    result := TPRICE_TYPE.PRICE_TYPE_COOKIE;
+  end;
+
+  if (pricetype and $2) = $2 then begin
+    result := TPRICE_TYPE.PRICE_TYPE_PANG;
+  end;
 end;
 
 end.

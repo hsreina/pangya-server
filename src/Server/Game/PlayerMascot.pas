@@ -33,6 +33,7 @@ implementation
 
 procedure TPlayerMascot.setText(newText: AnsiString);
 begin
+  newText := newText + #$00;
   move(newText[1], m_data.text[0], min(length(newText), 16));
 end;
 

@@ -32,9 +32,13 @@ type
       procedure OnDestroyClient(const client: TGameClient); override;
       procedure OnStart; override;
 
+      // Should move those function to TSyncableServer?
       procedure Sync(const client: TGameClient; const clientPacket: TClientPacket); overload;
-      procedure PlayerSync(const clientPacket: TClientPacket; const client: TGameClient);
-      procedure ServerPlayerAction(const clientPacket: TClientPacket; const client: TGameClient);
+      procedure SyncPlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlerSyncServerPlayerSync(const clientPacket: TClientPacket; const client: TGameClient);
+      procedure HandleSyncServerPlayerAction(const clientPacket: TClientPacket; const client: TGameClient);
+
+      procedure SavePlayer(const client: TGameClient);
 
       var m_lobbies: TLobbiesList;
 
@@ -66,7 +70,7 @@ type
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure handlePlayerRequestMessengerList(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestMessengerList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerGMCommaand(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
@@ -89,7 +93,7 @@ type
       procedure HandlePlayerSetMascotText(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerClearQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerDeleteMail(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure handlerPlayerSendMail(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlerPlayerSendMail(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestOfflinePlayerInfo(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerMoveInboxGift(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInboxDetails(const client: TGameClient; const clientPacket: TClientPacket);
@@ -119,7 +123,7 @@ uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
   PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment,
   PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem,
-  IffManager.HairStyle;
+  IffManager.HairStyle, PlayerItem, PlayerGenericData;
 
 constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
 begin
@@ -193,6 +197,7 @@ begin
   self.Log('TGameServer.OnDisconnectClient', TLogType_not);
   try
     lobby := m_lobbies.GetLobbyById(client.Data.Lobby);
+    SavePlayer(client);
     lobby.RemovePlayer(client);
   Except
     on E: Exception do
@@ -211,7 +216,23 @@ end;
 procedure TGameServer.Sync(const client: TGameClient; const clientPacket: TClientPacket);
 begin
   self.Log('TGameServer.Sync', TLogType.TLogType_not);
-  self.Sync(#$01#$00 + write(client.UID.id, 4) + writePStr(client.UID.login) + clientPacket.ToStr);
+  self.Sync(
+    #$01#$00 + // SSPID_PLAYER_SYNC
+    write(client.UID.id, 4) +
+    writePStr(client.UID.login) +
+    clientPacket.ToStr
+  );
+end;
+
+procedure TGameServer.SyncPlayerAction(const client: TGameClient; const clientPacket: TClientPacket);
+begin
+  self.Log('TGameServer.Sync', TLogType.TLogType_not);
+  self.Sync(
+    #$02#$00 + // SSPID_PLAYER_ACTION
+    write(client.UID.id, 4) +
+    writePStr(client.UID.login) +
+    clientPacket.ToStr
+  );
 end;
 
 procedure TGameServer.HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
@@ -229,17 +250,18 @@ procedure TGameServer.HandleDebugCommands(const client: TGameClient; const clien
 var
   game: TGame;
 begin
-
   game := self.m_lobbies.GetPlayerGame(client);
-
   // Speed ugly way for debug command
   if msg = ':start' then
   begin
-    game.HandlePlayerStartGame(client, clientPacket);
+    game.DebugStartGame(client, clientPacket);
   end
   else if msg = ':next' then
   begin
     game.GoToNextHole;
+  end else if msg = ':save' then
+  begin
+    SavePlayer(client);
   end;
 end;
 
@@ -430,11 +452,13 @@ var
   successCount: uint16;
   test: TITEM_TYPE;
   itemId: UInt32;
+  itemQty: UInt32;
   iffEntry: TIffEntrybase;
   iffEntry2: TIffEntrybase;
   itemSetDetails: TItemSetDetail;
   writeInfo: Boolean;
   character: TPlayerCharacter;
+  totalCost: UInt32;
 begin
   self.Log('TGameServer.HandlePlayerBuyItem', TLogType_not);
 
@@ -454,12 +478,20 @@ begin
   begin
     clientPacket.Read(shopItem.un1, sizeof(TShopItemDesc));
 
+    itemQty := shopItem.qty;
+
     if not self.m_iffManager.TryGetByIffId(shopItem.IffId.id, iffEntry) then
     begin
       client.Send(
         #$68#$00 +
         #$03#$00#$00#$00
       );
+      Exit;
+    end;
+
+    if not client.Data.SubStractIffEntryPrice(iffEntry, itemQty) then
+    begin
+      Console.Log('player don''t have enough money!!', C_RED);
       Exit;
     end;
 
@@ -485,7 +517,7 @@ begin
         with client.Data.Items.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
-          Console.WriteDump(ToPacketData);
+          SetQty(1);
         end;
       end;
       ITEM_TYPE_CLUB:
@@ -494,36 +526,44 @@ begin
         with client.Data.Items.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
+          SetQty(1);
+          itemQty := GetQty;
         end;
       end;
       ITEM_TYPE_AZTEC:
       begin
         Console.Log('ITEM_TYPE_AZTEC');
-        with client.Data.Items.Add(shopItem.IffId.id) do
+        with client.Data.Items.GetOrAddByIffId(shopItem.IffId.id) do
         begin
           itemId := getId;
+          AddQty(itemQty);
+          itemQty := GetQty;
         end;
       end;
       ITEM_TYPE_ITEM1:
       begin
         Console.Log('ITEM_TYPE_ITEM1');
-        with client.Data.Items.Add(shopItem.IffId.id) do
+        with client.Data.Items.GetOrAddByIffId(shopItem.IffId.id) do
         begin
           itemId := getId;
+          AddQty(itemQty);
+          itemQty := GetQty;
         end;
       end;
       ITEM_TYPE_ITEM2:
       begin
         Console.Log('ITEM_TYPE_ITEM2');
-        with client.Data.Items.Add(shopItem.IffId.id) do
+        with client.Data.Items.GetOrAddByIffId(shopItem.IffId.id) do
         begin
           itemId := getId;
+          AddQty(itemQty);
+          itemQty := GetQty;
         end;
       end;
       ITEM_TYPE_CADDIE:
       begin
         Console.Log('ITEM_TYPE_CADDIE');
-        with client.Data.Caddies.Add(shopItem.IffId.id) do
+        with client.Data.Caddies.GetOrAddByIffId(shopItem.IffId.id) do
         begin
           itemId := getId;
         end;
@@ -546,18 +586,18 @@ begin
               with client.Data.Items.Add(shopItem.IffId.id) do
               begin
                 itemId := getId;
-                Console.WriteDump(ToPacketData);
-
+                SetQty(1);
                 inc(successCount);
+                itemQty := GetQty;
+
                 shopResult := shopResult +
                   self.Write(itemSetDetails.IffId, 4) + // IffId
                   self.Write(itemId, 4) + // Id
                   self.Write(shopItem.lifeTime, 2) + // time
                   #$00 +
-                  self.Write(shopItem.qty, 4) + // qty left
+                  self.Write(itemQty, 4) + // qty left
                   #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
                   #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00;
-
               end;
             end;
           end;
@@ -580,7 +620,6 @@ begin
       ITEM_TYPE_HAIR_COLOR2:
       begin
         Console.Log('ITEM_TYPE_HAIR_COLOR');
-
         with THairStyleDataClass(IffEntry) do
         begin
           if client.Data.Characters.TryGetByIffId(GetCharacterIffId, character) then
@@ -592,7 +631,6 @@ begin
             end;
           end;
         end;
-
       end;
       ITEM_TYPE_MASCOT:
       begin
@@ -632,7 +670,7 @@ begin
         self.Write(itemId, 4) + // Id
         self.Write(shopItem.lifeTime, 2) + // time
         #$00 +
-        self.Write(shopItem.qty, 4) + // qty left
+        self.Write(itemQty, 4) + // qty left
         #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
         #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00;
     end;
@@ -884,11 +922,11 @@ begin
   client.Send(#$0B#$01#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$00#$00#$00#$00);
 end;
 
-procedure TGameServer.handlePlayerRequestMessengerList(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TGameServer.HandlePlayerRequestMessengerList(const client: TGameClient; const clientPacket: TClientPacket);
 var
   packet: TClientPacket;
 begin
-  Console.Log('TGameServer.handlePlayerRequestMessengerList', C_BLUE);
+  Console.Log('TGameServer.HandlePlayerRequestMessengerList', C_BLUE);
 
   packet := TClientPacket.Create;
   
@@ -1593,13 +1631,13 @@ begin
 
 end;
 
-procedure TGameServer.handlerPlayerSendMail(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TGameServer.HandlerPlayerSendMail(const client: TGameClient; const clientPacket: TClientPacket);
 var
   mailTo: AnsiString;
   mailBody: AnsiString;
   un1, un2: UInt32;
 begin
-  Console.Log('TGameServer.handlerPlayerSendMail', C_BLUE);
+  Console.Log('TGameServer.HandlerPlayerSendMail', C_BLUE);
 
   clientPacket.ReadUInt32(un1);
   clientPacket.ReadUInt32(un2);
@@ -2089,7 +2127,7 @@ begin
     end;
     CGPID_PLAYER_REQUEST_MESSENGER_LIST:
     begin
-      self.handlePlayerRequestMessengerList(client, clientPacket);
+      self.HandlePlayerRequestMessengerList(client, clientPacket);
     end;
     CGPID_PLAYER_GM_COMMAND:
     begin
@@ -2173,7 +2211,7 @@ begin
     end;
     CGPID_PLAYER_SEND_MAIL:
     begin
-      self.handlerPlayerSendMail(client, clientPacket);
+      self.HandlerPlayerSendMail(client, clientPacket);
     end;
     CGPID_PLAYER_DELETE_MAIL:
     begin
@@ -2214,7 +2252,11 @@ begin
     CGPID_ENTER_GRAND_PRIX_EVENT:
     begin
       lobby.HandlePlayerEnterGrandPrixEvent(client, clientPacket);;
-    end
+    end;
+    CGPID_PLAYER_SET_ASSIST_MODE:
+    begin
+      self.HandlePlayerSetAssistMode(client, clientPacket);
+    end;
     else begin
       try
         playerGame := lobby.GetPlayerGame(client);
@@ -2232,147 +2274,7 @@ end;
 
 procedure TGameServer.HandleGameRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
 begin
-  case packetId of
-    CGPID_PLAYER_CHANGE_GAME_SETTINGS:
-    begin
-      game.HandlePlayerChangeGameSettings(client, clientPacket);
-    end;
-    CGPID_PLAYER_SET_ASSIST_MODE:
-    begin
-      self.HandlePlayerSetAssistMode(client, clientPacket);
-    end;
-    CGPID_PLAYER_READY:
-    begin
-      game.HandlePlayerReady(client, clientPacket);
-    end;
-    CGPID_PLAYER_START_GAME:
-    begin
-      game.HandlePlayerStartGame(client, clientPacket);
-    end;
-    CGPID_PLAYER_LOADING_INFO:
-    begin
-      game.HandlePlayerLoadingInfo(client, clientPacket);
-    end;
-    CGPID_PLAYER_LOAD_OK:
-    begin
-      game.HandlePlayerLoadOk(client, clientPacket);
-    end;
-    CGPID_PLAYER_HOLE_INFORMATIONS:
-    begin
-      game.HandlePlayerHoleInformations(client, clientPacket);
-    end;
-    CGPID_PLAYER_1ST_SHOT_READY:
-    begin
-      game.HandlePlayer1stShotReady(client, clientPacket);
-    end;
-    CGPID_PLAYER_ACTION_SHOT:
-    begin
-      game.HandlePlayerActionShot(client, clientPacket);
-    end;
-    CGPID_PLAYER_ACTION_ROTATE:
-    begin
-      game.HandlePlayerActionRotate(client, clientPacket);
-    end;
-    CGPID_PLAYER_ACTION_HIT:
-    begin
-      game.HandlePlayerActionHit(client, clientPacket);
-    end;
-    CGPID_PLAYER_ACTION_CHANGE_CLUB:
-    begin
-      game.HandlePlayerActionChangeClub(client, clientPacket);
-    end;
-    CGPID_PLAYER_USE_ITEM:
-    begin
-      game.HandlePlayerUseItem(client, clientPacket);
-    end;
-    CGPID_PLAYER_SHOTDATA:
-    begin
-      game.HandlePlayerShotData(client, clientPacket);
-    end;
-    CGPID_PLAYER_SHOT_SYNC:
-    begin
-      game.HandlePlayerShotSync(client, clientPacket);
-    end;
-    CGPID_PLAYER_HOLE_COMPLETE:
-    begin
-      game.HandlerPlayerHoleComplete(client, clientPacket);
-    end;
-    CGPID_PLAYER_FAST_FORWARD:
-    begin
-      game.HandlePlayerFastForward(client, clientPacket);
-    end;
-    CGPID_PLAYER_POWER_SHOT:
-    begin
-      game.HandlePlayerPowerShot(client, clientPacket);
-    end;
-    CGPID_PLAYER_ACTION:
-    begin
-      game.HandlePlayerAction(client, clientPacket);
-    end;
-    CGPID_MASTER_KICK_PLAYER:
-    begin
-      game.HandleMasterKickPlayer(client, clientPacket);
-    end;
-    CGPID_PLAYER_CHANGE_EQUIP:
-    begin
-      game.HandlePlayerChangeEquipment2(client, clientPacket);
-    end;
-    CGPID_PLAYER_CHANGE_EQUPMENT_A:
-    begin
-      game.HandlePlayerChangeEquipment(client, clientPacket);
-    end;
-    CGPID_PLAYER_CHANGE_EQUPMENT_B:
-    begin
-      game.HandlePlayerChangeEquipment(client, clientPacket);
-    end;
-    CGPID_PLAYER_EDIT_SHOP:
-    begin
-      game.HandlePlayerEditShop(client, clientPacket);
-    end;
-    CGPID_PLAYER_EDIT_SHOP_NAME:
-    begin
-      game.HandlePlayerEditShopName(client, clientPacket);
-    end;
-    CGPID_PLAYER_CLOSE_SHOP:
-    begin
-      game.HandlePlayerCloseShop(client, clientPacket);
-    end;
-    CGPID_PLAYER_EDIT_SHOP_ITEMS:
-    begin
-      game.HandlePlayerEditShopItems(client, clientPacket);
-    end;
-    CGPID_PLAYER_REQUEST_SHOP_VISITORS_COUNT:
-    begin
-      game.HandlePlayerRequestShopVisitorsCount(client, clientPacket);
-    end;
-    CGPID_PLAYER_PAUSE_GAME:
-    begin
-      game.HandlePlayerPauseGame(client, clientPacket);
-    end;
-    CGPID_PLAYER_MOVE_AZTEC:
-    begin
-      game.HandlePlayerMoveAztec(client, clientPacket);
-    end;
-    CGPID_PLAYER_ENTER_SHOP:
-    begin
-      game.HandlerPlayerEnterShop(client, clientPacket);
-    end;
-    CGPID_PLAYER_REQUEST_INCOME:
-    begin
-      game.HandlePlayerRequestShopIncome(client, clientPacket);
-    end;
-    CGPID_PLAYER_BUY_SHOP_ITEM:
-    begin
-      game.HandlePlayerShopBuyItem(client, clientPacket);
-    end;
-    CGPID_PLAYER_LEAVE_GAME:
-    begin
-      game.HandlePlayerLeaveGame(client, clientPacket);
-    end;
-    else begin
-      self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
-    end;
-  end;
+  game.HandleRequests(game, packetId, client, clientPacket);
 end;
 
 procedure TGameServer.OnReceiveClientData(const client: TGameClient; const clientPacket: TClientPacket);
@@ -2422,22 +2324,22 @@ begin
 end;
 
 // TODO: move that to parent class
-procedure TGameServer.PlayerSync(const clientPacket: TClientPacket; const client: TGameClient);
+procedure TGameServer.HandlerSyncServerPlayerSync(const clientPacket: TClientPacket; const client: TGameClient);
 var
   actionId: TSGPID;
 begin
-  self.Log('TGameServer.PlayerSync', TLogType_not);
+  self.Log('TGameServer.HandlerSyncServerPlayerSync', TLogType_not);
   client.Send(clientPacket.GetRemainingData);
 end;
 
-procedure TGameServer.ServerPlayerAction(const clientPacket: TClientPacket; const client: TGameClient);
+procedure TGameServer.HandleSyncServerPlayerAction(const clientPacket: TClientPacket; const client: TGameClient);
 var
   actionId: TSSAPID;
   buffer: AnsiString;
   d: AnsiString;
   mascot: TPlayerMascot;
 begin
-  self.Log('TGameServer.PlayerSync', TLogType_not);
+  self.Log('TGameServer.HandleSyncServerPlayerAction', TLogType_not);
   if clientPacket.Read(actionId, 2) then
   begin
     case actionId of
@@ -2495,7 +2397,6 @@ begin
         console.WriteDump(
           WriteHeader(SGPID_PLAYER_MASCOTS_DATA) +
           client.Data.Mascots.ToPacketData
-
         );
 
         client.Send(
@@ -2515,7 +2416,6 @@ begin
       end;
     end;
   end;
-
 end;
 
 procedure TGameServer.OnDestroyClient(const client: TGameClient);
@@ -2572,11 +2472,11 @@ begin
     case packetId of
       SSPID_PLAYER_SYNC:
       begin
-        self.PlayerSync(clientPacket, client);
+        self.HandlerSyncServerPlayerSync(clientPacket, client);
       end;
       SSPID_PLAYER_ACTION:
       begin
-        self.ServerPlayerAction(clientPacket, client);
+        self.HandleSyncServerPlayerAction(clientPacket, client);
       end;
       else
       begin
@@ -2651,6 +2551,47 @@ begin
     end;
   end;
   lobby.Send(data);
+end;
+
+procedure TGameServer.SavePlayer(const client: TGameClient);
+var
+  clientPacket: TClientPacket;
+begin
+  Console.Log('TGameServer.SavePlayer', C_BLUE);
+
+  clientPacket := TClientPacket.Create;
+
+  clientPacket.WriteStr(
+    WriteAction(SSAPID_PLAYER_ITEMS) + client.Data.Items.ToPacketData
+  );
+  self.SyncPlayerAction(client, clientPacket);
+  clientPacket.Clear;
+
+  clientPacket.WriteStr(
+    WriteAction(SSAPID_PLAYER_CHARACTERS) + client.Data.Characters.ToPacketData
+  );
+  self.SyncPlayerAction(client, clientPacket);
+  clientPacket.Clear;
+
+  clientPacket.WriteStr(
+    WriteAction(SSAPID_PLAYER_CADDIES) + client.Data.Caddies.ToPacketData
+  );
+  self.SyncPlayerAction(client, clientPacket);
+  clientPacket.Clear;
+
+  clientPacket.WriteStr(
+    WriteAction(SSAPID_PLAYER_MASCOTS) + client.Data.Mascots.ToPacketData
+  );
+  self.SyncPlayerAction(client, clientPacket);
+  clientPacket.Clear;
+
+  clientPacket.WriteStr(
+    WriteAction(SSAPID_PLAYER_MAIN_SAVE) + client.Data.Data.ToPacketData
+  );
+  self.SyncPlayerAction(client, clientPacket);
+  clientPacket.Clear;
+
+  clientPacket.Free;
 end;
 
 end.

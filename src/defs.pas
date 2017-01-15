@@ -205,6 +205,12 @@ type
     CREATE_GAME_CANT_CREATE = $12
   );
 
+  TPRICE_TYPE = (
+    PRICE_TYPE_UNKNOW = $00,
+    PRICE_TYPE_PANG   = $01,
+    PRICE_TYPE_COOKIE = $02
+  );
+
 function WriteGameCreateResult(gameCreateResult: TCREATE_GAME_RESULT): Uint8;
 
 implementation
