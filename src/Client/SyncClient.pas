@@ -101,6 +101,7 @@ end;
 
 destructor TSyncClient.Destroy;
 begin
+  inherited;
   m_timer.Free;
   m_buffin.Free;
   m_buffout.Free;

@@ -238,11 +238,35 @@ end;
 procedure TGameServer.HandlePlayerLogin(const client: TGameClient; const clientPacket: TClientPacket);
 var
   login: AnsiString;
+  UID: UInt32;
+  checkA: AnsiString;
+  checkB: AnsiString;
+  checkC: UInt32;
+  clientVersion: AnsiString;
 begin
   self.Log('TGameServer.HandlePlayerLogin', TLogType_not);
+
   clientPacket.ReadPStr(login);
+
+  clientPacket.ReadUInt32(UID);
+  clientPacket.Skip(6);
+  clientPacket.ReadPStr(checkA);
+  clientPacket.ReadPStr(clientVersion);
+
+  ClientPacket.ReadUInt32(checkc);
+  checkc := self.Deserialize(checkc);
+  self.Log(Format('check c dec : %x, %d', [checkc, checkc]));
+
+  ClientPacket.seek(4, 1);
+
+  ClientPacket.ReadPStr(checkb);
+  self.Log(Format('Check b  : %s', [checkb]));
+
   client.UID.login := login;
   client.UID.id := 0;
+
+
+
   self.Sync(client, clientPacket);
 end;
 

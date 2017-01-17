@@ -12,7 +12,7 @@ interface
 
 uses
   IffManager.IffEntry, Generics.Collections, SysUtils, IffManager.IffEntrybase,
-  IffManager.DataCheck;
+  IffManager.DataCheck, System.Zip;
 
 type
   TIffEntryList<PartData: record; DataClass: TIffEntry<PartData>, constructor> = class
@@ -25,7 +25,8 @@ type
     public
       constructor Create;
       destructor Destroy; override;
-      function Load(filePath: string): Boolean;
+      function Load(filePath: string): Boolean; overload;
+      function Load(const zip: TZipFile; const filename: string): Boolean; overload;
       function GetByIffId(iffId: UInt32): TIffEntrybase;
       function TryGetByIffId(iffid: UInt32; var entry: TIffEntrybase): Boolean;
 
@@ -33,7 +34,7 @@ type
 
 implementation
 
-uses ConsolePas, GameServerExceptions;
+uses ConsolePas, GameServerExceptions, Classes;
 
 constructor TIffEntryList<PartData, DataClass>.Create;
 begin
@@ -52,6 +53,49 @@ begin
     entry.Free;
   end;
   m_entries.Free;
+end;
+
+function TIffEntryList<PartData, DataClass>.Load(const zip: TZipFile; const filename: string): Boolean;
+var
+  totalSize: UInt32;
+  bytes: TBytes;
+  memoryStream: TMemoryStream;
+  buff: PAnsiChar;
+begin
+
+  zip.Read(filename, bytes);
+  totalSize := Length(bytes);
+
+  with TMemoryStream.Create do
+  try
+    Write(bytes, totalSize);
+    Seek(0, 0);
+
+    Read(m_entriesCount, 2);
+    console.Log(Format('m_count : %x', [m_entriesCount]));
+
+    if not (totalSize = m_entriesCount * SizeOf(PartData) + 8) then
+    begin
+      Exit(false);
+    end;
+
+    Seek(6, 1);
+
+    // Should check the data Size
+    buff := allocMem(SizeOf(PartData));
+
+    while Read(buff^, SizeOf(PartData)) > 0 do
+    begin
+      m_entries.Add(TIffEntry<PartData>.Create(buff));
+    end;
+
+    freeMem(buff, SizeOf(PartData));
+
+    m_loaded := true;
+    Result := true;
+  finally
+    Free;
+  end;
 end;
 
 function TIffEntryList<PartData, DataClass>.Load(filePath: string): Boolean;
