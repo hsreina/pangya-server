@@ -25,7 +25,6 @@ type
       var m_ball: TBall;
       var m_caddie: TCaddie;
       var m_clubSet: TClubSet;
-      var m_club: TClub;
       var m_skin: TSkin;
       var m_mascot: TMascot;
       var m_auxPart: TAuxPart;
@@ -40,7 +39,6 @@ type
       property Ball: TBall read m_ball;
       property Caddie: TCaddie read m_caddie;
       property ClubSet: TClubSet read m_clubSet;
-      property Club: TClub read m_club;
       property Skin: TSkin read m_skin;
       property Mascot: TMascot read m_mascot;
       property AuxPart: TAuxPart read m_auxPart;
@@ -67,7 +65,6 @@ begin
   m_ball := TBall.Create;
   m_caddie := TCaddie.Create;
   m_clubSet := TClubSet.Create;
-  m_club := TClub.Create;
   m_skin := TSkin.Create;
   m_mascot := TMascot.Create;
   m_auxPart := TAuxPart.Create;
@@ -84,7 +81,6 @@ begin
   m_ball.Free;
   m_caddie.Free;
   m_clubSet.Free;
-  m_club.Free;
   m_skin.Free;
   m_mascot.Free;
   m_auxPart.Free;
@@ -147,7 +143,7 @@ begin
   path := '../data/pangya_gb_patch.iff';
 
   Result :=
-    //m_part.PatchAndSave(path + '/Part.iff');// and
+    m_part.PatchAndSave(path + '/Part.iff') and
     m_item.PatchAndSave(path + '/Item.iff') and
     m_ball.PatchAndSave(path + '/Ball.iff') and
     m_caddie.PatchAndSave(path + '/Caddie.iff') and
@@ -181,7 +177,6 @@ begin
     m_ball.TryGetByIffId(iffId, Result) or
     m_caddie.TryGetByIffId(iffId, Result) or
     m_clubSet.TryGetByIffId(iffId, Result) or
-    m_club.TryGetByIffId(iffId, Result) or
     m_skin.TryGetByIffId(iffId, Result) or
     m_mascot.TryGetByIffId(iffId, Result) or
     m_auxPart.TryGetByIffId(iffId, Result) or

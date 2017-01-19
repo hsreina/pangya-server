@@ -59,6 +59,7 @@ const
 constructor TServerOptions.Create;
 begin
   m_data.aFlag := 8; // 8 enable grand prix
+  {
   m_data.MaintenanceFlags :=
     MAINTENANCE_FLAG_PAPELSHOP or
     MAINTENANCE_FLAG_VS_STROKE or
@@ -75,6 +76,7 @@ begin
     MAINTENANCE_FLAG_CHAR_MASTERY// or
     //UInt64(1 shl 32)
     ;
+    }
 end;
 
 destructor TServerOptions.Destroy;
