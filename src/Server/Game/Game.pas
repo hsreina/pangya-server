@@ -756,7 +756,7 @@ begin
       gameInfo.ShotReady := false;
       gameInfo.LoadComplete := false;
       gameInfo.ShotSync := false;
-      res.WriteStr(Data.Debug1);
+      res.WriteStr(Data.ToPacketData);
     end;
   end;
 

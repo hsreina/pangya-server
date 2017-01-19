@@ -12,7 +12,7 @@ interface
 
 uses Client, GameServerPlayer, Server, ClientPacket, SysUtils, LobbiesList, CryptLib,
   SyncableServer, PangyaBuffer, PangyaPacketsDef, Lobby, Game, IniFiles,
-  IffManager;
+  IffManager, ServerOptions;
 
 type
 
@@ -47,6 +47,7 @@ type
       var m_name: AnsiString;
 
       var m_iffManager: TIffManager;
+      var m_serverOptions: TServerOptions;
 
       function LobbiesList: AnsiString;
 
@@ -131,12 +132,14 @@ begin
   Console.Log('TGameServer.Create');
   m_lobbies := TLobbiesList.Create;
   m_iffManager := iffManager;
+  m_serverOptions := TServerOptions.Create;
 end;
 
 destructor TGameServer.Destroy;
 begin
   inherited;
   m_lobbies.Free;
+  m_serverOptions.Free;
 end;
 
 function TGameServer.LobbiesList: AnsiString;
@@ -283,6 +286,13 @@ begin
   else if msg = ':next' then
   begin
     game.GoToNextHole;
+  end
+  else if msg = ':dump' then
+  begin
+    WriteDataToFile('dump.dat',
+      client.Data.Data.ToPacketData +
+      m_serverOptions.ToPacketData
+    );
   end else if msg = ':save' then
   begin
     SavePlayer(client);
@@ -2376,14 +2386,15 @@ begin
         buffer := clientPacket.GetRemainingData;
         client.Data.Data.Load(buffer);
         client.Data.Data.playerInfo1.ConnectionId := client.ID + 1;
-        client.Data.Data.aFlag := $8;
         client.Send(
           WriteHeader(SGPID_PLAYER_MAIN_DATA) +
           #$00 +
           WritePStr('824.00') +
           WritePStr(ExtractFilename(ParamStr(0))) +
-          client.Data.Data.ToPacketData
+          client.Data.Data.ToPacketData +
+          m_serverOptions.ToPacketData
         );
+
       end;
       SSAPID_PLAYER_CHARACTERS:
       begin

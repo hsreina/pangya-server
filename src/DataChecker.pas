@@ -21,7 +21,7 @@ implementation
 
 uses
   PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData, ShotData,
-  PlayerEquipment, PlayerMascot, PlayerShopItem;
+  PlayerEquipment, PlayerMascot, PlayerShopItem, ConsolePas, ServerOptions;
 
 procedure TDataChecker.Validate;
 const
@@ -37,6 +37,7 @@ const
   playerItemSize = SizeOf(TPlayerItemData);
   playerLockerItemSize = SizeOf(TPlayerLockerItemData);
   playerShopItemSize = SizeOf(TPlayerShopItem);
+  serverOptionsSize = SizeOf(TServerOptionsData);
 begin
 
   if not (playerShopItemSize = $AC) then
@@ -54,6 +55,7 @@ begin
     raise Exception.CreateFmt('TPlayerItemData Invalid Size (%x)', [playerItemSize]);
   end;
 
+  Console.Log(Format('SizeOf(playerMascotSize) %x', [playerMascotSize]));
   if not (playerMascotSize = $3E) then
   begin
     raise Exception.CreateFmt('TPlayerMascotData Invalid Size (%x)', [playerMascotSize]);
@@ -95,9 +97,14 @@ begin
     raise Exception.CreateFmt('TPlayerInfo2 Invalid Size (%x)', [playerInfo2Size]);
   end;
 
-  if not (playerDataSize = $30C5) then
+  if not (playerDataSize = $2F84) then
   begin
     raise Exception.CreateFmt('TPlayerData Invalid Size (%x)', [playerDataSize]);
+  end;
+
+  if not (serverOptionsSize = $141) then
+  begin
+    raise Exception.CreateFmt('TServerOptionsData Invalid Size (%x)', [serverOptionsSize]);
   end;
 
 end;

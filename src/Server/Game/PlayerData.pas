@@ -76,17 +76,8 @@ type
 
     var equipedMascot: TPlayerMascotData;
 
-    var un0001: array [0..$28] of AnsiChar;
-
-    // this flag must be 8 to enable grand prix on the server for the player
-    var aFlag: UInt8;
-
-    // now sound like something related to guilds
-    var un0004: array [0..$116] of AnsiChar;
-
     procedure Clear;
     function ToPacketData: TPacketData;
-    function Debug1: TPacketData;
     procedure Load(packetData: TPacketData);
     procedure SetLogin(login: AnsiString);
     procedure SetNickname(nickname: AnsiString);
@@ -100,15 +91,11 @@ begin
 end;
 
 function TPlayerData.ToPacketData: TPacketData;
+const
+  sizeOfTPlayerData = SizeOf(TPlayerData);
 begin
-  setLength(result, sizeof(TPlayerData));
-  move(self.playerInfo1.game, result[1], sizeof(TPlayerData));
-end;
-
-function TPlayerData.Debug1: TPacketData;
-begin
-  setLength(result, $2F95);
-  move(self.playerInfo1.game, result[1], $2F95);
+  setLength(result, sizeOfTPlayerData);
+  move(self.playerInfo1.game, result[1], sizeOfTPlayerData);
 end;
 
 procedure TPlayerData.Load(packetData: AnsiString);

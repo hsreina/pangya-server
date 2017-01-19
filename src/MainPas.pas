@@ -157,6 +157,8 @@ begin
     Exit;
   end;
 
+  //m_iffManager.PatchAndSave;
+
 {$IFDEF SYNC_SERVER}
   m_synServer := TSyncServer.Create(m_cryptLib);
   m_synServer.OnLog := self.OnServerLog;

@@ -26,6 +26,7 @@ type
       constructor Create;
       destructor Destroy; override;
       function Load(filePath: string): Boolean; overload;
+      function PatchAndSave(filePath: string): Boolean;
       function Load(const zip: TZipFile; const filename: string): Boolean; overload;
       function GetByIffId(iffId: UInt32): TIffEntrybase;
       function TryGetByIffId(iffid: UInt32; var entry: TIffEntrybase): Boolean;
@@ -62,7 +63,6 @@ var
   memoryStream: TMemoryStream;
   buff: PAnsiChar;
 begin
-
   zip.Read(filename, bytes);
   totalSize := Length(bytes);
 
@@ -72,7 +72,6 @@ begin
     Seek(0, 0);
 
     Read(m_entriesCount, 2);
-    console.Log(Format('m_count : %x', [m_entriesCount]));
 
     if not (totalSize = m_entriesCount * SizeOf(PartData) + 8) then
     begin
@@ -120,7 +119,6 @@ begin
   end;
 
   fileSeek(handler, 6, 1);
-  console.Log(Format('m_count : %d', [m_entriesCount]));
 
   // Should check the data Size
   buff := allocMem(SizeOf(PartData));
@@ -134,6 +132,49 @@ begin
   fileClose(handler);
 
   m_loaded := true;
+
+  Result := true;
+end;
+
+function TIffEntryList<PartData, DataClass>.PatchAndSave(filePath: string): Boolean;
+var
+  handler: Integer;
+  entry: DataClass;
+  buffer: TBytes;
+  entriesCount: UInt32;
+  fs: TFileStream;
+  flags: UInt16;
+const
+  sign: UInt32 = $d;
+begin
+  flags := fmOpenReadWrite;
+
+  if not FileExists(filePath) then
+  begin
+    flags := flags or fmCreate;
+  end;
+
+  entriesCount := m_entries.Count;
+  with TFileStream.Create(filepath, flags) do
+  try
+    Write(entriesCount, 4);
+    Write(sign, 4);
+    for entry in m_entries do
+    begin
+
+      if entry.IsEnabled then
+      begin
+        entry.SetItemFlag(1);
+        entry.SetMinLVL($0);
+        entry.SetShopPrice($0);
+        entry.SetPriceType($60);
+      end;
+      entry.LoadToBytes(buffer);
+      Write(buffer[0], entry.GetDataSize);
+    end;
+  finally
+    Free;
+  end;
 
   Result := true;
 end;

@@ -10,7 +10,7 @@ unit IffManager.IffEntry;
 
 interface
 
-uses IffManager.IffEntrybase, defs;
+uses IffManager.IffEntrybase, defs, SysUtils;
 
 type
 
@@ -25,7 +25,7 @@ type
     var itemPrice: UInt32;
     var discountPrice: UInt32;
     var usedPrice: UInt32;
-    var priceType: UInt8;
+    var priceType: UInt8; // Cookie , pangs, free
     var itemFlag: UInt8; // 0x01 in stock; 0x02 disable gift; 0x03 Special; 0x08 new; 0x10 hot;
     var timeFlag: UInt8;
     var time: UInt8;
@@ -38,24 +38,32 @@ type
     protected
       var m_data: EntryDataType;
       function GetBase: PIffbase;
+      const m_dataSize = SizeOf(EntryDataType);
     public
       constructor Create(data: PAnsiChar);
       destructor Destroy; override;
       function GetIffId: UInt32; override;
       function IsEnabled: Boolean; override;
+      procedure Enable;
       function GetPrice: UInt32; override;
       function GetPriceType: TPRICE_TYPE; override;
+      procedure LoadToBytes(var bytes: TBytes);
+      function GetDataSize: UInt32;
+      procedure SetItemFlag(itemFlag: UInt8);
+      procedure SetMinLVL(minLVL: UInt8);
+      procedure SetShopPrice(price: UInt32);
+      procedure SetPriceType(priceType: UInt32);
   end;
 
 implementation
 
-uses ConsolePas, SysUtils;
+uses ConsolePas;
 
 constructor TIffEntry<EntryDataType>.Create(data: PAnsiChar);
 begin
   inherited Create;
-  move(data^, m_data, SizeOf(EntryDataType));
-  //Console.Log(Format('Id : %x', [GetBase.iffId]));
+  move(data^, m_data, m_dataSize);
+  //Console.Log(Format('Preview : %s', [GetBase.preview]));
 end;
 
 destructor TIffEntry<EntryDataType>.Destroy;
@@ -78,6 +86,11 @@ var
   base: PIffBase;
 begin
   Result := self.GetBase.enabled = 1;
+end;
+
+procedure TIffEntry<EntryDataType>.Enable;
+begin
+  self.GetBase.enabled := 1;
 end;
 
 function TIffEntry<EntryDataType>.GetPrice: UInt32;
@@ -103,6 +116,37 @@ begin
   if (pricetype and $2) = $2 then begin
     result := TPRICE_TYPE.PRICE_TYPE_PANG;
   end;
+end;
+
+procedure TIffEntry<EntryDataType>.LoadToBytes(var bytes: TBytes);
+begin
+  setLength(bytes, m_dataSize);
+  move(m_data, bytes[0], m_dataSize);
+end;
+
+function TIffEntry<EntryDataType>.GetDataSize: UInt32;
+begin
+  Result := m_dataSize;
+end;
+
+procedure TIffEntry<EntryDataType>.SetItemFlag(itemFlag: UInt8);
+begin
+  self.GetBase.itemFlag := itemFlag;
+end;
+
+procedure TIffEntry<EntryDataType>.SetMinLVL(minLVL: UInt8);
+begin
+  self.GetBase.minLVL := minLVL;
+end;
+
+procedure TIffEntry<EntryDataType>.SetShopPrice(price: UInt32);
+begin
+  self.GetBase.itemPrice := price;
+end;
+
+procedure TIffEntry<EntryDataType>.SetPriceType(priceType: UInt32);
+begin
+  self.GetBase.priceType := priceType;
 end;
 
 end.

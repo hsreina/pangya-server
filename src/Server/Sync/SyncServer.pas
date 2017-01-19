@@ -743,9 +743,10 @@ begin
   packet := TClientPacket.Create;
 
   packet.WriteStr(
-    #$02#$00 +
-    #$01 // Number of servers
+    #$02#$00
   );
+
+  packet.WriteUInt8(serversList.Count);
 
   for client in serversList do
   begin
@@ -784,14 +785,9 @@ begin
       #$03 + // server icon
       #$00 // 1 seem to remove the name
     );
-
   end;
 
-
-
   Result := packet.ToStr;
-
-  Console.WriteDump(Result);
 
   serversList.Free;
   packet.Free;

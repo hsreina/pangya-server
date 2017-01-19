@@ -20,7 +20,6 @@ type
 
   TIffManager = class
     private
-      var m_loader: Boolean;
       var m_part: TPart;
       var m_item: TItem;
       var m_ball: TBall;
@@ -50,6 +49,8 @@ type
       property HairStyle: THairStyle read m_hairStyle;
 
       function Load: Boolean;
+      function PatchAndSave: Boolean;
+
       function TryGetByIffId(iffId: Cardinal; var res: TIffEntryBase): Boolean;
       function GetByIffId(iffId: UInt32): TIffEntryBase;
   end;
@@ -61,7 +62,6 @@ uses GameServerExceptions;
 constructor TIffManager.Create;
 begin
   inherited;
-  m_loader := false;
   m_part := TPart.Create;
   m_item := TItem.Create;
   m_ball := TBall.Create;
@@ -110,7 +110,6 @@ begin
       m_ball.Load(path + '/Ball.iff') and
       m_caddie.Load(path + '/Caddie.iff') and
       m_clubSet.Load(path + '/ClubSet.iff') and
-      m_club.Load(path + '/Club.iff') and
       m_skin.Load(path + '/Skin.iff') and
       m_mascot.Load(path + '/Mascot.iff') and
       m_auxPart.Load(path + '/AuxPart.iff') and
@@ -128,7 +127,6 @@ begin
       m_ball.Load(zip, 'Ball.iff') and
       m_caddie.Load(zip, 'Caddie.iff') and
       m_clubSet.Load(zip, 'ClubSet.iff') and
-      m_club.Load(zip, 'Club.iff') and
       m_skin.Load(zip, 'Skin.iff') and
       m_mascot.Load(zip, 'Mascot.iff') and
       m_auxPart.Load(zip, 'AuxPart.iff') and
@@ -138,6 +136,28 @@ begin
 
     zip.Free;
   end;
+
+end;
+
+function TIffManager.PatchAndSave: Boolean;
+var
+  path: string;
+begin
+
+  path := '../data/pangya_gb_patch.iff';
+
+  Result :=
+    //m_part.PatchAndSave(path + '/Part.iff');// and
+    m_item.PatchAndSave(path + '/Item.iff') and
+    m_ball.PatchAndSave(path + '/Ball.iff') and
+    m_caddie.PatchAndSave(path + '/Caddie.iff') and
+    m_clubSet.PatchAndSave(path + '/ClubSet.iff') and
+    //m_skin.PatchAndSave(path + '/Skin.iff') and
+    m_mascot.PatchAndSave(path + '/Mascot.iff') and
+    //m_auxPart.PatchAndSave(path + '/AuxPart.iff') and
+    m_SetItem.PatchAndSave(path + '/SetItem.iff') and
+    //m_character.PatchAndSave(path + '/Character.iff') and
+    m_hairStyle.PatchAndSave(path + '/HairStyle.iff');
 
 end;
 

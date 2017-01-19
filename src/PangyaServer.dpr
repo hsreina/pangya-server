@@ -93,7 +93,8 @@ uses
   PlayerLockerItem in 'Server\Game\PlayerLockerItem.pas',
   IffManager.HairStyle in 'Iff\IffManager.HairStyle.pas',
   PlayerShopItem in 'Server\Game\PlayerShopItem.pas',
-  ClubStats in 'Server\Game\ClubStats.pas';
+  ClubStats in 'Server\Game\ClubStats.pas',
+  ServerOptions in 'Server\Game\ServerOptions.pas';
 
 {$R *.res}
 
