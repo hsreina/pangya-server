@@ -29,7 +29,7 @@ type
       function GetClubForEquip: TPlayerClubData;
       procedure SetQty(qty: UInt32);
       procedure AddQty(qty: UInt32);
-      procedure RemQty(qty: UInt32);
+      function RemQty(qty: UInt32): Boolean;
       function GetQty: UInt32; override;
   end;
 
@@ -69,9 +69,16 @@ begin
   Inc(m_data.qty, qty);
 end;
 
-procedure TPlayerItem.RemQty(qty: Cardinal);
+function TPlayerItem.RemQty(qty: Cardinal): Boolean;
 begin
-  Dec(m_data.qty, qty);
+
+  Result := false;
+
+  if (m_data.qty - qty) >= 0 then
+  begin
+    Dec(m_data.qty, qty);
+    Result := true;
+  end;
 end;
 
 function TPlayerItem.GetQty: UInt32;

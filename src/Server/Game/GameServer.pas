@@ -76,6 +76,9 @@ type
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSetAssistMode(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestGuildListSearch(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerCreateGuild(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerCheckGuildName(const client: TGameClient; const clientPacket: TClientPacket);      procedure HandlePlayerRequestJoinGuild(const client: TGameClient; const clientPacket: TClientPacket);      procedure HandlePlayerRequestGuildList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
@@ -85,6 +88,7 @@ type
       procedure HandlePlayerRecycleItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestDailyQuest(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestInbox(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerDeleteItem(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlerPlayerPangsTransaction(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestLockerPage(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestLockerPangs(const client: TGameClient; const clientPacket: TClientPacket);
@@ -124,7 +128,7 @@ uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
   PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment,
   PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem,
-  IffManager.HairStyle, PlayerItem, PlayerGenericData;
+  IffManager.HairStyle, PlayerItem, PlayerGenericData, PlayerItems;
 
 constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
 begin
@@ -767,6 +771,17 @@ begin
   clientPacket.ReadUInt32(mode);
   clientPacket.ReadPStr(playerName);
 
+  Console.Log(Format('playerName : %s', [playerName]));
+
+  case mode of
+    $80: begin
+      // log something
+    end;
+    $FFFFFFFF: begin
+      // or log something else
+    end;
+  end;
+
   // TODO: should check if player can really do that
   client.Send(
     #$9A#$00 +
@@ -1053,6 +1068,144 @@ procedure TGameServer.HandlePlayerOpenScratchyCard(const client: TGameClient; co
 begin
   Console.Log('TGameServer.HandlePlayerOpenScratchyCard', C_BLUE);
   client.Send(#$EB#$01#$00#$00#$00#$00#$00);
+end;
+
+procedure TGameServer.HandlePlayerRequestGuildListSearch(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  keyword: AnsiString;
+  un1: UInt32;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerRequestGuildListSearch', C_BLUE);
+  clientPacket.ReadUInt32(un1);
+  clientPacket.ReadPStr(keyword);
+  Console.Log(Format('keyword : %s', [keyword]));
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$BD#$01);
+  res.WriteUInt32(1); // success or not?
+  res.WriteInt32(1); // page number
+  res.WriteUInt32(1); // total elements in search
+
+  res.WriteUInt16(1); // number of entries (max $f)
+
+  // loop this
+
+  res.WriteUInt32(1); // guild ID
+  res.WriteStr('guild name', 13, #$00);
+  res.WriteStr(#$00#$00#$00#$00);
+  res.WriteUInt32(1); // pangs
+  res.WriteUInt32(2); // points
+  res.WriteUInt32(3); // number of players
+  res.WriteStr(#$DF#$07#$0B#$00#$00#$00#$05#$00#$09#$00#$09#$00#$00#$00#$00#$00);
+  res.WriteStr('description', 16 * 6, #$00);
+  res.WriteStr(#$00#$00#$00#$00#$00#$00#$00#$00#$00);
+  res.WriteUInt32(1); // leader Id?
+  res.WriteStr('leader name', $16, #$00);
+  res.WriteStr(#$47#$55#$49#$4C#$44#$4D#$41#$52#$4B#$00#$00#$00);
+
+  // to this
+
+  client.Send(res);
+  res.Free;
+end;
+
+procedure TGameServer.HandlePlayerCreateGuild(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  name: AnsiString;
+  description: AnsiString;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerCreateGuild', C_BLUE);
+  clientPacket.ReadPStr(name);
+  clientPacket.ReadPStr(description);
+  Console.Log(Format('Name: %s', [name]));
+  Console.Log(Format('Description: %s', [description]));
+
+  // On success, should remove the item to create guild
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$B5#$01);
+  res.WriteUInt32(1); // status
+
+  client.Send(res);
+
+  res.Free;
+
+end;
+
+procedure TGameServer.HandlePlayerCheckGuildName(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  guildName: AnsiString;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerCheckGuildName', C_BLUE);
+  clientPacket.ReadPStr(guildName);
+  Console.Log(Format('guildName : %s', [guildName]));
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$B6#$01);
+  res.WriteUInt32(1); // status
+  res.WritePStr(guildName);
+
+  client.Send(res);
+
+  res.Free;
+
+end;
+
+procedure TGameServer.HandlePlayerRequestJoinGuild(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  un1: UInt32;
+  applicationMessage: AnsiString;
+begin
+  console.Log('TGameServer.HandlePlayerRequestJoinGuild', C_BLUE);
+  clientPacket.ReadUInt32(un1);
+  clientPacket.ReadPStr(applicationMessage);
+  console.Log(Format('un1 %x', [un1]));
+  console.Log(Format('Application message : ', [applicationMessage]));
+
+end;
+
+procedure TGameServer.HandlePlayerRequestGuildList(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  page: UInt32;
+  res: TClientPacket;
+begin
+  Console.Log('TGameServer.HandlePlayerRequestGuildList', C_BLUE);
+  clientPacket.ReadUInt32(page);
+  Console.Log(Format('page : %x', [page]));
+
+  res := TClientPacket.Create;
+
+  res.WriteStr(#$BC#$01);
+  res.WriteUInt32(1); // success or not?
+  res.WriteInt32(page); // page number
+  res.WriteUInt32(1); // total elements in search
+
+  res.WriteUInt16(1); // number of entries (max $f)
+
+  // loop this
+
+  res.WriteUInt32(1); // guild ID
+  res.WriteStr('guild name', 13, #$00);
+  res.WriteStr(#$00#$00#$00#$00);
+  res.WriteUInt32(1); // pangs
+  res.WriteUInt32(2); // points
+  res.WriteUInt32(3); // number of players
+  res.WriteStr(#$DF#$07#$0B#$00#$00#$00#$05#$00#$09#$00#$09#$00#$00#$00#$00#$00);
+  res.WriteStr('description', 16 * 6, #$00);
+  res.WriteStr(#$00#$00#$00#$00#$00#$00#$00#$00#$00);
+  res.WriteUInt32(1); // leader Id?
+  res.WriteStr('leader name', $16, #$00);
+  res.WriteStr(#$47#$55#$49#$4C#$44#$4D#$41#$52#$4B#$00#$00#$00);
+
+  // to this
+
+  client.Send(res);
+  res.Free;
 end;
 
 procedure TGameServer.HandlePlayerSetAssistMode(const client: TGameClient; const clientPacket: TClientPacket);
@@ -1399,6 +1552,54 @@ begin
   );
 
   client.Send(res);
+  res.Free;
+end;
+
+procedure TGameServer.HandlePlayerDeleteItem(const client: TGameClient; const clientPacket: TClientPacket);
+var
+  itemIffId: UInt32;
+  count: UInt32;
+  res: TClientPacket;
+  playerItem: TPlayerItem;
+  status: UInt8;
+  itemId: UInt32;
+  playerItems: TPlayerItems;
+begin
+  Console.Log('TGameServer.HandlePlayerDeleteItem', C_BLUE);
+
+  if not clientPacket.ReadUInt32(itemIffId) or not clientPacket.ReadUInt32(count) then
+  begin
+    Exit;
+  end;
+
+  Console.Log(Format('Delete: %x, %d', [itemIffId, count]));
+
+  playerItems := client.Data.Items;
+
+  res := TClientPacket.Create;
+  res.WriteStr(#$C5#$00);
+  if client.Data.Items.TryGetByIffId(itemIffId, playerItem) then
+  begin
+    if playerItem.RemQty(count) then
+    begin
+      status := 1;
+      itemId := playerItem.GetId;
+
+      // If there no more items, remove it from the list
+      if playerItem.GetQty = 0 then
+      begin
+        playerItems.Remove(playerItem);
+      end;
+    end;
+  end;
+
+  res.WriteUInt8(status);
+  res.WriteUInt32(itemIffId);
+  res.WriteUInt32(count);
+  res.WriteUInt32(itemId);
+
+  client.Send(res);
+
   res.Free;
 end;
 
@@ -2283,14 +2484,38 @@ begin
     begin
       self.HandlerPlayerPangsTransaction(client, clientPacket);
     end;
+      CGPID_PLAYER_DELETE_ITEM:
+    begin
+      self.HandlePlayerDeleteItem(client, clientPacket);
+    end;
     CGPID_ENTER_GRAND_PRIX_EVENT:
     begin
-      lobby.HandlePlayerEnterGrandPrixEvent(client, clientPacket);;
+      lobby.HandlePlayerEnterGrandPrixEvent(client, clientPacket);
     end;
     CGPID_PLAYER_SET_ASSIST_MODE:
     begin
       self.HandlePlayerSetAssistMode(client, clientPacket);
     end;
+    CGPID_PLAYER_GUILD_LIST:
+    begin
+      self.HandlePlayerRequestGuildList(client, clientPacket);
+    end;
+    CGPID_PLAYER_GUILD_CREATE:
+    begin
+      self.HandlePlayerCreateGuild(client, clientPacket);
+    end;
+    CGPID_PLAYER_GUILD_CHECK_NAME:
+    begin
+      self.HandlePlayerCheckGuildName(client, clientPacket);
+    end;
+    CGPID_PLAYER_GUILD_REQUEST_JOIN:
+    begin
+      self.HandlePlayerRequestJoinGuild(client, clientPacket);
+    end;
+    CGPID_PLAYER_GUILD_LIST_SEARCH:
+    begin
+      self.HandlePlayerRequestGuildListSearch(client, clientPacket);
+    end
     else begin
       try
         playerGame := lobby.GetPlayerGame(client);
@@ -2409,7 +2634,6 @@ begin
       begin
         Console.Log('Items');
         client.Data.Items.Load(clientPacket.GetRemainingData);
-        Console.WriteDump(client.Data.items.ToPacketData);
         client.Send(
           WriteHeader(SGPID_PLAYER_ITEMS_DATA) +
           client.Data.items.ToPacketData
