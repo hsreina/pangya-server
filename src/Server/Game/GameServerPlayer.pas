@@ -39,6 +39,8 @@ type
       var m_quest: TPlayerQuest;
 
       function FGetPlayerData: PPlayerData;
+      function FReadIsAdmin: Boolean;
+      procedure FWriteIsAdmin(isAdmin: Boolean);
     public
       var Cookies: Int64;
       var Action: TPlayerAction;
@@ -62,6 +64,8 @@ type
       property Mascots: TPlayerMascots read m_mascots;
       property Quests: TPlayerQuest read m_quest;
 
+      property IsAdmin: Boolean read FReadIsAdmin write FWriteIsAdmin;
+
       var InGameList: Boolean;
       var GameInfo: TGameInfo;
 
@@ -70,7 +74,6 @@ type
       procedure EquipCaddieById(Id: UInt32);
       procedure EquipClubById(Id: UInt32);
       procedure EquipAztecByIffId(IffId: UInt32);
-
 
       constructor Create;
       destructor Destroy; override;
@@ -343,6 +346,16 @@ begin
     Exit(true);
   end;
   Exit(false);
+end;
+
+procedure TGameServerPlayer.FWriteIsAdmin(isAdmin: Boolean);
+begin
+  m_data.playerInfo1.gmflag := TGeneric.Iff(isAdmin, $f, $0);
+end;
+
+function TGameServerPlayer.FReadIsAdmin: Boolean;
+begin
+
 end;
 
 end.

@@ -72,13 +72,14 @@ type
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenRareShop(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestMessengerList(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerGMCommaand(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerGMCommand(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerSetAssistMode(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestGuildListSearch(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerCreateGuild(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerCheckGuildName(const client: TGameClient; const clientPacket: TClientPacket);      procedure HandlePlayerRequestJoinGuild(const client: TGameClient; const clientPacket: TClientPacket);      procedure HandlePlayerRequestGuildList(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerCheckGuildName(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerRequestJoinGuild(const client: TGameClient; const clientPacket: TClientPacket);      procedure HandlePlayerRequestGuildList(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const clientPacket: TClientPacket);
       procedure HandlePlayerRequestAchievements(const client: TGameClient; const clientPacket: TClientPacket);
@@ -776,9 +777,10 @@ begin
   case mode of
     $80: begin
       // log something
+      client.data.IsAdmin := false;
     end;
     $FFFFFFFF: begin
-      // or log something else
+      client.data.IsAdmin := true;
     end;
   end;
 
@@ -877,6 +879,12 @@ var
   notice: AnsiString;
 begin
   Console.Log('TGameServer.HandlePlayerNotice', C_BLUE);
+
+  if not client.data.IsAdmin then
+  begin
+    Exit;
+  end;
+
   // TODO: should check if the player can do that
   if clientPacket.ReadPStr(notice) then
   begin
@@ -1000,15 +1008,22 @@ begin
   packet.free;
 end;
 
-procedure TGameServer.HandlePlayerGMCommaand(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TGameServer.HandlePlayerGMCommand(const client: TGameClient; const clientPacket: TClientPacket);
 var
   command: UInt16;
   tmpUInt32: UInt32;
   tmpUInt16: UInt16;
   tmpUInt8: UInt8;
+  tmp1UInt8: UInt8;
+  tmpPStr: AnsiString;
   game: TGame;
 begin
-  Console.Log('TGameServer.HandlePlayerGMCommaand', C_BLUE);
+  Console.Log('TGameServer.HandlePlayerGMCommand', C_BLUE);
+
+  if not client.data.IsAdmin then
+  begin
+    Exit;
+  end;
 
   try
     game := m_lobbies.GetPlayerGame(client);
@@ -1024,29 +1039,57 @@ begin
   end;
 
   case command of
-    3: begin // visible (on|off)
+    $3: begin // visible (on|off)
 
     end;
-    4: begin // whisper (on|off)
+    $4: begin // whisper (on|off)
 
     end;
-    5: begin // channel (on|off)
+    $5: begin // channel (on|off)
 
+    end;
+    $8: begin // open
+      if (clientPacket.ReadPStr(tmpPStr)) then
+      begin
+        Console.Log(Format('open %s', [tmpPStr]));
+      end;
+    end;
+    $9: begin // close
+      if (clientPacket.ReadPStr(tmpPStr)) then
+      begin
+        Console.Log(Format('close %s', [tmpPStr]));
+      end;
     end;
     $E: begin // wind (speed - dir)
-
+      if clientPacket.ReadUInt8(tmpUInt8) and clientPacket.ReadUInt8(tmp1UInt8) then
+      begin
+        Console.Log(Format('wind %d, %d', [tmpUInt8, tmp1UInt8]));
+      end;
     end;
     $A: begin // kick
       if (clientPacket.ReadUInt32(tmpUInt32)) then
       begin
-
+        console.Log(Format('kick %d', [tmpUInt32]));
       end;
     end;
     $F: begin // weather (fine|rain|snow|cloud)
-      console.Log('weather');
       if (clientPacket.ReadUInt8(tmpUInt8)) then
       begin
+        console.Log(Format('weather %d', [tmpUInt8]));
         game.Send(#$9E#$00 + AnsiChar(tmpUInt8) + #$00#$00);
+      end;
+    end;
+    $1C: begin // setmission
+      if (clientPacket.ReadUInt32(tmpUInt32)) then
+      begin
+        console.Log(Format('setmission %d', [tmpUInt8]));
+      end;
+    end;
+    $1F: begin // matchmap
+      console.Log('matchmap');
+      if (clientPacket.ReadUInt32(tmpUInt32)) then
+      begin
+        console.Log(Format('matchmap %d', [tmpUInt8]));
       end;
     end;
   end;
@@ -1165,7 +1208,7 @@ begin
   clientPacket.ReadUInt32(un1);
   clientPacket.ReadPStr(applicationMessage);
   console.Log(Format('un1 %x', [un1]));
-  console.Log(Format('Application message : ', [applicationMessage]));
+  console.Log(Format('Application message : %s', [applicationMessage]));
 
 end;
 
@@ -2366,7 +2409,7 @@ begin
     end;
     CGPID_PLAYER_GM_COMMAND:
     begin
-      self.HandlePlayerGMCommaand(client, clientPacket);
+      self.HandlePlayerGMCommand(client, clientPacket);
     end;
     CGPID_PLAYER_OPEN_RARE_SHOP:
     begin

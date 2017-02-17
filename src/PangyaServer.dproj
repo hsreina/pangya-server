@@ -182,6 +182,7 @@
         <DCCReference Include="Server\Game\PlayerShopItem.pas"/>
         <DCCReference Include="Server\Game\ClubStats.pas"/>
         <DCCReference Include="Server\Game\ServerOptions.pas"/>
+        <DCCReference Include="Collections\SerialList.pas"/>
         <None Include="Libs\Fast\FastMM4Options.inc"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
