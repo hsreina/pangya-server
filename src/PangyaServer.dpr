@@ -94,7 +94,8 @@ uses
   IffManager.HairStyle in 'Iff\IffManager.HairStyle.pas',
   PlayerShopItem in 'Server\Game\PlayerShopItem.pas',
   ClubStats in 'Server\Game\ClubStats.pas',
-  ServerOptions in 'Server\Game\ServerOptions.pas';
+  ServerOptions in 'Server\Game\ServerOptions.pas',
+  SerialList in 'Collections\SerialList.pas';
 
 {$R *.res}
 
