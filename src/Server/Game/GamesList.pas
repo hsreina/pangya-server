@@ -11,13 +11,13 @@ unit GamesList;
 interface
 
 uses
-  Generics.Collections, Game, GameServerPlayer;
+  Game, GameServerPlayer, SerialList;
 
 type
 
   TGamesList = class
     private
-      var m_games: TList<TGame>;
+      var m_games: TSerialList<TGame>;
       var m_maxGames: UInt32;
 
       var m_onCreateGame: TGameGenericEvent;
@@ -28,7 +28,7 @@ type
       constructor Create;
       destructor Destroy; override;
 
-      property List: TList<TGame> read m_games;
+      property List: TSerialList<TGame> read m_games;
 
       function GetGameById(gameId: UInt16): TGame;
       function getPlayerGame(player: TGameServerPlayer): TGame;
@@ -47,7 +47,7 @@ constructor TGamesList.Create;
 begin
   inherited;
   m_maxGames := 10;
-  m_games := TList<TGame>.Create;
+  m_games := TSerialList<TGame>.Create;
   m_onCreateGame := TGameGenericEvent.Create;
   m_onDestroyGame := TGameGenericEvent.Create;
 end;
