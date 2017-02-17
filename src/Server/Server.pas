@@ -11,7 +11,7 @@ unit Server;
 interface
 
 uses ScktComp, Logging, Client, Generics.Collections, ExtCtrls, CryptLib,
-  ServerClient, ClientPacket, SyncClient, defs, PacketData, SysUtils;
+  ServerClient, ClientPacket, SyncClient, defs, PacketData, SysUtils, SerialList;
 
 type
 
@@ -23,7 +23,7 @@ type
   TServer<ClientType> = class abstract (TLogging)
     private
 
-      var m_clients: TList<TServerClient<ClientType>>;
+      var m_clients: TSerialList<TServerClient<ClientType>>;
       var m_server: TServerSocket;
       var m_timer: TTimer;
       var m_cryptLib: TCryptLib;
@@ -58,7 +58,7 @@ type
       function Deserialize(value: UInt32): UInt32;
 
       // Should replace this by something better
-      property Clients: TList<TServerClient<ClientType>> read m_clients;
+      property Clients: TSerialList<TServerClient<ClientType>> read m_clients;
     public
       constructor Create(cryptLib: TCryptLib);
       destructor Destroy; override;
@@ -79,7 +79,7 @@ begin
   m_timer := TTimer.Create(nil);
   m_timer.OnTimer := OnTimer;
   m_timer.Interval := 30;
-  m_clients := TList<TServerClient<ClientType>>.Create;
+  m_clients := TSerialList<TServerClient<ClientType>>.Create;
   m_server := TServerSocket.Create(nil);
   m_server.OnAccept := ServerAccept;
   m_server.OnClientRead := ServerRead;
