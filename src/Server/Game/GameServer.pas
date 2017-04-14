@@ -2076,7 +2076,7 @@ var
 begin
   Console.Log('TGameServer.PlayerRequestDailyReward', C_BLUE);
   res := TClientPacket.Create;
-  res.WriteStr(WriteAction(SFPID_PLAYER_COOKIES));
+  res.WriteStr(WriteAction(TSGPID.PLAYER_COOKIES));
   res.WriteInt64(client.Data.Cookies);
   client.Send(res);
   res.Free;
@@ -2351,211 +2351,211 @@ var
   playerGame: TGame;
 begin
   case packetId of
-    CGPID_PLAYER_MESSAGE:
+    TCGPID.PLAYER_MESSAGE:
     begin
       self.HandlePlayerSendMessage(client, clientPacket);
     end;
-    CGPID_PLAYER_WHISPER:
+    TCGPID.PLAYER_WHISPER:
     begin
       self.HandlerPlayerWhisper(client, clientPacket);
     end;
-    CGPID_PLAYER_CREATE_GAME:
+    TCGPID.PLAYER_CREATE_GAME:
     begin
       lobby.HandlePlayerCreateGame(client, clientPacket);
     end;
-    CGPID_PLAYER_JOIN_GAME:
+    TCGPID.PLAYER_JOIN_GAME:
     begin
       lobby.HandlePlayerJoinGame(client, clientPacket);
     end;
-    CGPID_PLAYER_BUY_ITEM:
+    TCGPID.PLAYER_BUY_ITEM:
     begin
       self.HandlePlayerBuyItem(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_IDENTITY:
+    TCGPID.PLAYER_REQUEST_IDENTITY:
     begin
       self.HandlePlayerRequestIdentity(client, clientPacket);
     end;
-    CGPID_PLAYER_REQQUEST_SERVERS_LIST:
+    TCGPID.PLAYER_REQQUEST_SERVERS_LIST:
     begin
       self.HandlePlayerRequestServerList(client, clientPacket);
     end;
-    CGPID_PLAYER_UPGRADE:
+    TCGPID.PLAYER_UPGRADE:
     begin
       self.HandlePlayerUpgrade(client, clientPacket);
     end;
-    CGPID_PLAYER_NOTICE:
+    TCGPID.PLAYER_NOTICE:
     begin
       self.HandlePlayerNotice(client, clientPacket);
     end;
-    CGPID_PLAYER_ENTER_GRAND_PRIX:
+    TCGPID.PLAYER_ENTER_GRAND_PRIX:
     begin
       self.HandlePlayerEnterGrandPrix(client, clientPacket);
     end;
-    CGPID_PLAYER_LEAVE_GRAND_PRIX:
+    TCGPID.PLAYER_LEAVE_GRAND_PRIX:
     begin
       self.HandlePlayerLeaveGrandPrix(client, clientPacket);
     end;
-    CGPID_PLAYER_JOIN_MULTIPLAYER_GAME_LIST:
+    TCGPID.PLAYER_JOIN_MULTIPLAYER_GAME_LIST:
     begin
       self.HandlePlayerJoinMultiplayerGamesList(client, clientPacket);
     end;
-    CGPID_PLAYER_LEAVE_MULTIPLAYER_GAME_LIST:
+    TCGPID.PLAYER_LEAVE_MULTIPLAYER_GAME_LIST:
     begin
       self.HandlePlayerLeaveMultiplayerGamesList(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_MESSENGER_LIST:
+    TCGPID.PLAYER_REQUEST_MESSENGER_LIST:
     begin
       self.HandlePlayerRequestMessengerList(client, clientPacket);
     end;
-    CGPID_PLAYER_GM_COMMAND:
+    TCGPID.PLAYER_GM_COMMAND:
     begin
       self.HandlePlayerGMCommand(client, clientPacket);
     end;
-    CGPID_PLAYER_OPEN_RARE_SHOP:
+    TCGPID.PLAYER_OPEN_RARE_SHOP:
     begin
       self.HandlePlayerOpenRareShop(client, clientPacket);
     end;
-    CGPID_PLAYER_UN_00EB:
+    TCGPID.PLAYER_UN_00EB:
     begin
       self.HandlePlayerUnknow00EB(client, clientPacket);
     end;
-    CGPID_PLAYER_OPEN_SCRATCHY_CARD:
+    TCGPID.PLAYER_OPEN_SCRATCHY_CARD:
     begin
       self.HandlePlayerOpenScratchyCard(client, clientPacket);
     end;
-    CGPID_PLAYER_UN_0140:
+    TCGPID.PLAYER_UN_0140:
     begin
       self.HandlePlayerUnknow0140(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_INFO:
+    TCGPID.PLAYER_REQUEST_INFO:
     begin
       self.HandlePlayerRequestInfo(client, clientPacket);
     end;
-    CGPID_PLAYER_PLAY_BONGDARI_SHOP:
+    TCGPID.PLAYER_PLAY_BONGDARI_SHOP:
     begin
       self.HandlePlayerPlayBongdariShop(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_ACHIEVEMENTS:
+    TCGPID.PLAYER_REQUEST_ACHIEVEMENTS:
     begin
       self.HandlePlayerRequestAchievements(client, clientPacket);
     end;
-    CGPID_PLAYER_ENTER_SCRATCHY_SERIAL:
+    TCGPID.PLAYER_ENTER_SCRATCHY_SERIAL:
     begin
       self.HandlePlayerEnterScratchyCardSerial(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_DAILY_QUEST:
+    TCGPID.PLAYER_REQUEST_DAILY_QUEST:
     begin
       self.HandlePlayerRequestDailyQuest(client, clientPacket);
     end;
-    CGPID_PLAYER_RECYCLE_ITEM:
+    TCGPID.PLAYER_RECYCLE_ITEM:
     begin
       self.HandlePlayerRecycleItem(client, clientPacket);
     end;
-    CGPID_PLAYER_ACCEPT_DAILY_QUEST:
+    TCGPID.PLAYER_ACCEPT_DAILY_QUEST:
     begin
       self.HandlePlayerAcceptDailyQuest(client, clientPacket);
     end;
-    CGPID_PLAYER_GIVEUP_DAILY_QUEST:
+    TCGPID.PLAYER_GIVEUP_DAILY_QUEST:
     begin
       self.HandlePlayerGiveUpDailyQuest(client, clientPacket);
     end;
-    CGPID_PLAYER_SEND_INVITE:
+    TCGPID.PLAYER_SEND_INVITE:
     begin
       self.HandlePlayerSendInvite(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_DAILY_REWARD:
+    TCGPID.PLAYER_REQUEST_DAILY_REWARD:
     begin
       self.HandlePlayerRequestDailyReward(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_COOKIES_COUNT:
+    TCGPID.PLAYER_REQUEST_COOKIES_COUNT:
     begin
       self.HandlePlayerRequestCookiesCount(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_INBOX:
+    TCGPID.PLAYER_REQUEST_INBOX:
     begin
       self.HandlePlayerRequestInbox(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_INBOX_DETAILS:
+    TCGPID.PLAYER_REQUEST_INBOX_DETAILS:
     begin
       self.HandlePlayerRequestInboxDetails(client, clientPacket);
     end;
-    CGPID_PLAYER_MOVE_INBOX_GIFT:
+    TCGPID.PLAYER_MOVE_INBOX_GIFT:
     begin
       self.HandlePlayerMoveInboxGift(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_OFFLINE_PLAYER_INFO:
+    TCGPID.PLAYER_REQUEST_OFFLINE_PLAYER_INFO:
     begin
       self.HandlePlayerRequestOfflinePlayerInfo(client, clientPacket);
     end;
-    CGPID_PLAYER_SEND_MAIL:
+    TCGPID.PLAYER_SEND_MAIL:
     begin
       self.HandlerPlayerSendMail(client, clientPacket);
     end;
-    CGPID_PLAYER_DELETE_MAIL:
+    TCGPID.PLAYER_DELETE_MAIL:
     begin
       self.HandlerPlayerDeleteMail(client, clientPacket);
     end;
-    CGPID_PLAYER_CLEAR_QUEST:
+    TCGPID.PLAYER_CLEAR_QUEST:
     begin
       self.HandlerPlayerClearQuest(client, clientpacket);
     end;
-    CGPID_PLAYER_SET_MASCOT_TEXT:
+    TCGPID.PLAYER_SET_MASCOT_TEXT:
     begin
       self.HandlePlayerSetMascotText(client, clientpacket);
     end;
-    CGPID_PLAYER_REQUEST_LOCKER:
+    TCGPID.PLAYER_REQUEST_LOCKER:
     begin
       self.HandlePlayerRequestLocker(client, clientpacket);
     end;
-    CGPID_PLAYER_REQUEST_LOCKER_ACCESS:
+    TCGPID.PLAYER_REQUEST_LOCKER_ACCESS:
     begin
       self.HandlerPlayerRequestLockerAccess(client, clientPacket);
     end;
-    CGPID_PLAYER_CHANGE_LOCKER_PASSWORD:
+    TCGPID.PLAYER_CHANGE_LOCKER_PASSWORD:
     begin
       self.HandlePlayerChangeLockerPassword(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_LOCKER_PANGS:
+    TCGPID.PLAYER_REQUEST_LOCKER_PANGS:
     begin
       self.HandlePlayerRequestLockerPangs(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_LOCKER_PAGE:
+    TCGPID.PLAYER_REQUEST_LOCKER_PAGE:
     begin
       self.HandlePlayerRequestLockerPage(client, clientPacket);
     end;
-    CGPID_PLAYER_LOCKER_PANGS_TRANSACTION:
+    TCGPID.PLAYER_LOCKER_PANGS_TRANSACTION:
     begin
       self.HandlerPlayerPangsTransaction(client, clientPacket);
     end;
-      CGPID_PLAYER_DELETE_ITEM:
+    TCGPID.PLAYER_DELETE_ITEM:
     begin
       self.HandlePlayerDeleteItem(client, clientPacket);
     end;
-    CGPID_ENTER_GRAND_PRIX_EVENT:
+    TCGPID.ENTER_GRAND_PRIX_EVENT:
     begin
       lobby.HandlePlayerEnterGrandPrixEvent(client, clientPacket);
     end;
-    CGPID_PLAYER_SET_ASSIST_MODE:
+    TCGPID.PLAYER_SET_ASSIST_MODE:
     begin
       self.HandlePlayerSetAssistMode(client, clientPacket);
     end;
-    CGPID_PLAYER_GUILD_LIST:
+    TCGPID.PLAYER_GUILD_LIST:
     begin
       self.HandlePlayerRequestGuildList(client, clientPacket);
     end;
-    CGPID_PLAYER_GUILD_CREATE:
+    TCGPID.PLAYER_GUILD_CREATE:
     begin
       self.HandlePlayerCreateGuild(client, clientPacket);
     end;
-    CGPID_PLAYER_GUILD_CHECK_NAME:
+    TCGPID.PLAYER_GUILD_CHECK_NAME:
     begin
       self.HandlePlayerCheckGuildName(client, clientPacket);
     end;
-    CGPID_PLAYER_GUILD_REQUEST_JOIN:
+    TCGPID.PLAYER_GUILD_REQUEST_JOIN:
     begin
       self.HandlePlayerRequestJoinGuild(client, clientPacket);
     end;
-    CGPID_PLAYER_GUILD_LIST_SEARCH:
+    TCGPID.PLAYER_GUILD_LIST_SEARCH:
     begin
       self.HandlePlayerRequestGuildListSearch(client, clientPacket);
     end
@@ -2592,19 +2592,19 @@ begin
   if (clientPacket.Read(packetID, 2)) then
   begin
     case packetID of
-      CGPID_PLAYER_LOGIN:
+      TCGPID.PLAYER_LOGIN:
       begin
         self.HandlePlayerLogin(client, clientPacket);
       end;
-      CGPID_PLAYER_JOIN_LOBBY:
+      TCGPID.PLAYER_JOIN_LOBBY:
       begin
         self.HandlePlayerJoinLobby(client, clientPacket);
       end;
-      CGPID_PLAYER_EXCEPTION:
+      TCGPID.PLAYER_EXCEPTION:
       begin
         self.HandlerPlayerException(client, clientpacket);
       end;
-      CGPID_PLAYER_REQUEST_SERVER_TIME:
+      TCGPID.PLAYER_REQUEST_SERVER_TIME:
       begin
         self.HandlePlayerRequestServerTime(client, clientpacket);
       end
@@ -2645,17 +2645,17 @@ begin
   if clientPacket.Read(actionId, 2) then
   begin
     case actionId of
-      SSAPID_SEND_LOBBIES_LIST:
+      TSSAPID.SEND_LOBBIES_LIST:
       begin
         client.Send(LobbiesList);
       end;
-      SSAPID_PLAYER_MAIN_SAVE:
+      TSSAPID.PLAYER_MAIN_SAVE:
       begin
         buffer := clientPacket.GetRemainingData;
         client.Data.Data.Load(buffer);
         client.Data.Data.playerInfo1.ConnectionId := client.ID + 1;
         client.Send(
-          WriteHeader(SGPID_PLAYER_MAIN_DATA) +
+          WriteHeader(TSGPID.PLAYER_MAIN_DATA) +
           #$00 +
           WritePStr('824.00') +
           WritePStr(ExtractFilename(ParamStr(0))) +
@@ -2664,49 +2664,49 @@ begin
         );
 
       end;
-      SSAPID_PLAYER_CHARACTERS:
+      TSSAPID.PLAYER_CHARACTERS:
       begin
         Console.Log('Characters');
         client.Data.Characters.Load(clientPacket.GetRemainingData);
         client.Send(
-          WriteHeader(SGPID_PLAYER_CHARACTERS_DATA) +
+          WriteHeader(TSGPID.PLAYER_CHARACTERS_DATA) +
           client.Data.Characters.ToPacketData
         );
       end;
-      SSAPID_PLAYER_ITEMS:
+      TSSAPID.PLAYER_ITEMS:
       begin
         Console.Log('Items');
         client.Data.Items.Load(clientPacket.GetRemainingData);
         client.Send(
-          WriteHeader(SGPID_PLAYER_ITEMS_DATA) +
+          WriteHeader(TSGPID.PLAYER_ITEMS_DATA) +
           client.Data.items.ToPacketData
         );
       end;
-      SSAPID_PLAYER_CADDIES:
+      TSSAPID.PLAYER_CADDIES:
       begin
         Console.Log('caddies');
         client.Data.Caddies.Load(clientPacket.GetRemainingData);
         client.Send(
-          WriteHeader(SGPID_PLAYER_CADDIES_DATA) +
+          WriteHeader(TSGPID.PLAYER_CADDIES_DATA) +
           client.Data.Caddies.ToPacketData
         );
       end;
-      SSAPID_PLAYER_MASCOTS:
+      TSSAPID.PLAYER_MASCOTS:
       begin
         Console.Log('mascots');
         client.Data.Mascots.Load(clientPacket.GetRemainingData);
 
         console.WriteDump(
-          WriteHeader(SGPID_PLAYER_MASCOTS_DATA) +
+          WriteHeader(TSGPID.PLAYER_MASCOTS_DATA) +
           client.Data.Mascots.ToPacketData
         );
 
         client.Send(
-          WriteHeader(SGPID_PLAYER_MASCOTS_DATA) +
+          WriteHeader(TSGPID.PLAYER_MASCOTS_DATA) +
           client.Data.Mascots.ToPacketData
         );
       end;
-      SSAPID_PLAYER_COOKIES:
+      TSSAPID.PLAYER_COOKIES:
       begin
         Console.Log('cookies');
         clientPacket.ReadInt64(client.Data.Cookies);
@@ -2772,11 +2772,11 @@ begin
     console.Log(Format('player UID : %s/%d', [playerUID.login, playerUID.id]));
 
     case packetId of
-      SSPID_PLAYER_SYNC:
+      TSSPID.PLAYER_SYNC:
       begin
         self.HandlerSyncServerPlayerSync(clientPacket, client);
       end;
-      SSPID_PLAYER_ACTION:
+      TSSPID.PLAYER_ACTION:
       begin
         self.HandleSyncServerPlayerAction(clientPacket, client);
       end;
@@ -2864,31 +2864,31 @@ begin
   clientPacket := TClientPacket.Create;
 
   clientPacket.WriteStr(
-    WriteAction(SSAPID_PLAYER_ITEMS) + client.Data.Items.ToPacketData
+    WriteAction(TSSAPID.PLAYER_ITEMS) + client.Data.Items.ToPacketData
   );
   self.SyncPlayerAction(client, clientPacket);
   clientPacket.Clear;
 
   clientPacket.WriteStr(
-    WriteAction(SSAPID_PLAYER_CHARACTERS) + client.Data.Characters.ToPacketData
+    WriteAction(TSSAPID.PLAYER_CHARACTERS) + client.Data.Characters.ToPacketData
   );
   self.SyncPlayerAction(client, clientPacket);
   clientPacket.Clear;
 
   clientPacket.WriteStr(
-    WriteAction(SSAPID_PLAYER_CADDIES) + client.Data.Caddies.ToPacketData
+    WriteAction(TSSAPID.PLAYER_CADDIES) + client.Data.Caddies.ToPacketData
   );
   self.SyncPlayerAction(client, clientPacket);
   clientPacket.Clear;
 
   clientPacket.WriteStr(
-    WriteAction(SSAPID_PLAYER_MASCOTS) + client.Data.Mascots.ToPacketData
+    WriteAction(TSSAPID.PLAYER_MASCOTS) + client.Data.Mascots.ToPacketData
   );
   self.SyncPlayerAction(client, clientPacket);
   clientPacket.Clear;
 
   clientPacket.WriteStr(
-    WriteAction(SSAPID_PLAYER_MAIN_SAVE) + client.Data.Data.ToPacketData
+    WriteAction(TSSAPID.PLAYER_MAIN_SAVE) + client.Data.Data.ToPacketData
   );
   self.SyncPlayerAction(client, clientPacket);
   clientPacket.Clear;

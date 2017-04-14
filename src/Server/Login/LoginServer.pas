@@ -127,7 +127,7 @@ begin
   if clientPacket.Read(actionId, 2) then
   begin
     case actionId of
-      SSAPID_SEND_SERVER_LIST:
+      TSSAPID.SEND_SERVER_LIST:
       begin
         //client.Send(ServersList);
       end;
@@ -177,11 +177,11 @@ begin
     console.Log(Format('player UID : %s/%d', [playerUID.login, playerUID.id]));
 
     case packetId of
-      SSPID_PLAYER_SYNC:
+      TSSPID.PLAYER_SYNC:
       begin
         self.PlayerSync(clientPacket, client);
       end;
-      SSPID_PLAYER_ACTION:
+      TSSPID.PLAYER_ACTION:
       begin
         self.ServerPlayerAction(clientPacket, client);
       end;
@@ -203,27 +203,27 @@ begin
   if (clientPacket.Read(packetID, 2)) then
   begin
     case packetID of
-      CLPID_PLAYER_LOGIN:
+      TCLPID.PLAYER_LOGIN:
       begin
         self.HandlePlayerLogin(client, clientPacket);
       end;
-      CLPID_PLAYER_SELECT_SERVER:
+      TCLPID.PLAYER_SELECT_SERVER:
       begin
         self.HandlePlayerServerSelect(client, clientPacket);
       end;
-      CLPID_PLAYER_SET_NICKNAME:
+      TCLPID.PLAYER_SET_NICKNAME:
       begin
         self.Sync(client, clientPacket);
       end;
-      CLPID_PLAYER_CONFIRM:
+      TCLPID.PLAYER_CONFIRM:
       begin
         self.Sync(client, clientPacket);
       end;
-      CLPID_PLAYER_SELECT_CHARCTER:
+      TCLPID.PLAYER_SELECT_CHARCTER:
       begin
         self.Sync(client, clientPacket);
       end;
-      CLPID_PLAYER_RECONNECT: // ??
+      TCLPID.PLAYER_RECONNECT: // ??
       begin
         self.Log('CLPID_PLAYER_RECONNECT', TLogType.TLogType_not);
       end

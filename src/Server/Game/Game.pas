@@ -565,7 +565,7 @@ begin
 
   res := TClientpacket.Create;
 
-  res.WriteStr(WriteAction(SGPID_PLAYER_LOADING_INFO));
+  res.WriteStr(WriteAction(TSGPID.PLAYER_LOADING_INFO));
   res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
   res.WriteUInt8(progress);
 
@@ -764,7 +764,7 @@ begin
 
   res.Clear;
 
-  res.WriteStr(WriteAction(SGPID_GAME_PLAY_INFO));
+  res.WriteStr(WriteAction(TSGPID.GAME_PLAY_INFO));
   res.WriteUInt8(self.m_gameInfo.map);
   res.WriteStr(#$00#$00);
   res.WriteUInt8(self.m_gameInfo.holeCount);
@@ -965,7 +965,7 @@ begin
     Exit;
   end;
 
-  self.Send(WriteAction(SGPID_PLAYER_1ST_SHOT_READY));
+  self.Send(WriteAction(TSGPID.PLAYER_1ST_SHOT_READY));
 end;
 
 procedure TGame.HandlePlayerActionShot(const client: TGameClient; const clientPacket: TClientPacket);
@@ -985,7 +985,7 @@ begin
   clientPacket.ReadUInt16(shotType);
 
   res := TClientPacket.Create;
-  res.WriteStr(WriteAction(SGPID_PLAYER_ACTION_SHOT));
+  res.WriteStr(WriteAction(TSGPID.PLAYER_ACTION_SHOT));
   res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
 
   if shotType = 1 then
@@ -1017,7 +1017,7 @@ begin
   clientPacket.ReadDouble(angle);
   res := TClientPacket.Create;
 
-  res.WriteStr(WriteAction(SGPID_PLAYER_ACTION_ROTATE));
+  res.WriteStr(WriteAction(TSGPID.PLAYER_ACTION_ROTATE));
   res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
   res.WriteDouble(angle);
 
@@ -1045,7 +1045,7 @@ begin
 
   res := TClientPacket.Create;
 
-  res.WriteStr(WriteAction(SGPID_PLAYER_ACTION_CHANGE_CLUB));
+  res.WriteStr(WriteAction(TSGPID.PLAYER_ACTION_CHANGE_CLUB));
   res.WriteUInt32(client.Data.Data.playerInfo1.ConnectionId);
   res.Write(clubType, 1);
 
@@ -1718,7 +1718,7 @@ begin
     begin
       self.SendWind;
       res := TClientPacket.Create;
-      res.WriteStr(WriteAction(SGPID_PLAYER_NEXT));
+      res.WriteStr(WriteAction(TSGPID.PLAYER_NEXT));
       res.WriteInt32(nextPlayer.Data.Data.playerInfo1.ConnectionId);
       self.Send(res);
       res.Free;
@@ -1980,135 +1980,135 @@ end;
 procedure TGame.HandleRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const clientPacket: TClientPacket);
 begin
   case packetId of
-    CGPID_PLAYER_CHANGE_GAME_SETTINGS:
+    TCGPID.PLAYER_CHANGE_GAME_SETTINGS:
     begin
       game.HandlePlayerChangeGameSettings(client, clientPacket);
     end;
-    CGPID_PLAYER_READY:
+    TCGPID.PLAYER_READY:
     begin
       game.HandlePlayerReady(client, clientPacket);
     end;
-    CGPID_PLAYER_START_GAME:
+    TCGPID.PLAYER_START_GAME:
     begin
       game.HandlePlayerStartGame(client, clientPacket);
     end;
-    CGPID_PLAYER_LOADING_INFO:
+    TCGPID.PLAYER_LOADING_INFO:
     begin
       game.HandlePlayerLoadingInfo(client, clientPacket);
     end;
-    CGPID_PLAYER_LOAD_OK:
+    TCGPID.PLAYER_LOAD_OK:
     begin
       game.HandlePlayerLoadOk(client, clientPacket);
     end;
-    CGPID_PLAYER_HOLE_INFORMATIONS:
+    TCGPID.PLAYER_HOLE_INFORMATIONS:
     begin
       game.HandlePlayerHoleInformations(client, clientPacket);
     end;
-    CGPID_PLAYER_1ST_SHOT_READY:
+    TCGPID.PLAYER_1ST_SHOT_READY:
     begin
       game.HandlePlayer1stShotReady(client, clientPacket);
     end;
-    CGPID_PLAYER_ACTION_SHOT:
+    TCGPID.PLAYER_ACTION_SHOT:
     begin
       game.HandlePlayerActionShot(client, clientPacket);
     end;
-    CGPID_PLAYER_ACTION_ROTATE:
+    TCGPID.PLAYER_ACTION_ROTATE:
     begin
       game.HandlePlayerActionRotate(client, clientPacket);
     end;
-    CGPID_PLAYER_ACTION_HIT:
+    TCGPID.PLAYER_ACTION_HIT:
     begin
       game.HandlePlayerActionHit(client, clientPacket);
     end;
-    CGPID_PLAYER_ACTION_CHANGE_CLUB:
+    TCGPID.PLAYER_ACTION_CHANGE_CLUB:
     begin
       game.HandlePlayerActionChangeClub(client, clientPacket);
     end;
-    CGPID_PLAYER_USE_ITEM:
+    TCGPID.PLAYER_USE_ITEM:
     begin
       game.HandlePlayerUseItem(client, clientPacket);
     end;
-    CGPID_PLAYER_SHOTDATA:
+    TCGPID.PLAYER_SHOTDATA:
     begin
       game.HandlePlayerShotData(client, clientPacket);
     end;
-    CGPID_PLAYER_SHOT_SYNC:
+    TCGPID.PLAYER_SHOT_SYNC:
     begin
       game.HandlePlayerShotSync(client, clientPacket);
     end;
-    CGPID_PLAYER_HOLE_COMPLETE:
+    TCGPID.PLAYER_HOLE_COMPLETE:
     begin
       game.HandlerPlayerHoleComplete(client, clientPacket);
     end;
-    CGPID_PLAYER_FAST_FORWARD:
+    TCGPID.PLAYER_FAST_FORWARD:
     begin
       game.HandlePlayerFastForward(client, clientPacket);
     end;
-    CGPID_PLAYER_POWER_SHOT:
+    TCGPID.PLAYER_POWER_SHOT:
     begin
       game.HandlePlayerPowerShot(client, clientPacket);
     end;
-    CGPID_PLAYER_ACTION:
+    TCGPID.PLAYER_ACTION:
     begin
       game.HandlePlayerAction(client, clientPacket);
     end;
-    CGPID_MASTER_KICK_PLAYER:
+    TCGPID.MASTER_KICK_PLAYER:
     begin
       game.HandleMasterKickPlayer(client, clientPacket);
     end;
-    CGPID_PLAYER_CHANGE_EQUIP:
+    TCGPID.PLAYER_CHANGE_EQUIP:
     begin
       game.HandlePlayerChangeEquipment2(client, clientPacket);
     end;
-    CGPID_PLAYER_CHANGE_EQUPMENT_A:
+    TCGPID.PLAYER_CHANGE_EQUPMENT_A:
     begin
       game.HandlePlayerChangeEquipment(client, clientPacket);
     end;
-    CGPID_PLAYER_CHANGE_EQUPMENT_B:
+    TCGPID.PLAYER_CHANGE_EQUPMENT_B:
     begin
       game.HandlePlayerChangeEquipment(client, clientPacket);
     end;
-    CGPID_PLAYER_EDIT_SHOP:
+    TCGPID.PLAYER_EDIT_SHOP:
     begin
       game.HandlePlayerEditShop(client, clientPacket);
     end;
-    CGPID_PLAYER_EDIT_SHOP_NAME:
+    TCGPID.PLAYER_EDIT_SHOP_NAME:
     begin
       game.HandlePlayerEditShopName(client, clientPacket);
     end;
-    CGPID_PLAYER_CLOSE_SHOP:
+    TCGPID.PLAYER_CLOSE_SHOP:
     begin
       game.HandlePlayerCloseShop(client, clientPacket);
     end;
-    CGPID_PLAYER_EDIT_SHOP_ITEMS:
+    TCGPID.PLAYER_EDIT_SHOP_ITEMS:
     begin
       game.HandlePlayerEditShopItems(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_SHOP_VISITORS_COUNT:
+    TCGPID.PLAYER_REQUEST_SHOP_VISITORS_COUNT:
     begin
       game.HandlePlayerRequestShopVisitorsCount(client, clientPacket);
     end;
-    CGPID_PLAYER_PAUSE_GAME:
+    TCGPID.PLAYER_PAUSE_GAME:
     begin
       game.HandlePlayerPauseGame(client, clientPacket);
     end;
-    CGPID_PLAYER_MOVE_AZTEC:
+    TCGPID.PLAYER_MOVE_AZTEC:
     begin
       game.HandlePlayerMoveAztec(client, clientPacket);
     end;
-    CGPID_PLAYER_ENTER_SHOP:
+    TCGPID.PLAYER_ENTER_SHOP:
     begin
       game.HandlerPlayerEnterShop(client, clientPacket);
     end;
-    CGPID_PLAYER_REQUEST_INCOME:
+    TCGPID.PLAYER_REQUEST_INCOME:
     begin
       game.HandlePlayerRequestShopIncome(client, clientPacket);
     end;
-    CGPID_PLAYER_BUY_SHOP_ITEM:
+    TCGPID.PLAYER_BUY_SHOP_ITEM:
     begin
       game.HandlePlayerShopBuyItem(client, clientPacket);
     end;
-    CGPID_PLAYER_LEAVE_GAME:
+    TCGPID.PLAYER_LEAVE_GAME:
     begin
       game.HandlePlayerLeaveGame(client, clientPacket);
     end;

@@ -374,35 +374,35 @@ begin
   self.PlayerAction(
     client,
     playerUID,
-    WriteAction(SSAPID_PLAYER_MAIN_SAVE) + playerData.ToPacketData
+    WriteAction(TSSAPID.PLAYER_MAIN_SAVE) + playerData.ToPacketData
   );
 
   // player items
   self.PlayerAction(
     client,
     playerUID,
-    WriteAction(SSAPID_PLAYER_ITEMS) + m_database.GetPlayerItems(playerUID.id)
+    WriteAction(TSSAPID.PLAYER_ITEMS) + m_database.GetPlayerItems(playerUID.id)
   );
 
   // player characters
   self.PlayerAction(
     client,
     playerUID,
-    WriteAction(SSAPID_PLAYER_CHARACTERS) + m_database.GetPlayerCharacters(playerUID.id)
+    WriteAction(TSSAPID.PLAYER_CHARACTERS) + m_database.GetPlayerCharacters(playerUID.id)
   );
 
   // player caddies
   self.PlayerAction(
     client,
     playerUID,
-    WriteAction(SSAPID_PLAYER_CADDIES) + m_database.GetPlayerCaddies(playerUID.id)
+    WriteAction(TSSAPID.PLAYER_CADDIES) + m_database.GetPlayerCaddies(playerUID.id)
   );
 
   // player mascots
   self.PlayerAction(
     client,
     playerUID,
-    WriteAction(SSAPID_PLAYER_MASCOTS) + m_database.GetPlayerMascots(playerUID.id)
+    WriteAction(TSSAPID.PLAYER_MASCOTS) + m_database.GetPlayerMascots(playerUID.id)
   );
 
   cookies := 99999999;
@@ -411,7 +411,7 @@ begin
   self.PlayerAction(
     client,
     playerUID,
-    WriteAction(SSAPID_PLAYER_COOKIES) + Write(cookies, 8)
+    WriteAction(TSSAPID.PLAYER_COOKIES) + Write(cookies, 8)
   );
 
   // Send Lobbies list
@@ -484,7 +484,7 @@ begin
   if clientPacket.Read(packetId, 2) then
   begin
     case packetId of
-      SSAPID_PLAYER_MAIN_SAVE:
+      TSSAPID.PLAYER_MAIN_SAVE:
       begin
         Console.Log('SSAPID_PLAYER_MAIN_SAVE');
         tmp := clientPacket.GetRemainingData;
@@ -494,7 +494,7 @@ begin
         m_database.SavePlayerMainSave(playerUID.id, playerData);
         // playerData.Free;
       end;
-      SSAPID_PLAYER_CHARACTERS:
+      TSSAPID.PLAYER_CHARACTERS:
       begin
         Console.Log('SSAPID_PLAYER_CHARACTERS');
         playerCharacters := TPlayerCharacters.Create;
@@ -502,7 +502,7 @@ begin
         m_database.SavePlayerCharacters(playerUID.id, playerCharacters);
         playerCharacters.Free;
       end;
-      SSAPID_PLAYER_ITEMS:
+      TSSAPID.PLAYER_ITEMS:
       begin
         Console.Log('SSAPID_PLAYER_ITEMS');
         playerItems := TPlayerItems.Create;
@@ -510,7 +510,7 @@ begin
         m_database.SavePlayerItems(playerUID.id, playerItems);
         playerItems.Free;
       end;
-      SSAPID_PLAYER_CADDIES:
+      TSSAPID.PLAYER_CADDIES:
       begin
         Console.Log('SSAPID_PLAYER_CADDIES');
         playerCaddies := TPlayerCaddies.Create;
@@ -518,11 +518,11 @@ begin
         m_database.SavePlayerCaddies(playerUID.id, playerCaddies);
         playerCaddies.Free;
       end;
-      SSAPID_PLAYER_COOKIES:
+      TSSAPID.PLAYER_COOKIES:
       begin
         Console.Log('SSAPID_PLAYER_COOKIES');
       end;
-      SSAPID_PLAYER_MASCOTS:
+      TSSAPID.PLAYER_MASCOTS:
       begin
         Console.Log('SSAPID_PLAYER_MASCOTS');
         playerMascots := TPlayerMascots.Create;
@@ -550,7 +550,7 @@ begin
   if clientPacket.Read(packetId, 2) then
   begin
     case packetId of
-      CGPID_PLAYER_LOGIN:
+      TCGPID.PLAYER_LOGIN:
       begin
         HandleGamePlayerLogin(client, clientPacket, playerUID);
       end;
@@ -577,19 +577,19 @@ begin
   if clientPacket.Read(packetId, 2) then
   begin
     case packetId of
-      CLPID_PLAYER_LOGIN:
+      TCLPID.PLAYER_LOGIN:
       begin
         HandleLoginPlayerLogin(client, clientPacket, playerUID);
       end;
-      CLPID_PLAYER_CONFIRM:
+      TCLPID.PLAYER_CONFIRM:
       begin
         self.HandlePlayerConfirmNickname(client, clientPacket, playerUID);
       end;
-      CLPID_PLAYER_SELECT_CHARCTER:
+      TCLPID.PLAYER_SELECT_CHARCTER:
       begin
         self.HandlePlayerSelectCharacter(client, clientpacket, playerUID);
       end;
-      CLPID_PLAYER_SET_NICKNAME:
+      TCLPID.PLAYER_SET_NICKNAME:
       begin
         self.HandlePlayerSetNickname(client, clientpacket, playerUID);
       end
@@ -609,7 +609,7 @@ end;
 procedure TSyncServer.OnReceiveLoginClientData(const packetId: TSSPID; const client: TSyncClient; const clientPacket: TClientPacket);
 begin
   case packetID of
-    SSPID_PLAYER_SYNC:
+    TSSPID.PLAYER_SYNC:
     begin
       self.SyncLoginPlayer(client, clientPacket);
     end;
@@ -623,11 +623,11 @@ end;
 procedure TSyncServer.OnReceiveGameClientData(const packetId: TSSPID; const client: TSyncClient; const clientPacket: TClientPacket);
 begin
   case packetID of
-    SSPID_PLAYER_SYNC:
+    TSSPID.PLAYER_SYNC:
     begin
       self.SyncGamePlayer(client, clientPacket);
     end;
-    SSPID_PLAYER_ACTION:
+    TSSPID.PLAYER_ACTION:
     begin
       self.HandleGameServerPlayerAction(client, clientPacket);
     end
@@ -690,7 +690,7 @@ begin
   end else
   begin
     case packetID of
-      TSSPID.SSPID_REGISTER_SERVER:
+      TSSPID.REGISTER_SERVER:
       begin
         self.RegisterServer(client, clientPacket);
       end;
