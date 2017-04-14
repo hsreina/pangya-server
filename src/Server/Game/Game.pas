@@ -950,7 +950,7 @@ var
 begin
   Console.Log('TGame.HandlePlayerChangeGameSettings', C_BLUE);
 
-  numberOfPlayerRdy :=0;
+  numberOfPlayerRdy := 0;
 
   for player in m_players do
   begin

@@ -25,10 +25,11 @@ type
     public
       constructor Create;
       destructor Destroy; override;
-      function GetLobbyById(lobbyId: Byte): TLobby;
-      function GetPlayerLobby(player: TGameClient): TLobby;
-      function GetPlayerGame(player: TGameClient): TGame;
-      procedure Send(data: AnsiString);
+      function GetLobbyById(const lobbyId: Byte): TLobby;
+      function GetPlayerLobby(const player: TGameClient): TLobby;
+      function TryGetPlayerLobby(const player: TGameClient; var lobby: TLobby): Boolean;
+      function GetPlayerGame(const player: TGameClient): TGame;
+      procedure Send(const data: AnsiString);
       function Build: TPacketData;
   end;
 
@@ -64,7 +65,7 @@ begin
   end;
 end;
 
-function TLobbiesList.GetLobbyById(lobbyId: Byte): TLobby;
+function TLobbiesList.GetLobbyById(const lobbyId: Byte): TLobby;
 var
   lobby: TLobby;
 begin
@@ -78,12 +79,22 @@ begin
   raise LobbyNotFoundException.Create('Lobby not found');
 end;
 
-function TLobbiesList.GetPlayerLobby(player: TGameClient): TLobby;
+function TLobbiesList.GetPlayerLobby(const player: TGameClient): TLobby;
 begin
   Exit(self.GetLobbyById(player.Data.Lobby));
 end;
 
-function TLobbiesList.GetPlayerGame(player: TGameClient): TGame;
+function TLobbiesList.TryGetPlayerLobby(const player: TGameClient; var lobby: TLobby): Boolean;
+begin
+  try
+    lobby := GetPlayerLobby(player);
+  except
+    Exit(False);
+  end;
+  Exit(True);
+end;
+
+function TLobbiesList.GetPlayerGame(const player: TGameClient): TGame;
 var
   lobby: TLobby;
 begin
@@ -102,7 +113,7 @@ begin
   end;
 end;
 
-procedure TLobbiesList.Send(data: AnsiString);
+procedure TLobbiesList.Send(const data: AnsiString);
 var
   lobby: TLobby;
 begin

@@ -2752,38 +2752,39 @@ var
   client: TGameClient;
 begin
   self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
-  if (clientPacket.Read(packetID, 2)) then
+  if not (clientPacket.Read(packetID, 2)) then
   begin
+    Exit;
+  end;
 
-    clientPacket.ReadUInt32(playerUID.id);
-    clientPacket.ReadPStr(playerUID.login);
+  clientPacket.ReadUInt32(playerUID.id);
+  clientPacket.ReadPStr(playerUID.login);
 
-    client := self.GetClientByUID(playerUID);
-    if client = nil then
+  client := self.GetClientByUID(playerUID);
+  if client = nil then
+  begin
+    Console.Log('something went wrong client not found', C_RED);
+    Exit;
+  end;
+
+  if client.UID.id = 0 then
+  begin
+    client.UID.id := playerUID.id;
+  end;
+  console.Log(Format('player UID : %s/%d', [playerUID.login, playerUID.id]));
+
+  case packetId of
+    TSSPID.PLAYER_SYNC:
     begin
-      Console.Log('something went wrong client not found', C_RED);
-      Exit;
+      self.HandlerSyncServerPlayerSync(clientPacket, client);
     end;
-
-    if client.UID.id = 0 then
+    TSSPID.PLAYER_ACTION:
     begin
-      client.UID.id := playerUID.id;
+      self.HandleSyncServerPlayerAction(clientPacket, client);
     end;
-    console.Log(Format('player UID : %s/%d', [playerUID.login, playerUID.id]));
-
-    case packetId of
-      TSSPID.PLAYER_SYNC:
-      begin
-        self.HandlerSyncServerPlayerSync(clientPacket, client);
-      end;
-      TSSPID.PLAYER_ACTION:
-      begin
-        self.HandleSyncServerPlayerAction(clientPacket, client);
-      end;
-      else
-      begin
-        self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
-      end;
+    else
+    begin
+      self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;
   end;
 end;
