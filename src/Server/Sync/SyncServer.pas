@@ -115,7 +115,7 @@ end;
 
 procedure TSyncServer.OnClientDisconnect(const client: TSyncClient);
 begin
-  self.Log('TSyncServer.OnClientDisconnect', TLogType_not);
+  //self.Log('TSyncServer.OnClientDisconnect', TLogType_not);
 end;
 
 procedure TSyncServer.OnStart;

@@ -209,13 +209,13 @@ begin
 
     if not m_haveKey then
     begin
-      clientPacket := TClientPacket.Create(buffer);
+      clientPacket := TClientPacket.CreateFromAnsiString(buffer);
       HandleReadKey(clientPacket);
       self.TriggerOnConnect;
     end else
     begin
       buffer := m_cryptLib.ClientDecrypt(buffer, m_key);
-      clientPacket := TClientPacket.Create(buffer);
+      clientPacket := TClientPacket.CreateFromAnsiString(buffer);
       TriggerOnRead(clientPacket);
     end;
 

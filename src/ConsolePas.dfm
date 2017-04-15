@@ -2,7 +2,7 @@ object Console: TConsole
   Left = 0
   Top = 0
   Caption = 'Console'
-  ClientHeight = 284
+  ClientHeight = 224
   ClientWidth = 655
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -20,7 +20,7 @@ object Console: TConsole
     Left = 0
     Top = 0
     Width = 655
-    Height = 284
+    Height = 224
     Align = alClient
     BorderStyle = bsNone
     Color = 15920102

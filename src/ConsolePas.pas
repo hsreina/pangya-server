@@ -156,36 +156,64 @@ begin
   end;
 end;
 
+// Uggly temporary fix to log from other threads
 function TConsole.log(data: string; pColor: TColor; bold: boolean): ansistring;
 var
   logFile: TextFile;
+  currentThreadId: UInt32;
 begin
 
-  {$IFDEF CONSOLE}
-  SetConsoleTextAttribute(
-    GetStdHandle(STD_OUTPUT_HANDLE),
-    GetConsoleAttributes(pColor)
-  );
+  currentThreadId := GetCurrentThreadId;
 
-  WriteLn(data);
-  {$ELSE}
-  with DebugInfo do
+  if not (currentThreadId = MainThreadID) Then
   begin
-    SelStart := GetTextLen; // move to the end
-    SelAttributes.Color := pColor;
-    if bold then
+    TThread.Synchronize(TThread.CurrentThread,
+    procedure
     begin
-      SelAttributes.Style := [fsBold];
-    end;
-    SelText := data + C_NL;
-  end;
-  result := data;
-  {$ENDIF}
+      {$IFDEF CONSOLE}
+      SetConsoleTextAttribute(
+        GetStdHandle(STD_OUTPUT_HANDLE),
+        GetConsoleAttributes(pColor)
+      );
 
-  //AssignFile(logFile, 'log.txt');
-  //Append(logFile);
-  //WriteLn(logFile, data);
-  //CloseFile(logFile);
+      WriteLn(data);
+      {$ELSE}
+      with DebugInfo do
+      begin
+        SelStart := GetTextLen; // move to the end
+        SelAttributes.Color := pColor;
+        if bold then
+        begin
+          SelAttributes.Style := [fsBold];
+        end;
+        SelText := data + C_NL;
+      end;
+      //result := data;
+      {$ENDIF}
+    end);
+  end else
+  begin
+    {$IFDEF CONSOLE}
+    SetConsoleTextAttribute(
+      GetStdHandle(STD_OUTPUT_HANDLE),
+      GetConsoleAttributes(pColor)
+    );
+
+    WriteLn(data);
+    {$ELSE}
+    with DebugInfo do
+    begin
+      SelStart := GetTextLen; // move to the end
+      SelAttributes.Color := pColor;
+      if bold then
+      begin
+        SelAttributes.Style := [fsBold];
+      end;
+      SelText := data + C_NL;
+    end;
+    //result := data;
+    {$ENDIF}
+  end;
 
 end;
 

@@ -11,7 +11,7 @@ unit CryptLib;
 interface
 
 uses
-  windows;
+  windows, PangyaBuffer;
 
 type
 
@@ -33,6 +33,7 @@ type
       var m_init_ok: Boolean;
     public
       function ClientDecrypt(data: AnsiString; key: Byte): AnsiString;
+      function ClientDecrypt2(const buffin: TPangyaBytes; var buffout: TPangyaBytes; const key: Byte): Boolean;
       function ClientEncrypt(data: AnsiString; key: Byte; packetid: byte): AnsiString;
       function ServerEncrypt(data: AnsiString; key: Byte): AnsiString;
       function ServerDecrypt(data: ansistring; key: byte): ansistring;
@@ -67,6 +68,30 @@ begin
     m_pangyaFree(@buffout);
   end;
 end;
+
+function TCryptLib.ClientDecrypt2(const buffin: TPangyaBytes; var buffout: TPangyaBytes; const key: Byte): Boolean;
+var
+  decryptedBuffer: PByte;
+  buffoutSize: Integer;
+  res: integer;
+begin
+
+  res := m_pangyaClientDecrypt(
+    PAnsiChar(@buffin[0]),
+    Length(buffin),
+    @decryptedBuffer,
+    @buffoutSize,
+    key
+  );
+
+  if res > 0 then
+  begin
+    setLength(buffout, buffoutSize);
+    move(decryptedBuffer[0], buffout[0], buffoutSize);
+    m_pangyaFree(@decryptedBuffer);
+  end;
+end;
+
 
 function TCryptLib.ClientEncrypt(data: AnsiString; key: byte; packetId: Byte): AnsiString;
 var

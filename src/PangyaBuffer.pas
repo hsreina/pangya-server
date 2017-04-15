@@ -14,6 +14,9 @@ uses
   Classes, System.SyncObjs, SysUtils;
 
 type
+
+  TPangyaBytes = array of Byte;
+
   TPangyaBuffer = class
     private
       var m_data: TMemoryStream;
@@ -21,7 +24,8 @@ type
       procedure Init;
     public
       constructor Create; overload;
-      constructor Create(const src: AnsiString); overload;
+      constructor CreateFromAnsiString(const src: AnsiString); overload;
+      constructor CreateFromPangyaBytes(const src: TPangyaBytes); overload;
       destructor Destroy; override;
 
       procedure Lock;
@@ -78,11 +82,19 @@ begin
   Init;
 end;
 
-constructor TPangyaBuffer.Create(const src: AnsiString);
+constructor TPangyaBuffer.CreateFromAnsiString(const src: AnsiString);
 begin
   inherited Create;
   init;
   WriteStr(src);
+  Seek(0, 0);
+end;
+
+constructor TPangyaBuffer.CreateFromPangyaBytes(const src: TPangyaBytes);
+begin
+  inherited Create;
+  init;
+  Write(src[0], Length(src));
   Seek(0, 0);
 end;
 
