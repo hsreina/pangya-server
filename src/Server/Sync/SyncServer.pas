@@ -124,15 +124,39 @@ begin
 end;
 
 procedure TSyncServer.SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
+var
+  clientPacket: TClientPacket;
 begin
   self.Log('TSyncServer.SendToGame', TLogType_not);
-  client.Send(#$01#$00 + Write(playerUID.id, 4) + WritePStr(playerUID.login) + data);
+
+  clientPacket := TClientPacket.Create;
+
+  clientPacket.WriteAction(TSSPID.PLAYER_SYNC);
+  clientPacket.WriteUInt32(playerUID.id);
+  clientPacket.WritePStr(playerUID.login);
+  clientPacket.WriteStr(data);
+
+  client.Send(clientPacket);
+
+  clientPacket.Free;
 end;
 
 procedure TSyncServer.PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
+var
+  clientPacket: TClientPacket;
 begin
   self.Log('TSyncServer.PlayerAction', TLogType_not);
-  client.Send(#$02#$00 + Write(playerUID.id, 4) + WritePStr(playerUID.login) + data);
+
+  clientPacket := TClientPacket.Create;
+
+  clientPacket.WriteAction(TSSPID.PLAYER_ACTION);
+  clientPacket.WriteUInt32(playerUID.id);
+  clientPacket.WritePStr(playerUID.login);
+  clientPacket.WriteStr(data);
+
+  client.Send(clientPacket);
+
+  clientPacket.Free;
 end;
 
 procedure TSyncServer.HandlePlayerSelectCharacter(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
@@ -415,7 +439,7 @@ begin
   );
 
   // Send Lobbies list
-  self.PlayerAction(client, playerUID, #$02#$00);
+  self.PlayerAction(client, playerUID, WriteAction(TSSAPID.SEND_LOBBIES_LIST));
 end;
 
 procedure TSyncServer.HandlePlayerSetNickname(const client: TSyncClient; const clientPacket: TClientPacket; const playerUID: TPlayerUID);
