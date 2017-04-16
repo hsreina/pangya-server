@@ -11,7 +11,7 @@ unit PangyaBuffer;
 interface
 
 uses
-  Classes, System.SyncObjs, SysUtils;
+  Classes, System.SyncObjs, SysUtils, PangyaPacketsDef;
 
 type
   TPangyaBuffer = class
@@ -59,6 +59,11 @@ type
       function WritePStr(const src: AnsiString): Boolean;
       function ReadPStr(var dst: AnsiString): Boolean;
 
+      function WriteAction(actionId: TSGPID): Boolean; overload;
+      function WriteAction(actionId: TSSPID): Boolean; overload;
+      function WriteAction(actionId: TSSAPID): Boolean; overload;
+      function WriteAction(actionId: TCGPID): Boolean; overload;
+
       procedure Skip(count: integer);
       function Seek(offset, origin: integer): integer;
       function GetSize: UInt32;
@@ -69,8 +74,6 @@ type
   end;
 
 implementation
-
-uses ConsolePas;
 
 constructor TPangyaBuffer.Create;
 begin
@@ -243,6 +246,26 @@ begin
 
   setLength(dst, size);
   Exit(Read(dst[1], size));
+end;
+
+function TPangyaBuffer.WriteAction(actionId: TSGPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
+end;
+
+function TPangyaBuffer.WriteAction(actionId: TSSPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
+end;
+
+function TPangyaBuffer.WriteAction(actionId: TSSAPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
+end;
+
+function TPangyaBuffer.WriteAction(actionId: TCGPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
 end;
 
 procedure TPangyaBuffer.Skip(count: integer);

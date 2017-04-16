@@ -176,8 +176,6 @@ function WriteAction(actionId: TSSPID): AnsiString; overload;
 function WriteAction(actionId: TSSAPID): AnsiString; overload;
 function WriteAction(actionId: TCGPID): AnsiString; overload;
 
-function WriteHeader(id: TSGPID): AnsiString; overload;
-
 implementation
 
 function WriteAction(actionId: TSGPID): AnsiString;
@@ -202,12 +200,6 @@ function WriteAction(actionId: TCGPID): AnsiString;
 begin
   setLength(result, 2);
   move(actionId, result[1], 2);
-end;
-
-function WriteHeader(id: TSGPID): AnsiString; overload;
-begin
-  setLength(result, 2);
-  move(id, result[1], 2);
 end;
 
 end.

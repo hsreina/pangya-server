@@ -2655,7 +2655,7 @@ begin
         client.Data.Data.Load(buffer);
         client.Data.Data.playerInfo1.ConnectionId := client.ID + 1;
         client.Send(
-          WriteHeader(TSGPID.PLAYER_MAIN_DATA) +
+          WriteAction(TSGPID.PLAYER_MAIN_DATA) +
           #$00 +
           WritePStr('824.00') +
           WritePStr(ExtractFilename(ParamStr(0))) +
@@ -2669,7 +2669,7 @@ begin
         Console.Log('Characters');
         client.Data.Characters.Load(clientPacket.GetRemainingData);
         client.Send(
-          WriteHeader(TSGPID.PLAYER_CHARACTERS_DATA) +
+          WriteAction(TSGPID.PLAYER_CHARACTERS_DATA) +
           client.Data.Characters.ToPacketData
         );
       end;
@@ -2678,7 +2678,7 @@ begin
         Console.Log('Items');
         client.Data.Items.Load(clientPacket.GetRemainingData);
         client.Send(
-          WriteHeader(TSGPID.PLAYER_ITEMS_DATA) +
+          WriteAction(TSGPID.PLAYER_ITEMS_DATA) +
           client.Data.items.ToPacketData
         );
       end;
@@ -2687,7 +2687,7 @@ begin
         Console.Log('caddies');
         client.Data.Caddies.Load(clientPacket.GetRemainingData);
         client.Send(
-          WriteHeader(TSGPID.PLAYER_CADDIES_DATA) +
+          WriteAction(TSGPID.PLAYER_CADDIES_DATA) +
           client.Data.Caddies.ToPacketData
         );
       end;
@@ -2697,12 +2697,12 @@ begin
         client.Data.Mascots.Load(clientPacket.GetRemainingData);
 
         console.WriteDump(
-          WriteHeader(TSGPID.PLAYER_MASCOTS_DATA) +
+          WriteAction(TSGPID.PLAYER_MASCOTS_DATA) +
           client.Data.Mascots.ToPacketData
         );
 
         client.Send(
-          WriteHeader(TSGPID.PLAYER_MASCOTS_DATA) +
+          WriteAction(TSGPID.PLAYER_MASCOTS_DATA) +
           client.Data.Mascots.ToPacketData
         );
       end;
