@@ -13,3 +13,5 @@ __history
 *.db
 debug
 howto
+*.local
+*.stat

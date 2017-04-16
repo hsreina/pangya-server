@@ -45,8 +45,6 @@ type
 
   implementation
 
-uses ConsolePas;
-
 function TCryptLib.ClientDecrypt(data: AnsiString; key: Byte): AnsiString;
 var
   buffout: PAnsiChar;
