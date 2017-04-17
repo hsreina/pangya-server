@@ -133,7 +133,7 @@ uses Logging, ConsolePas, Buffer, utils, PacketData, defs,
 
 constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
 begin
-  inherited create(cryptLib);
+  inherited create('GameServer', cryptLib);
   Console.Log('TGameServer.Create');
   m_lobbies := TLobbiesList.Create;
   m_iffManager := iffManager;

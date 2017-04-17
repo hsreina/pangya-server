@@ -22,13 +22,6 @@ type
     and some other basic function to send back message to the game
   }
 
-  PTClientPacketHeader = ^TClientPacketHeader;
-  TClientPacketHeader = packed record
-    var xx: UInt8;
-    var size: UInt16;
-    var yy: UInt8;
-  end;
-
   TServer<ClientType> = class abstract (TLogging)
     private
 
@@ -79,7 +72,7 @@ type
 
   implementation
 
-uses Buffer, ConsolePas;
+uses Buffer, ConsolePas, PangyaPacketsDef;
 
 constructor TServer<ClientType>.Create(cryptLib: TCryptLib);
 begin
@@ -133,103 +126,6 @@ begin
     Result := false;
   end;
 end;
-
-{
-procedure TServer<ClientType>.ServerRead(Sender: TObject; Socket: TCustomWinSocket);
-var
-  client: TServerClient<ClientType>;
-  packetData: AnsiString;
-  buffin: TBuffer;
-  buffer: AnsiString;
-  size: Uint32;
-  clientPacket: TClientPacket;
-  realPacketSize: UInt32;
-begin
-  Log('TServer.serverRead', TLogType.TLogType_not);
-  client := GetClientBySocket(Socket);
-  size := 0;
-
-  if client = nil then
-  begin
-    Exit;
-  end;
-  client.ReceiveData(Socket.ReceiveText);
-
-  buffin := client.GetBuffin;
-
-  if (buffin.GetLength > 2) then
-  begin
-    move(buffin.GetData[2], size, 2);
-    realPacketSize := size + 4;
-  end else
-  begin
-    Exit;
-  end;
-
-  while buffin.GetLength >= realPacketSize  do
-  begin
-    buffer := buffin.Read(0, realPacketSize);
-    buffin.Delete(0, realPacketSize);
-
-    buffer := m_cryptLib.ClientDecrypt(buffer, client.GetKey);
-
-    clientPacket := TClientPacket.Create(buffer);
-
-    OnReceiveClientData(client, clientPacket);
-
-    clientPacket.Free;
-
-    if (buffin.GetLength > 2) then
-    begin
-      move(buffin.GetData[2], size, 2);
-      realPacketSize := size + 4;
-    end else
-    begin
-      Exit;
-    end;
-  end;
-end;
-
-procedure TServer<ClientType>.ServerDisconnect(Sender: TObject; Socket: TCustomWinSocket);
-var
-  client: TServerClient<ClientType>;
-begin
-  Log('TServer.serverDisconnect', TLogType.TLogType_not);
-  client := GetClientBySocket(Socket);
-  if client = nil then
-  begin
-    Console.Log('Client socket not found', C_RED);
-    Exit;
-  end;
-
-  self.OnClientDisconnect(client);
-
-  m_clients.Remove(client);
-
-  OnDestroyClient(client);
-  client.Free;
-end;
-
-procedure TServer<ClientType>.ServerError(Sender: TObject; Socket: TCustomWinSocket; ErrorEvent: TErrorEvent; var ErrorCode: Integer);
-begin
-  Log('TServer.serverError', TLogType.TLogType_not);
-  errorCode := 0;
-  Socket.Close;
-  Socket.free;
-end;
-}
-
-{
-procedure TServer<ClientType>.OnTimer(Sender: TObject);
-var
-  Client: TServerClient<ClientType>;
-begin
-  for Client in m_clients do
-  begin
-    Client.HandleSend;
-  end;
-end;
-}
 
 function TServer<ClientType>.GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
 var
@@ -352,8 +248,6 @@ begin
     ReadBytes(buffer, pheader.size, true);
   end;
 
-  m_lock.Enter;
-
   pheader := @buffer[0];
 
   bufferSize := Length(buffer);
@@ -361,6 +255,8 @@ begin
   if not (dataSize + 4 = bufferSize) then
   begin
     Console.Log('Something went wrong! Fix me', C_RED);
+    AContext.Connection.Disconnect;
+    Exit;
   end;
 
   client := self.GetClientByContext(AContext);
@@ -368,17 +264,19 @@ begin
   if nil = client then
   begin
     Console.Log('Something went wrong v2! Fix me', C_RED);
+    AContext.Connection.Disconnect;
+    Exit;
   end;
 
   m_cryptLib.ClientDecrypt2(TPangyaBytes(buffer), decryptedBuffer, client.GetKey);
 
   clientPacket := TClientPacket.CreateFromPangyaBytes(decryptedBuffer);
 
+  m_lock.Enter;
   OnReceiveClientData(client, clientPacket);
+  m_lock.Leave;
 
   clientPacket.Free;
-
-  m_lock.Leave;
 end;
 
 procedure TServer<ClientType>.ServerOnException(AContext: TIdContext;

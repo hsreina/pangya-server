@@ -56,7 +56,7 @@ uses Logging, PangyaPacketsDef, ConsolePas, SysUtils, defs;
 
 constructor TLoginServer.Create(cryptLib: TCryptLib);
 begin
-  inherited;
+  inherited Create('LoginServer', cryptLib);
 end;
 
 destructor TLoginServer.Destroy;

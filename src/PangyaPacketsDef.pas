@@ -12,6 +12,13 @@ interface
 
 type
 
+  PTClientPacketHeader = ^TClientPacketHeader;
+  TClientPacketHeader = packed record
+    var xx: UInt8;
+    var size: UInt16;
+    var yy: UInt8;
+  end;
+
 {$SCOPEDENUMS ON}
   // Client login packets (packets sent from the game to the Login Server)
   TCLPID = (

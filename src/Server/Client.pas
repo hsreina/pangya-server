@@ -11,20 +11,18 @@ unit Client;
 interface
 
 uses
-  ScktComp, ClientPacket, CryptLib, defs, PangyaBuffer, SysUtils, utils, IdContext, Classes;
+  ClientPacket, CryptLib, defs, PangyaBuffer, SysUtils, utils, IdContext, Classes;
 
 type
 
   TClient<ClientType> = class
     protected
-      var m_socket: TCustomWinSocket;
       var m_key: Byte;
       var m_context: TIdContext;
       var m_cryptLib: TCryptLib;
       function FGetHost: AnsiString;
       var m_useIndy: Boolean;
     public
-      constructor Create(const Socket: TCustomWinSocket; const cryptLib: TCryptLib); overload;
       constructor Create(const AContext: TIdContext; const cryptLib: TCryptLib); overload;
       destructor Destroy; override;
 
@@ -98,29 +96,11 @@ begin
     encrypted := data;
   end;
 
-  if m_useIndy then
-  begin
-    // tmp fix, with indy, we don't want anymore string as buffer
-    tmp := TMemoryStream.Create;
-    tmp.Write(encrypted[1], Length(encrypted));
-    m_context.Connection.IOHandler.Write(tmp);
-    tmp.free;
-  end else
-  begin
-    m_socket.SendText(encrypted);
-  end;
-
-end;
-
-constructor TClient<ClientType>.Create(const Socket: TCustomWinSocket; const cryptLib: TCryptLib);
-var
-  rnd: Byte;
-begin
-  m_useIndy := false;
-  rnd := Byte(Random(9));
-  //m_key := 2;
-  m_cryptLib := cryptLib;
-  m_socket := socket;
+  // tmp fix, with indy, we don't want anymore string as buffer
+  tmp := TMemoryStream.Create;
+  tmp.Write(encrypted[1], Length(encrypted));
+  m_context.Connection.IOHandler.Write(tmp);
+  tmp.free;
 end;
 
 constructor TClient<ClientType>.Create(const AContext: TIdContext; const cryptLib: TCryptLib);
@@ -156,7 +136,7 @@ end;
 
 procedure TClient<ClientType>.Disconnect;
 begin
-  m_socket.Close;
+  m_context.Connection.Disconnect;
 end;
 
 end.
