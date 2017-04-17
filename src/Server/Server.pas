@@ -354,6 +354,8 @@ begin
 
   m_lock.Enter;
 
+  pheader := @buffer[0];
+
   bufferSize := Length(buffer);
   dataSize := pheader.size;
   if not (dataSize + 4 = bufferSize) then

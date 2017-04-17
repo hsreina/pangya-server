@@ -11,13 +11,12 @@ unit Client;
 interface
 
 uses
-  ScktComp, ClientPacket, CryptLib, defs, PangyaBuffer, SysUtils, utils, IdContext;
+  ScktComp, ClientPacket, CryptLib, defs, PangyaBuffer, SysUtils, utils, IdContext, Classes;
 
 type
 
   TClient<ClientType> = class
     protected
-      var m_buffout: TPangyaBuffer;
       var m_socket: TCustomWinSocket;
       var m_key: Byte;
       var m_context: TIdContext;
@@ -76,6 +75,7 @@ end;
 procedure TClient<ClientType>.Send(data: AnsiString; encrypt: Boolean);
 var
   encrypted: AnsiString;
+  tmp: TMemoryStream;
 begin
 
   if Length(data) = 0 then
@@ -100,10 +100,14 @@ begin
 
   if m_useIndy then
   begin
-    m_context.Connection.IOHandler.Write(encrypted);
+    // tmp fix, with indy, we don't want anymore string as buffer
+    tmp := TMemoryStream.Create;
+    tmp.Write(encrypted[1], Length(encrypted));
+    m_context.Connection.IOHandler.Write(tmp);
+    tmp.free;
   end else
   begin
-    m_buffout.WriteStr(encrypted);
+    m_socket.SendText(encrypted);
   end;
 
 end;
@@ -117,7 +121,6 @@ begin
   //m_key := 2;
   m_cryptLib := cryptLib;
   m_socket := socket;
-  m_buffout := TPangyaBuffer.Create;
 end;
 
 constructor TClient<ClientType>.Create(const AContext: TIdContext; const cryptLib: TCryptLib);
@@ -129,13 +132,11 @@ begin
   rnd := Byte(Random(9));
   //m_key := 2;
   m_cryptLib := cryptLib;
-  m_buffout := TPangyaBuffer.Create;
 end;
 
 destructor TClient<ClientType>.Destroy;
 begin
   inherited;
-  m_buffout.Free;
 end;
 
 function TClient<ClientType>.GetKey: Byte;

@@ -18,7 +18,9 @@ uses
   DUnitTestRunner,
   TestCryptLib in 'TestCryptLib.pas',
   CryptLib in '..\CryptLib.pas',
-  Utils in 'Tools\Utils.pas';
+  Utils in 'Tools\Utils.pas',
+  PangyaBuffer in '..\PangyaBuffer.pas',
+  PangyaPacketsDef in '..\PangyaPacketsDef.pas';
 
 {$R *.RES}
 

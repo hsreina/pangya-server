@@ -11,7 +11,7 @@ unit CryptLib;
 interface
 
 uses
-  windows, PangyaBuffer;
+  windows, PangyaBuffer, SysUtils;
 
 type
 
@@ -31,6 +31,7 @@ type
       var m_pangyaFree: TPangyaFree;
       var m_pangyaDeserialize: TPangyaDeserialize;
       var m_init_ok: Boolean;
+      procedure GuardAgainstUninitializedLib;
     public
       function ClientDecrypt(data: AnsiString; key: Byte): AnsiString;
       function ClientDecrypt2(const buffin: TPangyaBytes; var buffout: TPangyaBytes; const key: Byte): Boolean;
@@ -51,6 +52,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
+  GuardAgainstUninitializedLib;
+
   res := m_pangyaClientDecrypt(
     PAnsiChar(data),
     Length(data),
@@ -73,6 +76,7 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
+  GuardAgainstUninitializedLib;
 
   res := m_pangyaClientDecrypt(
     PAnsiChar(@buffin[0]),
@@ -97,6 +101,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
+  GuardAgainstUninitializedLib;
+
   res := m_pangyaClientEncrypt(
     PAnsiChar(data),
     Length(data),
@@ -120,6 +126,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
+  GuardAgainstUninitializedLib;
+
   res := m_pangyaServerEncrypt(
     PAnsiChar(data),
     Length(data),
@@ -142,6 +150,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
+  GuardAgainstUninitializedLib;
+
   res := m_pangyaServerDecrypt(
     PAnsiChar(data),
     Length(data),
@@ -230,6 +240,14 @@ end;
 destructor TCryptLib.Destroy;
 begin
   inherited;
+end;
+
+procedure TCryptLib.GuardAgainstUninitializedLib;
+begin
+  if not m_init_ok then
+  begin
+    raise Exception.Create('CryptLib is not initialized');
+  end;
 end;
 
 end.
