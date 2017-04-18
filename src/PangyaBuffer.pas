@@ -11,9 +11,12 @@ unit PangyaBuffer;
 interface
 
 uses
-  Classes, System.SyncObjs, SysUtils;
+  Classes, System.SyncObjs, SysUtils, PangyaPacketsDef;
 
 type
+
+  TPangyaBytes = array of Byte;
+
   TPangyaBuffer = class
     private
       var m_data: TMemoryStream;
@@ -21,7 +24,8 @@ type
       procedure Init;
     public
       constructor Create; overload;
-      constructor Create(const src: AnsiString); overload;
+      constructor CreateFromAnsiString(const src: AnsiString); overload;
+      constructor CreateFromPangyaBytes(const src: TPangyaBytes); overload;
       destructor Destroy; override;
 
       procedure Lock;
@@ -59,6 +63,11 @@ type
       function WritePStr(const src: AnsiString): Boolean;
       function ReadPStr(var dst: AnsiString): Boolean;
 
+      function WriteAction(actionId: TSGPID): Boolean; overload;
+      function WriteAction(actionId: TSSPID): Boolean; overload;
+      function WriteAction(actionId: TSSAPID): Boolean; overload;
+      function WriteAction(actionId: TCGPID): Boolean; overload;
+
       procedure Skip(count: integer);
       function Seek(offset, origin: integer): integer;
       function GetSize: UInt32;
@@ -70,19 +79,25 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TPangyaBuffer.Create;
 begin
   inherited;
   Init;
 end;
 
-constructor TPangyaBuffer.Create(const src: AnsiString);
+constructor TPangyaBuffer.CreateFromAnsiString(const src: AnsiString);
 begin
   inherited Create;
   init;
   WriteStr(src);
+  Seek(0, 0);
+end;
+
+constructor TPangyaBuffer.CreateFromPangyaBytes(const src: TPangyaBytes);
+begin
+  inherited Create;
+  init;
+  Write(src[0], Length(src));
   Seek(0, 0);
 end;
 
@@ -243,6 +258,26 @@ begin
 
   setLength(dst, size);
   Exit(Read(dst[1], size));
+end;
+
+function TPangyaBuffer.WriteAction(actionId: TSGPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
+end;
+
+function TPangyaBuffer.WriteAction(actionId: TSSPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
+end;
+
+function TPangyaBuffer.WriteAction(actionId: TSSAPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
+end;
+
+function TPangyaBuffer.WriteAction(actionId: TCGPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
 end;
 
 procedure TPangyaBuffer.Skip(count: integer);

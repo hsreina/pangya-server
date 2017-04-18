@@ -32,7 +32,7 @@ type
       procedure OnClientRead(Sender: TObject; const clientPacket: TClientPacket);
 
     public
-      constructor Create(cryptLib: TCryptLib);
+      constructor Create(const name: string; const cryptLib: TCryptLib);
       destructor Destroy; override;
   end;
 
@@ -40,10 +40,10 @@ implementation
 
 uses Logging, ConsolePas;
 
-constructor TSyncableServer<ClientType>.Create(cryptLib: TCryptLib);
+constructor TSyncableServer<ClientType>.Create(const name: string; const cryptLib: TCryptLib);
 begin
-  inherited;
-  m_syncClient := TSyncClient.Create(cryptLib);
+  inherited Create(cryptLib);
+  m_syncClient := TSyncClient.Create(name + 'SyncableServer', cryptLib);
   m_syncClient.OnRead := self.OnClientRead;
   m_syncClient.OnConnect := OnConnect;
 end;

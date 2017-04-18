@@ -11,19 +11,19 @@ unit Client;
 interface
 
 uses
-  ScktComp, ClientPacket, CryptLib, defs, PangyaBuffer, SysUtils, utils;
+  ClientPacket, CryptLib, defs, PangyaBuffer, SysUtils, utils, IdContext, Classes;
 
 type
 
   TClient<ClientType> = class
     protected
-      var m_buffout: TPangyaBuffer;
-      var m_socket: TCustomWinSocket;
       var m_key: Byte;
+      var m_context: TIdContext;
       var m_cryptLib: TCryptLib;
       function FGetHost: AnsiString;
+      var m_useIndy: Boolean;
     public
-      constructor Create(Socket: TCustomWinSocket; cryptLib: TCryptLib);
+      constructor Create(const AContext: TIdContext; const cryptLib: TCryptLib); overload;
       destructor Destroy; override;
 
       function GetKey: Byte;
@@ -61,7 +61,7 @@ begin
   data.Seek(0, 0);
   size := data.GetSize;
   data.ReadStr(buff, size);
-  self.Send(buff, encrypt);
+  Send(buff, encrypt);
   data.Seek(oldPos, 0);
 end;
 
@@ -73,39 +73,50 @@ end;
 procedure TClient<ClientType>.Send(data: AnsiString; encrypt: Boolean);
 var
   encrypted: AnsiString;
+  tmp: TMemoryStream;
 begin
+
+  if Length(data) = 0 then
+  begin
+    Console.Log('data too small');
+    Exit;
+  end;
+
   if encrypt then
   begin
     if (UID.login = 'Sync') then
     begin
       encrypted := m_cryptLib.ClientEncrypt(data, m_key, 0);
-      m_buffout.WriteStr(encrypted);
     end else
     begin
       encrypted := m_cryptLib.ServerEncrypt(data, m_key);
-      m_buffout.WriteStr(encrypted);
     end;
   end else
   begin
-    m_buffout.WriteStr(data);
+    encrypted := data;
   end;
+
+  // tmp fix, with indy, we don't want anymore string as buffer
+  tmp := TMemoryStream.Create;
+  tmp.Write(encrypted[1], Length(encrypted));
+  m_context.Connection.IOHandler.Write(tmp);
+  tmp.free;
 end;
 
-constructor TClient<ClientType>.Create(Socket: TCustomWinSocket; cryptLib: TCryptLib);
+constructor TClient<ClientType>.Create(const AContext: TIdContext; const cryptLib: TCryptLib);
 var
   rnd: Byte;
 begin
+  m_context := AContext;
+  m_useIndy := true;
   rnd := Byte(Random(9));
   //m_key := 2;
   m_cryptLib := cryptLib;
-  m_socket := socket;
-  m_buffout := TPangyaBuffer.Create;
 end;
 
 destructor TClient<ClientType>.Destroy;
 begin
   inherited;
-  m_buffout.Free;
 end;
 
 function TClient<ClientType>.GetKey: Byte;
@@ -125,7 +136,7 @@ end;
 
 procedure TClient<ClientType>.Disconnect;
 begin
-  m_socket.Close;
+  m_context.Connection.Disconnect;
 end;
 
 end.

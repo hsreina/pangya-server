@@ -157,7 +157,7 @@ var
   i: integer;
   tmp: AnsiString;
 begin
-  ClientPacket := TClientPacket.Create(PacketData);
+  ClientPacket := TClientPacket.CreateFromAnsiString(PacketData);
 
   count := 0;
   // TODO: should rethink that

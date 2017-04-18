@@ -56,7 +56,7 @@ uses Logging, PangyaPacketsDef, ConsolePas, SysUtils, defs;
 
 constructor TLoginServer.Create(cryptLib: TCryptLib);
 begin
-  inherited;
+  inherited Create('LoginServer', cryptLib);
 end;
 
 destructor TLoginServer.Destroy;
@@ -195,42 +195,43 @@ end;
 
 procedure TLoginServer.OnReceiveClientData(const client: TLoginClient; const clientPacket: TClientPacket);
 var
-  player: TLoginPlayer;
   packetId: TCLPID;
 begin
   self.Log('TLoginServer.OnReceiveClientData', TLogType_not);
-  player := client.Data;
-  if (clientPacket.Read(packetID, 2)) then
+
+  if not (clientPacket.Read(packetID, 2)) then
   begin
-    case packetID of
-      TCLPID.PLAYER_LOGIN:
-      begin
-        self.HandlePlayerLogin(client, clientPacket);
-      end;
-      TCLPID.PLAYER_SELECT_SERVER:
-      begin
-        self.HandlePlayerServerSelect(client, clientPacket);
-      end;
-      TCLPID.PLAYER_SET_NICKNAME:
-      begin
-        self.Sync(client, clientPacket);
-      end;
-      TCLPID.PLAYER_CONFIRM:
-      begin
-        self.Sync(client, clientPacket);
-      end;
-      TCLPID.PLAYER_SELECT_CHARCTER:
-      begin
-        self.Sync(client, clientPacket);
-      end;
-      TCLPID.PLAYER_RECONNECT: // ??
-      begin
-        self.Log('CLPID_PLAYER_RECONNECT', TLogType.TLogType_not);
-      end
-      else
-      begin
-        self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
-      end;
+    Exit;
+  end;
+
+  case packetID of
+    TCLPID.PLAYER_LOGIN:
+    begin
+      self.HandlePlayerLogin(client, clientPacket);
+    end;
+    TCLPID.PLAYER_SELECT_SERVER:
+    begin
+      self.HandlePlayerServerSelect(client, clientPacket);
+    end;
+    TCLPID.PLAYER_SET_NICKNAME:
+    begin
+      self.Sync(client, clientPacket);
+    end;
+    TCLPID.PLAYER_CONFIRM:
+    begin
+      self.Sync(client, clientPacket);
+    end;
+    TCLPID.PLAYER_SELECT_CHARCTER:
+    begin
+      self.Sync(client, clientPacket);
+    end;
+    TCLPID.PLAYER_RECONNECT: // ??
+    begin
+      self.Log('CLPID_PLAYER_RECONNECT', TLogType.TLogType_not);
+    end
+    else
+    begin
+      self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;
   end;
 end;
