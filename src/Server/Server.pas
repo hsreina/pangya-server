@@ -30,6 +30,7 @@ type
       var m_idSchedulerOfThreadPool: TIdSchedulerOfThreadPool;
       var m_lock: TCriticalSection;
       var m_cryptLib: TCryptLib;
+      var m_maxPlayers: UInt32;
 
       procedure ServerOnConnect(AContext: TIdContext);
       procedure ServerOnDisconnect(AContext: TIdContext);
@@ -82,12 +83,14 @@ begin
   m_clients := TSerialList<TServerClient<ClientType>>.Create;
   m_server := TIdTCPServer.Create(nil);
 
-  m_idSchedulerOfThreadPool := TIdSchedulerOfThreadPool.Create(nil);
-  m_idSchedulerOfThreadPool.MaxThreads := 30;
-  m_idSchedulerOfThreadPool.PoolSize := 30;
+  m_maxPlayers := 10;
 
-  m_server.MaxConnections := 30;
-  m_server.ListenQueue := 30;
+  m_idSchedulerOfThreadPool := TIdSchedulerOfThreadPool.Create(nil);
+  m_idSchedulerOfThreadPool.MaxThreads := m_maxPlayers;
+  m_idSchedulerOfThreadPool.PoolSize := m_maxPlayers;
+
+  m_server.MaxConnections := m_maxPlayers;
+  m_server.ListenQueue := m_maxPlayers;
 
   m_server.OnExecute := ServerOnExecute;
   m_server.OnConnect := ServerOnConnect;
@@ -191,7 +194,7 @@ var
 begin
   m_lock.Enter;
   Console.Log('TServer<ClientType>.ServerOnConnect');
-  if (m_clients.Count >= 10) then
+  if (m_clients.Count >= m_maxPlayers) then
   begin
     Console.Log('Server full', C_RED);
     AContext.Connection.Disconnect;
