@@ -10,7 +10,7 @@ unit ServerClient;
 
 interface
 
-uses Client, Buffer, CryptLib, IdContext;
+uses Client, CryptLib, IdContext;
 
 type
   TServerClient<ClientType> = class (TClient<ClientType>)

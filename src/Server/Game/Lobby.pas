@@ -10,8 +10,8 @@ unit Lobby;
 
 interface
 
-uses PacketData, GameServerPlayer, Generics.Collections, GamesList, Game, PangyaBuffer,
-  ClientPacket, SysUtils;
+uses PacketData, GameServerPlayer, Generics.Collections, GamesList, Game,
+  SysUtils, Packet, PacketReader, PacketWriter;
 
 type
 
@@ -42,7 +42,7 @@ type
       function GetGameById(gameId: Uint16): TGame;
       function GetPlayerGame(player: TGameClient): TGame;
       procedure Send(data: AnsiString); overload;
-      procedure Send(data: TPangyaBuffer); overload;
+      procedure Send(data: TPacket); overload;
 
       property Players: TPLayerList read m_players;
       property NullGame: TGame read m_nullGame;
@@ -53,9 +53,9 @@ type
       procedure JoinMultiplayerGamesList(client: TgameClient);
       procedure LeaveMultiplayerGamesList(client: TgameClient);
 
-      procedure HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerCreateGame(const client: TGameClient; const packetReader: TPacketReader);
+      procedure HandlePlayerJoinGame(const client: TGameClient; const packetReader: TPacketReader);
+      procedure HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const packetReader: TPacketReader);
 
       constructor Create;
       destructor Destroy; override;
@@ -121,9 +121,9 @@ end;
 
 function TLobby.Build: TPacketData;
 var
-  packet: TClientPacket;
+  packet: TPacketWriter;
 begin
-  packet := TClientPacket.Create;
+  packet := TPacketWriter.Create;
 
   packet.WriteStr('test', 20, #$00);
   packet.WriteStr(
@@ -168,7 +168,7 @@ begin
   end;
 end;
 
-procedure TLobby.Send(data: TPangyaBuffer);
+procedure TLobby.Send(data: TPacket);
 var
   client: TGameClient;
 begin
@@ -360,7 +360,7 @@ begin
   end;
 end;
 
-procedure TLobby.HandlePlayerCreateGame(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TLobby.HandlePlayerCreateGame(const client: TGameClient; const packetReader: TPacketReader);
 var
   gameInfo: TPlayerCreateGameInfo;
   gameName: AnsiString;
@@ -368,15 +368,15 @@ var
   artifact: UInt32;
   game: TGame;
   d: AnsiString;
-  res: TClientPacket;
+  res: TPacketWriter;
   args: TGameCreateArgs;
 begin
   Console.Log('TGameServer.HandlePlayerCreateGame', C_BLUE);
-  clientPacket.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
+  packetReader.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
 
-  clientPacket.ReadPStr(gameName);
-  clientPacket.ReadPStr(gamePassword);
-  clientPacket.ReadUInt32(artifact);
+  packetReader.ReadPStr(gameName);
+  packetReader.ReadPStr(gamePassword);
+  packetReader.ReadUInt32(artifact);
 
   // Lets pprevent game creation for some type of unimplemented games
   if
@@ -386,7 +386,7 @@ begin
     not (gameInfo.gameType = TGAME_TYPE.GAME_TYPE_CHAT_ROOM)
   then
   begin
-    res := TClientPacket.Create;
+    res := TPacketWriter.Create;
     // Can't create a game here
     res.WriteStr(#$49#$00);
     res.WriteUInt8(WriteGameCreateResult(TCREATE_GAME_RESULT.CREATE_GAME_CANT_CREATE));
@@ -436,7 +436,7 @@ begin
   );
 end;
 
-procedure TLobby.HandlePlayerJoinGame(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TLobby.HandlePlayerJoinGame(const client: TGameClient; const packetReader: TPacketReader);
 var
   gameId: UInt16;
   password: AnsiString;
@@ -444,12 +444,12 @@ var
 begin
   Console.Log('TGameServer.HandlePlayerJoinGame', C_BLUE);
   {09 00 01 00 00 00  }
-  if not clientPacket.ReadUInt16(gameId) then
+  if not packetReader.ReadUInt16(gameId) then
   begin
     Console.Log('Failed to get game Id', C_RED);
     Exit;
   end;
-  clientPacket.ReadPStr(password);
+  packetReader.ReadPStr(password);
 
   try
     game := GetGameById(gameId);
@@ -487,9 +487,9 @@ begin
 
 end;
 
-procedure TLobby.HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const clientPacket: TClientPacket);
+procedure TLobby.HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const packetReader: TPacketReader);
 var
-  res: TClientPacket;
+  res: TpacketReader;
   gameInfo: TPlayerCreateGameInfo;
   game: TGame;
   args: TGameCreateArgs;
@@ -514,7 +514,7 @@ begin
   game := self.CreateGame(args);
   game.AddPlayer(client);
 
-  res := TClientPacket.Create;
+  res := TpacketReader.Create;
 
   //client.Send(#$53#$02#$00#$00#$00#$00);
 

@@ -11,7 +11,7 @@ unit CryptLib;
 interface
 
 uses
-  windows, PangyaBuffer, SysUtils;
+  windows, SysUtils, Types;
 
 type
 

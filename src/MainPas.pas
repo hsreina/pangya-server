@@ -43,7 +43,7 @@ implementation
 
 {$R *.dfm}
 
-uses ConsolePas, Buffer, utils, IffManager.IffEntrybase;
+uses ConsolePas, utils, IffManager.IffEntrybase;
 
 procedure TMain.FormCreate(Sender: TObject);
 begin

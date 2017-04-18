@@ -3,7 +3,7 @@ unit SyncClientReadThread;
 interface
 
 uses
-  Classes, IdTcpClient, SyncObjs, PangyaBuffer;
+  Classes, IdTcpClient, SyncObjs, Types;
 
 type
 

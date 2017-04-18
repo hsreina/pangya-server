@@ -10,12 +10,12 @@ unit SyncClient;
 
 interface
 
-uses Buffer, ExtCtrls, CryptLib, Logging, ClientPacket, IdTcpClient,
-  SyncClientReadThread, PangyaBuffer, Classes;
+uses ExtCtrls, CryptLib, Logging, IdTcpClient,
+  SyncClientReadThread, Classes, Types, PacketReader;
 
 type
 
-  TSyncClientReadEvent = procedure (sender: TObject; const clientPacket: TClientPacket) of object;
+  TSyncClientReadEvent = procedure (sender: TObject; const packetReader: TPacketReader) of object;
   TSyncClientConnectEvent = procedure (sender: TObject) of object;
 
   TSyncClient = class (TLogging)
@@ -27,7 +27,7 @@ type
       var m_haveKey: Boolean;
 
       var FOnRead: TSyncClientReadEvent;
-      procedure TriggerOnRead(const clientPacket: TClientPacket);
+      procedure TriggerOnRead(const packetReader: TPacketReader);
 
       var FOnConnect: TSyncClientConnectEvent;
       procedure TriggerOnConnect;
@@ -35,7 +35,7 @@ type
       procedure OnClientRead(const sender: TObject; const buffer: TPangyaBytes);
       procedure OnClientConnected(Sender: TObject);
       procedure OnClientDisconnected(Sender: TObject);
-      procedure HandleReadKey(clientPacket: TClientPacket);
+      procedure HandleReadKey(packetReader: TPacketReader);
 
     public
       constructor Create(const name: string; const cryptLib: TCryptLib);
@@ -120,10 +120,10 @@ begin
   tmp.free;
 end;
 
-procedure TSyncClient.HandleReadKey(clientPacket: TClientPacket);
+procedure TSyncClient.HandleReadKey(packetReader: TPacketReader);
 begin
-  clientPacket.Skip(4);
-  if not clientPacket.ReadUInt8(m_key) then
+  packetReader.Skip(4);
+  if not packetReader.ReadUInt8(m_key) then
   begin
     Console.Log('Failed to get Key', C_RED);
     Exit;
@@ -131,11 +131,11 @@ begin
   m_haveKey := true;
 end;
 
-procedure TSyncClient.TriggerOnRead(const clientPacket: TClientPacket);
+procedure TSyncClient.TriggerOnRead(const packetReader: TPacketReader);
 begin
   if Assigned(FOnRead) then
   begin
-    FOnRead(self, clientPacket);
+    FOnRead(self, packetReader);
   end;
 end;
 
@@ -149,20 +149,20 @@ end;
 
 procedure TSyncClient.OnClientRead(const sender: TObject; const buffer: TPangyaBytes);
 var
-  clientPacket: TClientPacket;
+  packetReader: TPacketReader;
   decryptedBuffer: TPangyaBytes;
 begin
   if not m_haveKey then
   begin
-    clientPacket := TClientPacket.CreateFromPangyaBytes(buffer);
-    HandleReadKey(clientPacket);
-    clientPacket.Free;
+    packetReader := TPacketReader.CreateFromPangyaBytes(buffer);
+    HandleReadKey(packetReader);
+    packetReader.Free;
   end else
   begin
     m_cryptLib.ClientDecrypt2(buffer, decryptedBuffer, m_key);
-    clientPacket := TClientPacket.CreateFromPangyaBytes(decryptedBuffer);
-    TriggerOnRead(clientPacket);
-    clientPacket.Free;
+    packetReader := TPacketReader.CreateFromPangyaBytes(decryptedBuffer);
+    TriggerOnRead(packetReader);
+    packetReader.Free;
   end;
 end;
 

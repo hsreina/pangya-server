@@ -10,7 +10,7 @@ unit PlayerCharacters;
 
 interface
 
-uses PlayerCharacter, ClientPacket, PlayerGenericDataList;
+uses PlayerCharacter, PlayerGenericDataList;
 
 type
   TPlayerCharacters = TPlayerGenericDataList<TPlayerCharacterData,

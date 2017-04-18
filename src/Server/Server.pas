@@ -11,9 +11,9 @@ unit Server;
 interface
 
 uses Logging, Client, Generics.Collections, ExtCtrls, CryptLib,
-  ServerClient, ClientPacket, SyncClient, defs, PacketData, SysUtils,
+  ServerClient, SyncClient, defs, PacketData, SysUtils,
   SerialList, IdTcpServer, IdContext, IdGlobal, IdComponent,
-  IdSchedulerOfThreadPool, SyncObjs, PangyaBuffer;
+  IdSchedulerOfThreadPool, SyncObjs, Types, PacketReader;
 
 type
 
@@ -48,7 +48,7 @@ type
 
       procedure OnClientConnect(const client: TClient<ClientType>); virtual; abstract;
       procedure OnClientDisconnect(const client: TClient<ClientType>); virtual; abstract;
-      procedure OnReceiveClientData(const client: TClient<ClientType>; const clientPacket: TClientPacket); virtual; abstract;
+      procedure OnReceiveClientData(const client: TClient<ClientType>; const packetReader: TPacketReader); virtual; abstract;
       procedure OnStart; virtual; abstract;
       procedure OnDestroyClient(const client: TClient<ClientType>); virtual; abstract;
 
@@ -73,7 +73,7 @@ type
 
   implementation
 
-uses Buffer, ConsolePas, PangyaPacketsDef;
+uses ConsolePas, PangyaPacketsDef;
 
 constructor TServer<ClientType>.Create(cryptLib: TCryptLib);
 begin
@@ -240,7 +240,7 @@ var
   pheader: PTClientPacketHeader;
   bufferSize: UInt32;
   dataSize: UInt32;
-  clientPacket: TClientPacket;
+  packetReader: TPacketReader;
   client: TServerClient<ClientType>;
 begin
 
@@ -273,13 +273,13 @@ begin
 
   m_cryptLib.ClientDecrypt2(TPangyaBytes(buffer), decryptedBuffer, client.GetKey);
 
-  clientPacket := TClientPacket.CreateFromPangyaBytes(decryptedBuffer);
+  packetReader := TPacketReader.CreateFromPangyaBytes(decryptedBuffer);
 
   m_lock.Enter;
-  OnReceiveClientData(client, clientPacket);
+  OnReceiveClientData(client, packetReader);
   m_lock.Leave;
 
-  clientPacket.Free;
+  packetReader.Free;
 end;
 
 procedure TServer<ClientType>.ServerOnException(AContext: TIdContext;

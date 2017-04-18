@@ -11,7 +11,7 @@ unit Client;
 interface
 
 uses
-  ClientPacket, CryptLib, defs, PangyaBuffer, SysUtils, utils, IdContext, Classes;
+  CryptLib, defs, SysUtils, utils, IdContext, Classes, Packet;
 
 type
 
@@ -27,7 +27,7 @@ type
       destructor Destroy; override;
 
       function GetKey: Byte;
-      procedure Send(data: TPangyaBuffer; encrypt: Boolean = True); overload;
+      procedure Send(data: TPacket; encrypt: Boolean = True); overload;
       procedure Send(data: AnsiString); overload;
       procedure Send(data: AnsiString; encrypt: Boolean); overload;
       function HasUID(playerUID: TPlayerUID): Boolean;
@@ -51,18 +51,12 @@ begin
   //Exit(m_socket.RemoteHost);
 end;
 
-procedure TClient<ClientType>.Send(data: TPangyaBuffer; encrypt: Boolean = True);
+procedure TClient<ClientType>.Send(data: TPacket; encrypt: Boolean = True);
 var
-  oldPos: Integer;
   size: integer;
-  buff: AnsiString;
 begin
-  oldPos := data.Seek(0, 1);
-  data.Seek(0, 0);
   size := data.GetSize;
-  data.ReadStr(buff, size);
-  Send(buff, encrypt);
-  data.Seek(oldPos, 0);
+  Send(data.ToStr, encrypt);
 end;
 
 procedure TClient<ClientType>.Send(data: AnsiString);
