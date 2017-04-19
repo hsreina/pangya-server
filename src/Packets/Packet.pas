@@ -29,13 +29,14 @@ uses ConsolePas;
 
 constructor TPacket.Create;
 begin
+  inherited;
   m_data := TMemoryStream.Create;
 end;
 
 destructor TPacket.Destroy;
 begin
-  inherited;
   m_data.Free;
+  inherited;
 end;
 
 procedure TPacket.Skip(count: integer);

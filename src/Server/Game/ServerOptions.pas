@@ -58,6 +58,7 @@ const
 
 constructor TServerOptions.Create;
 begin
+  inherited;
   m_data.aFlag := 8; // 8 enable grand prix
   {
   m_data.MaintenanceFlags :=

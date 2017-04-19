@@ -62,13 +62,12 @@ destructor TGameHoles.Destroy;
 var
   holeInfo: TGameHoleInfo;
 begin
-  inherited;
-
   for holeInfo in m_gameHoles do
   begin
     TObject(holeInfo).Free;
   end;
   m_gameHoles.Free;
+  inherited;
 end;
 
 procedure TGameHoles.RandomizeWeather;

@@ -54,11 +54,11 @@ end;
 
 destructor TGamesList.Destroy;
 begin
-  inherited;
   DestroyGames;
   m_games.Free;
   m_onCreateGame.Destroy;
   m_onDestroyGame.Destroy;
+  inherited;
 end;
 
 procedure TGamesList.DestroyGames;

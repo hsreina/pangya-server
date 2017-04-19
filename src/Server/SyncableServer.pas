@@ -50,8 +50,8 @@ end;
 
 destructor TSyncableServer<ClientType>.Destroy;
 begin
-  inherited;
   m_syncClient.Free;
+  inherited;
 end;
 
 procedure TSyncableServer<ClientType>.SetSyncPort(port: Integer);

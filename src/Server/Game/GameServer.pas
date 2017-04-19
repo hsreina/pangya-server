@@ -143,9 +143,9 @@ end;
 
 destructor TGameServer.Destroy;
 begin
-  inherited;
   m_lobbies.Free;
   m_serverOptions.Free;
+  inherited;
 end;
 
 function TGameServer.LobbiesList: AnsiString;

@@ -75,7 +75,6 @@ end;
 
 destructor TIffManager.Destroy;
 begin
-  inherited;
   m_part.Free;
   m_item.Free;
   m_ball.Free;
@@ -87,6 +86,7 @@ begin
   m_SetItem.Free;
   m_character.Free;
   m_hairStyle.Free;
+  inherited;
 end;
 
 function TIffManager.Load: Boolean;

@@ -84,10 +84,10 @@ end;
 
 destructor TDatabase.Destroy;
 begin
-  inherited;
   m_connection.Free;
   m_physDriver.Free;
   m_query.Free;
+  inherited;
 end;
 
 procedure TDatabase.Init;

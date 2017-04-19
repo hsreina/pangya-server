@@ -204,6 +204,7 @@ constructor TGame.Create(args: TGameCreateArgs; onUpdate: TGameEvent);
 var
   I: Integer;
 begin
+  inherited;
   Console.Log('TGame.Create', C_BLUE);
   m_onUpdateGame := TGameGenericEvent.Create;
   m_onPlayerJoinGame := TGamePlayerGenericEvent.Create;
@@ -231,13 +232,12 @@ destructor TGame.Destroy;
 var
   holeInfo: TGameHoleInfo;
 begin
-  inherited;
-
   m_players.Free;
   m_onUpdateGame.Free;
   m_onPlayerJoinGame.Free;
   m_onPlayerLeaveGame.Free;
   m_gameHoles.Free;
+  inherited;
 end;
 
 function TGame.AddPlayer(player: TGameClient): Boolean;

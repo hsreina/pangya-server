@@ -58,6 +58,7 @@ uses ConsolePas;
 
 constructor TSyncClient.Create(const name: string; const cryptLib: TCryptLib);
 begin
+  inherited;
   m_client := TIdTcpClient.Create(nil);
   m_client.OnConnected := OnClientConnected;
   m_client.OnDisconnected := OnClientDisconnected;
@@ -71,9 +72,9 @@ end;
 
 destructor TSyncClient.Destroy;
 begin
-  inherited;
   m_client.Free;
   m_clientReadThread.Free;
+  inherited;
 end;
 
 procedure TSyncClient.SetPort(port: Integer);

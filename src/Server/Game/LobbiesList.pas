@@ -50,9 +50,9 @@ end;
 
 destructor TLobbiesList.Destroy;
 begin
-  inherited;
   DestroyLobbies;
   m_lobbies.Free;
+  inherited;
 end;
 
 procedure TLobbiesList.DestroyLobbies;

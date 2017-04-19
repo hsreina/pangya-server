@@ -101,6 +101,7 @@ constructor TClient<ClientType>.Create(const AContext: TIdContext; const cryptLi
 var
   rnd: Byte;
 begin
+  inherited;
   m_context := AContext;
   m_useIndy := true;
   rnd := Byte(Random(9));
