@@ -29,14 +29,12 @@ uses
   SyncClient in 'Client\SyncClient.pas',
   Client in 'Server\Client.pas',
   Server in 'Server\Server.pas',
-  ServerClient in 'Server\ServerClient.pas',
   SyncableServer in 'Server\SyncableServer.pas',
   LoginPlayer in 'Server\Login\LoginPlayer.pas',
   LoginServer in 'Server\Login\LoginServer.pas',
   SyncServer in 'Server\Sync\SyncServer.pas',
   SyncUser in 'Server\Sync\SyncUser.pas',
   Database in 'Server\Sync\Database.pas',
-  PacketData in 'Server\PacketData.pas',
   GameServerPlayer in 'Server\Game\GameServerPlayer.pas',
   GameServer in 'Server\Game\GameServer.pas',
   LobbiesList in 'Server\Game\LobbiesList.pas',
@@ -97,7 +95,8 @@ uses
   Types.PangyaBytes in 'Types\Types.PangyaBytes.pas',
   Types.ShotData in 'Types\Types.ShotData.pas',
   Types.Vector3 in 'Types\Types.Vector3.pas',
-  PacketsDef in 'Packets\PacketsDef.pas';
+  PacketsDef in 'Packets\PacketsDef.pas',
+  PacketData in 'Packets\PacketData.pas';
 
 {$R *.res}
 

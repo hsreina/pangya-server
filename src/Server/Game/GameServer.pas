@@ -79,7 +79,8 @@ type
       procedure HandlePlayerRequestGuildListSearch(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerCreateGuild(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerCheckGuildName(const client: TGameClient; const packetReader: TPacketReader);
-      procedure HandlePlayerRequestJoinGuild(const client: TGameClient; const packetReader: TPacketReader);      procedure HandlePlayerRequestGuildList(const client: TGameClient; const packetReader: TPacketReader);
+      procedure HandlePlayerRequestJoinGuild(const client: TGameClient; const packetReader: TPacketReader);      
+	  procedure HandlePlayerRequestGuildList(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestAchievements(const client: TGameClient; const packetReader: TPacketReader);

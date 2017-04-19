@@ -10,8 +10,6 @@ unit defs;
 
 interface
 
-uses PacketData;
-
 type
   TPlayerUID = record
     var id: UInt32;

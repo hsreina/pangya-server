@@ -11,7 +11,7 @@ unit Server;
 interface
 
 uses Logging, Client, Generics.Collections, ExtCtrls, CryptLib,
-  ServerClient, SyncClient, defs, PacketData, SysUtils,
+  SyncClient, defs, PacketData, SysUtils,
   SerialList, IdTcpServer, IdContext, IdGlobal, IdComponent,
   IdSchedulerOfThreadPool, SyncObjs, PacketReader, Types.PangyaBytes;
 
@@ -25,7 +25,7 @@ type
   TServer<ClientType> = class abstract (TLogging)
     private
 
-      var m_clients: TSerialList<TServerClient<ClientType>>;
+      var m_clients: TSerialList<TClient<ClientType>>;
       var m_server: TIdTCPServer;
       var m_idSchedulerOfThreadPool: TIdSchedulerOfThreadPool;
       var m_lock: TCriticalSection;
@@ -38,7 +38,7 @@ type
       procedure ServerOnException(AContext: TIdContext; AException: Exception);
       procedure ServerOnStatus(ASender: TObject; const AStatus: TIdStatus; const AStatusText: string);
 
-      function GetClientByContext(AContext: TIdContext): TServerClient<ClientType>;
+      function GetClientByContext(AContext: TIdContext): TClient<ClientType>;
       procedure SetContextData(AContext: TIdContext; data: TObject);
       function GetContextData(AContext: TIdContext): TObject;
 
@@ -61,7 +61,7 @@ type
       function Deserialize(value: UInt32): UInt32;
 
       // Should replace this by something better
-      property Clients: TSerialList<TServerClient<ClientType>> read m_clients;
+      property Clients: TSerialList<TClient<ClientType>> read m_clients;
     public
       constructor Create(cryptLib: TCryptLib);
       destructor Destroy; override;
@@ -80,7 +80,7 @@ begin
   console.Log('TServer<ClientType>.Create');
   m_lock := TCriticalSection.Create;
   m_cryptLib := cryptLib;
-  m_clients := TSerialList<TServerClient<ClientType>>.Create;
+  m_clients := TSerialList<TClient<ClientType>>.Create;
   m_server := TIdTCPServer.Create(nil);
 
   m_maxPlayers := 10;
@@ -132,7 +132,7 @@ end;
 
 function TServer<ClientType>.GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
 var
-  Client: TServerClient<ClientType>;
+  Client: TClient<ClientType>;
 begin
   for Client in m_clients do
   begin
@@ -177,7 +177,7 @@ end;
 
 procedure TServer<ClientType>.SendDebugData(data: TPacketData);
 var
-  client: TServerClient<ClientType>;
+  client: TClient<ClientType>;
 begin
   //Console.Log('SendDebugData', C_BLUE);
   //Console.WriteDump(data);
@@ -190,7 +190,7 @@ end;
 
 procedure TServer<ClientType>.ServerOnConnect(AContext: TIdContext);
 var
-  client: TServerClient<ClientType>;
+  client: TClient<ClientType>;
 begin
   m_lock.Enter;
   Console.Log('TServer<ClientType>.ServerOnConnect');
@@ -201,7 +201,7 @@ begin
     Exit;
   end;
 
-  client := TServerClient<ClientType>.Create(AContext, m_cryptLib);
+  client := TClient<ClientType>.Create(AContext, m_cryptLib);
   client.ID := m_clients.Add(client);
   SetContextData(AContext, client);
   OnClientConnect(client);
@@ -210,7 +210,7 @@ end;
 
 procedure TServer<ClientType>.ServerOnDisconnect(AContext: TIdContext);
 var
-  client: TServerClient<ClientType>;
+  client: TClient<ClientType>;
 begin
   m_lock.Enter;
   //Console.Log('TServer<ClientType>.ServerOnDisconnect');
@@ -241,7 +241,7 @@ var
   bufferSize: UInt32;
   dataSize: UInt32;
   packetReader: TPacketReader;
-  client: TServerClient<ClientType>;
+  client: TClient<ClientType>;
 begin
 
   with AContext.Connection.IOHandler do
@@ -299,9 +299,9 @@ begin
   m_lock.Leave;
 end;
 
-function TServer<ClientType>.GetClientByContext(AContext: TIdContext): TServerClient<ClientType>;
+function TServer<ClientType>.GetClientByContext(AContext: TIdContext): TClient<ClientType>;
 var
-  Client: TServerClient<ClientType>;
+  Client: TClient<ClientType>;
   contextObject: TObject;
 begin
 
