@@ -26,11 +26,9 @@ uses
   ConsolePas in 'ConsolePas.pas' {Console},
   Logging in 'Logging.pas',
   CryptLib in 'CryptLib.pas',
-  Buffer in 'Buffer.pas',
   PangyaPacketsDef in 'PangyaPacketsDef.pas',
   SyncClient in 'Client\SyncClient.pas',
   Client in 'Server\Client.pas',
-  ClientPacket in 'Server\ClientPacket.pas',
   Server in 'Server\Server.pas',
   ServerClient in 'Server\ServerClient.pas',
   SyncableServer in 'Server\SyncableServer.pas',
@@ -48,7 +46,6 @@ uses
   PlayerCharacters in 'Server\Game\PlayerCharacters.pas',
   PlayerData in 'Server\Game\PlayerData.pas',
   utils in 'utils.pas',
-  PangyaBuffer in 'PangyaBuffer.pas',
   DataChecker in 'DataChecker.pas',
   Game in 'Server\Game\Game.pas',
   GamesList in 'Server\Game\GamesList.pas',
@@ -96,7 +93,11 @@ uses
   ClubStats in 'Server\Game\ClubStats.pas',
   ServerOptions in 'Server\Game\ServerOptions.pas',
   SerialList in 'Collections\SerialList.pas',
-  SyncClientReadThread in 'Client\SyncClientReadThread.pas';
+  SyncClientReadThread in 'Client\SyncClientReadThread.pas',
+  Packet in 'Packets\Packet.pas',
+  PacketReader in 'Packets\PacketReader.pas',
+  PacketWriter in 'Packets\PacketWriter.pas',
+  Types in 'Types.pas';
 
 {$R *.res}
 

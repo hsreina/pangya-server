@@ -10,26 +10,26 @@ unit SyncableServer;
 
 interface
 
-uses SyncClient, Server, CryptLib, ClientPacket, ScktComp, PangyaBuffer, SysUtils;
+uses SyncClient, Server, CryptLib, ScktComp, SysUtils, Packet, PacketReader;
 
 type
   TSyncableServer<ClientType> = class abstract (TServer<ClientType>)
     protected
       procedure Sync(data: AnsiString); overload;
-      procedure Sync(data: TPangyaBuffer); overload;
+      procedure Sync(data: TPacket); overload;
 
       procedure SetSyncPort(port: Integer);
       procedure StartSyncClient;
       procedure StopSyncClient;
       procedure SetSyncHost(host: string);
 
-      procedure OnReceiveSyncData(const clientPacket: TClientPacket); virtual; abstract;
+      procedure OnReceiveSyncData(const packetReader: TPacketReader); virtual; abstract;
       procedure OnConnect(sender: TObject); virtual; abstract;
 
     private
       var m_syncClient: TSyncClient;
 
-      procedure OnClientRead(Sender: TObject; const clientPacket: TClientPacket);
+      procedure OnClientRead(Sender: TObject; const packetReader: TPacketReader);
 
     public
       constructor Create(const name: string; const cryptLib: TCryptLib);
@@ -67,19 +67,10 @@ begin
   m_syncClient.Send(data);
 end;
 
-procedure TSyncableServer<ClientType>.Sync(data: TPangyaBuffer);
-var
-  oldPos: Integer;
-  size: integer;
-  buff: AnsiString;
+procedure TSyncableServer<ClientType>.Sync(data: TPacket);
 begin
   self.Log('TSyncableServer<ClientType>.Sync', TLogType_not);
-  oldPos := data.Seek(0, 1);
-  data.Seek(0, 0);
-  size := data.GetSize;
-  data.ReadStr(buff, size);
-  m_syncClient.Send(buff);
-  data.Seek(oldPos, 0);
+  m_syncClient.Send(data.ToStr);
 end;
 
 procedure TSyncableServer<ClientType>.StartSyncClient;
@@ -102,9 +93,9 @@ begin
   m_syncClient.SetHost(host);
 end;
 
-procedure TSyncableServer<ClientType>.OnClientRead(Sender: TObject; const clientPacket: TClientPacket);
+procedure TSyncableServer<ClientType>.OnClientRead(Sender: TObject; const packetReader: TPacketReader);
 begin
-  self.OnReceiveSyncData(clientPacket);
+  self.OnReceiveSyncData(packetReader);
 end;
 
 end.

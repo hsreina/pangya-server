@@ -11,7 +11,8 @@ unit GameServerPlayer;
 interface
 
 uses PlayerData, PlayerCharacters, Client, PlayerAction, PlayerItems,
-  PlayerCaddies, PlayerQuest, PlayerMascots, IffManager.IffEntryBase;
+  PlayerCaddies, PlayerQuest, PlayerMascots, IffManager.IffEntryBase,
+  PacketWriter;
 
 type
 
@@ -83,7 +84,7 @@ type
 
 implementation
 
-uses ClientPacket, PlayerCharacter, utils, PlayerEquipment, defs;
+uses PlayerCharacter, utils, PlayerEquipment, defs;
 
 constructor TGameServerPlayer.Create;
 begin
@@ -119,10 +120,10 @@ end;
 
 function TGameServerPlayer.GameInformation(level: UInt8): AnsiString;
 var
-  packet: TClientPacket;
+  packet: TPacketWriter;
 begin
 
-  packet := TClientPacket.Create;
+  packet := TPacketWriter.Create;
 
   packet.WriteUInt32(Data.playerInfo1.ConnectionId);
 
@@ -210,7 +211,7 @@ end;
 
 function TGameServerPlayer.LobbyInformations: AnsiString;
 var
-  packet: TClientPacket;
+  packet: TPacketWriter;
   tmpGameId: UInt16;
 begin
 
@@ -221,7 +222,7 @@ begin
     tmpGameId := $ffff;
   end;
 
-  packet := TClientPacket.Create;
+  packet := TPacketWriter.Create;
 
   packet.WriteUInt32(Data.playerInfo1.PlayerID);
   packet.WriteUInt32(Data.playerInfo1.ConnectionId);

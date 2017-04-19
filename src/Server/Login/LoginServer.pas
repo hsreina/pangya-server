@@ -10,8 +10,8 @@ unit LoginServer;
 
 interface
 
-uses Client, LoginPlayer, ClientPacket, SyncClient, Server, SyncableServer,
-  CryptLib, IniFiles;
+uses Client, LoginPlayer, SyncClient, Server, SyncableServer,
+  CryptLib, IniFiles, PacketReader, PacketWriter;
 
 type
 
@@ -23,20 +23,20 @@ type
       procedure Init; override;
       procedure OnClientConnect(const client: TLoginClient); override;
       procedure OnClientDisconnect(const client: TLoginClient); override;
-      procedure OnReceiveClientData(const client: TLoginClient; const clientPacket: TClientPacket); override;
+      procedure OnReceiveClientData(const client: TLoginClient; const packetReader: TPacketReader); override;
 
-      procedure OnReceiveSyncData(const clientPacket: TClientPacket); override;
+      procedure OnReceiveSyncData(const packetReader: TPacketReader); override;
       procedure OnConnect(sender: TObject); override;
 
       procedure OnDestroyClient(const client: TLoginClient); override;
       procedure OnStart; override;
 
-      procedure Sync(const client: TLoginClient; const clientPacket: TClientPacket); overload;
-      procedure PlayerSync(const clientPacket: TClientPacket; const client: TLoginClient);
-      procedure ServerPlayerAction(const clientPacket: TClientPacket; const client: TLoginClient);
+      procedure Sync(const client: TLoginClient; const packetReader: TPacketReader); overload;
+      procedure PlayerSync(const packetReader: TPacketReader; const client: TLoginClient);
+      procedure ServerPlayerAction(const packetReader: TPacketReader; const client: TLoginClient);
 
-      procedure HandlePlayerServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
-      procedure HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
+      procedure HandlePlayerServerSelect(const client: TLoginClient; const packetReader: TPacketReader);
+      procedure HandlePlayerLogin(const client: TLoginClient; const packetReader: TPacketReader);
 
       procedure RegisterServer;
 
@@ -109,22 +109,22 @@ begin
   self.StartSyncClient;
 end;
 
-procedure TLoginServer.PlayerSync(const clientPacket: TClientPacket; const client: TLoginClient);
+procedure TLoginServer.PlayerSync(const packetReader: TPacketReader; const client: TLoginClient);
 var
   playerUID: TPlayerUID;
   test: AnsiString;
 begin
   self.Log('TLoginServer.PlayerSync', TLogType_not);
   // Then forward the data
-  client.Send(clientPacket.GetRemainingData);
+  client.Send(packetReader.GetRemainingData);
 end;
 
-procedure TLoginServer.ServerPlayerAction(const clientPacket: TClientPacket; const client: TLoginClient);
+procedure TLoginServer.ServerPlayerAction(const packetReader: TPacketReader; const client: TLoginClient);
 var
   actionId: TSSAPID;
 begin
   self.Log('TLoginServer.PlayerSync', TLogType_not);
-  if clientPacket.Read(actionId, 2) then
+  if packetReader.Read(actionId, 2) then
   begin
     case actionId of
       TSSAPID.SEND_SERVER_LIST:
@@ -150,18 +150,18 @@ begin
   self.RegisterServer;
 end;
 
-procedure TLoginServer.OnReceiveSyncData(const clientPacket: TClientPacket);
+procedure TLoginServer.OnReceiveSyncData(const packetReader: TPacketReader);
 var
   packetId: TSSPID;
   playerUID: TPlayerUID;
   client: TLoginClient;
 begin
   self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
-  if (clientPacket.Read(packetID, 2)) then
+  if (packetReader.Read(packetID, 2)) then
   begin
 
-    clientPacket.ReadUInt32(playerUID.id);
-    clientPacket.ReadPStr(playerUID.login);
+    packetReader.ReadUInt32(playerUID.id);
+    packetReader.ReadPStr(playerUID.login);
 
     client := self.GetClientByUID(playerUID);
     if client = nil then
@@ -179,11 +179,11 @@ begin
     case packetId of
       TSSPID.PLAYER_SYNC:
       begin
-        self.PlayerSync(clientPacket, client);
+        self.PlayerSync(packetReader, client);
       end;
       TSSPID.PLAYER_ACTION:
       begin
-        self.ServerPlayerAction(clientPacket, client);
+        self.ServerPlayerAction(packetReader, client);
       end;
       else
       begin
@@ -193,13 +193,13 @@ begin
   end;
 end;
 
-procedure TLoginServer.OnReceiveClientData(const client: TLoginClient; const clientPacket: TClientPacket);
+procedure TLoginServer.OnReceiveClientData(const client: TLoginClient; const packetReader: TPacketReader);
 var
   packetId: TCLPID;
 begin
   self.Log('TLoginServer.OnReceiveClientData', TLogType_not);
 
-  if not (clientPacket.Read(packetID, 2)) then
+  if not (packetReader.Read(packetID, 2)) then
   begin
     Exit;
   end;
@@ -207,23 +207,23 @@ begin
   case packetID of
     TCLPID.PLAYER_LOGIN:
     begin
-      self.HandlePlayerLogin(client, clientPacket);
+      self.HandlePlayerLogin(client, packetReader);
     end;
     TCLPID.PLAYER_SELECT_SERVER:
     begin
-      self.HandlePlayerServerSelect(client, clientPacket);
+      self.HandlePlayerServerSelect(client, packetReader);
     end;
     TCLPID.PLAYER_SET_NICKNAME:
     begin
-      self.Sync(client, clientPacket);
+      self.Sync(client, packetReader);
     end;
     TCLPID.PLAYER_CONFIRM:
     begin
-      self.Sync(client, clientPacket);
+      self.Sync(client, packetReader);
     end;
     TCLPID.PLAYER_SELECT_CHARCTER:
     begin
-      self.Sync(client, clientPacket);
+      self.Sync(client, packetReader);
     end;
     TCLPID.PLAYER_RECONNECT: // ??
     begin
@@ -236,17 +236,17 @@ begin
   end;
 end;
 
-procedure TLoginServer.Sync(const client: TLoginClient; const clientPacket: TClientPacket);
+procedure TLoginServer.Sync(const client: TLoginClient; const packetReader: TPacketReader);
 begin
   self.Log('TLoginServer.Sync', TLogType.TLogType_not);
-  self.Sync(#$01#$00 + write(client.UID.id, 4) + WritePStr(client.UID.login) + clientPacket.ToStr);
+  self.Sync(#$01#$00 + write(client.UID.id, 4) + WritePStr(client.UID.login) + packetReader.ToStr);
 end;
 
 procedure TLoginServer.RegisterServer;
 var
-  res: TClientPacket;
+  res: TPacketWriter;
 begin
-  res := TClientPacket.Create;
+  res := TPacketWriter.Create;
   res.WriteUInt16(0);
   res.WriteUInt8(1); // Login server
   res.WritePStr(m_name);
@@ -256,20 +256,20 @@ begin
   res.Free;
 end;
 
-procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const clientPacket: TClientPacket);
+procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const packetReader: TPacketReader);
 var
   login: AnsiString;
 begin
-  clientPacket.ReadPStr(login);
+  packetReader.ReadPStr(login);
   client.UID.login := login;
   client.UID.id := 0;
-  self.Sync(client, clientPacket);
+  self.Sync(client, packetReader);
 end;
 
-procedure TLoginServer.HandlePlayerServerSelect(const client: TLoginClient; const clientPacket: TClientPacket);
+procedure TLoginServer.HandlePlayerServerSelect(const client: TLoginClient; const packetReader: TPacketReader);
 begin
   self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
-  clientPacket.Log;
+  packetReader.Log;
   // this code will be send by the client to the game server
   client.Send(#$03#$00#$00#$00#$00#$00 + WritePStr('1f766c8'));
 end;
