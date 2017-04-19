@@ -26,7 +26,6 @@ uses
   ConsolePas in 'ConsolePas.pas' {Console},
   Logging in 'Logging.pas',
   CryptLib in 'CryptLib.pas',
-  PangyaPacketsDef in 'PangyaPacketsDef.pas',
   SyncClient in 'Client\SyncClient.pas',
   Client in 'Server\Client.pas',
   Server in 'Server\Server.pas',
@@ -61,8 +60,6 @@ uses
   PlayerCaddie in 'Server\Game\PlayerCaddie.pas',
   GameHoleInfo in 'Server\Game\GameHoleInfo.pas',
   WindInformation in 'Server\Game\WindInformation.pas',
-  ShotData in 'ShotData.pas',
-  Vector3 in 'Vector3.pas',
   PlayerMascots in 'Server\Game\PlayerMascots.pas',
   PlayerMascot in 'Server\Game\PlayerMascot.pas',
   GenericDataRecord in 'Server\Game\GenericDataRecord.pas',
@@ -97,7 +94,10 @@ uses
   Packet in 'Packets\Packet.pas',
   PacketReader in 'Packets\PacketReader.pas',
   PacketWriter in 'Packets\PacketWriter.pas',
-  Types in 'Types.pas';
+  Types.PangyaBytes in 'Types\Types.PangyaBytes.pas',
+  Types.ShotData in 'Types\Types.ShotData.pas',
+  Types.Vector3 in 'Types\Types.Vector3.pas',
+  PacketsDef in 'Packets\PacketsDef.pas';
 
 {$R *.res}
 

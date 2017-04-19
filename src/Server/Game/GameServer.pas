@@ -11,7 +11,7 @@ unit GameServer;
 interface
 
 uses Client, GameServerPlayer, Server, SysUtils, LobbiesList, CryptLib,
-  SyncableServer, PangyaPacketsDef, Lobby, Game, IniFiles,
+  SyncableServer, PacketsDef, Lobby, Game, IniFiles,
   IffManager, ServerOptions, Packet, PacketReader, PacketWriter;
 
 type

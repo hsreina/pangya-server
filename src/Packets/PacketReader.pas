@@ -2,7 +2,7 @@ unit PacketReader;
 
 interface
 
-uses Packet, Types;
+uses Packet, Types.PangyaBytes;
 
 type
   TPacketReader = class(TPacket)

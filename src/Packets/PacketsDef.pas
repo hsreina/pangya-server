@@ -6,7 +6,7 @@
 {                                                       }
 {*******************************************************}
 
-unit PangyaPacketsDef;
+unit PacketsDef;
 
 interface
 

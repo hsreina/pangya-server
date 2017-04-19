@@ -113,7 +113,6 @@
         </DCCReference>
         <DCCReference Include="Logging.pas"/>
         <DCCReference Include="CryptLib.pas"/>
-        <DCCReference Include="PangyaPacketsDef.pas"/>
         <DCCReference Include="Client\SyncClient.pas"/>
         <DCCReference Include="Server\Client.pas"/>
         <DCCReference Include="Server\Server.pas"/>
@@ -148,8 +147,6 @@
         <DCCReference Include="Server\Game\PlayerCaddie.pas"/>
         <DCCReference Include="Server\Game\GameHoleInfo.pas"/>
         <DCCReference Include="Server\Game\WindInformation.pas"/>
-        <DCCReference Include="ShotData.pas"/>
-        <DCCReference Include="Vector3.pas"/>
         <DCCReference Include="Server\Game\PlayerMascots.pas"/>
         <DCCReference Include="Server\Game\PlayerMascot.pas"/>
         <DCCReference Include="Server\Game\GenericDataRecord.pas"/>
@@ -184,7 +181,10 @@
         <DCCReference Include="Packets\Packet.pas"/>
         <DCCReference Include="Packets\PacketReader.pas"/>
         <DCCReference Include="Packets\PacketWriter.pas"/>
-        <DCCReference Include="Types.pas"/>
+        <DCCReference Include="Types\Types.PangyaBytes.pas"/>
+        <DCCReference Include="Types\Types.ShotData.pas"/>
+        <DCCReference Include="Types\Types.Vector3.pas"/>
+        <DCCReference Include="Packets\PacketsDef.pas"/>
         <None Include="Libs\Fast\FastMM4Options.inc"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>

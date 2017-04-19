@@ -13,7 +13,7 @@ interface
 uses Logging, Client, Generics.Collections, ExtCtrls, CryptLib,
   ServerClient, SyncClient, defs, PacketData, SysUtils,
   SerialList, IdTcpServer, IdContext, IdGlobal, IdComponent,
-  IdSchedulerOfThreadPool, SyncObjs, Types, PacketReader;
+  IdSchedulerOfThreadPool, SyncObjs, PacketReader, Types.PangyaBytes;
 
 type
 
@@ -73,7 +73,7 @@ type
 
   implementation
 
-uses ConsolePas, PangyaPacketsDef;
+uses ConsolePas, PacketsDef;
 
 constructor TServer<ClientType>.Create(cryptLib: TCryptLib);
 begin

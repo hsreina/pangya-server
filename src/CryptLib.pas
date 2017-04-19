@@ -11,7 +11,7 @@ unit CryptLib;
 interface
 
 uses
-  windows, SysUtils, Types;
+  windows, SysUtils, Types.PangyaBytes;
 
 type
 

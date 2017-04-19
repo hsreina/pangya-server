@@ -11,7 +11,7 @@ unit SyncClient;
 interface
 
 uses ExtCtrls, CryptLib, Logging, IdTcpClient,
-  SyncClientReadThread, Classes, Types, PacketReader;
+  SyncClientReadThread, Classes, PacketReader, Types.PangyaBytes;
 
 type
 

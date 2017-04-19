@@ -52,7 +52,7 @@ type
 
 implementation
 
-uses Logging, PangyaPacketsDef, ConsolePas, SysUtils, defs;
+uses Logging, PacketsDef, ConsolePas, SysUtils, defs;
 
 constructor TLoginServer.Create(cryptLib: TCryptLib);
 begin

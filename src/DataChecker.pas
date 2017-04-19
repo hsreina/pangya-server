@@ -20,8 +20,9 @@ type
 implementation
 
 uses
-  PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData, ShotData,
-  PlayerEquipment, PlayerMascot, PlayerShopItem, ConsolePas, ServerOptions;
+  PlayerCharacter, System.SysUtils, PlayerData, PlayerClubData,
+  PlayerEquipment, PlayerMascot, PlayerShopItem, ConsolePas, ServerOptions,
+  Types.ShotData;
 
 procedure TDataChecker.Validate;
 const

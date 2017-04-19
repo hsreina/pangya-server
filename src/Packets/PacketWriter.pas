@@ -2,7 +2,7 @@ unit PacketWriter;
 
 interface
 
-uses Packet, PangyaPacketsDef;
+uses Packet, PacketsDef;
 
 type
   TPacketWriter = class(TPacket)

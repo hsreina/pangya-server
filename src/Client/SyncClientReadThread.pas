@@ -3,7 +3,7 @@ unit SyncClientReadThread;
 interface
 
 uses
-  Classes, IdTcpClient, SyncObjs, Types;
+  Classes, IdTcpClient, SyncObjs, Types.PangyaBytes;
 
 type
 
@@ -26,7 +26,7 @@ type
 implementation
 
 uses
-  IdIOHandler, IdGlobal, PangyaPacketsDef, ConsolePas;
+  IdIOHandler, IdGlobal, PacketsDef, ConsolePas;
 
 constructor TSyncClientReadThread.Create(const name: string; const client: TIdTCPClient);
 begin

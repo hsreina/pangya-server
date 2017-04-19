@@ -12,7 +12,7 @@ interface
 
 uses
   Generics.Collections, GameServerPlayer, defs, utils, SysUtils,
-  GameHoleInfo, Vector3, System.TypInfo, PlayersList, GameHoles, PangyaPacketsDef,
+  GameHoleInfo, Vector3, System.TypInfo, PlayersList, GameHoles, PacketsDef,
   Packet, PacketReader, PacketWriter;
 
 type
@@ -160,9 +160,9 @@ type
 
 implementation
 
-uses GameServerExceptions, ConsolePas, ShotData,
+uses GameServerExceptions, ConsolePas,
   PlayerGenericData, PlayerAction, PlayerCharacter, PlayerEquipment,
-  PlayerShopItem;
+  PlayerShopItem, Types.ShotData;
 
 constructor TGameGenericEvent.Create;
 begin

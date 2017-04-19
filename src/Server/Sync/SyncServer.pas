@@ -11,7 +11,7 @@ unit SyncServer;
 interface
 
 uses Client, SyncUser, Server, CryptLib, SysUtils, defs,
-  Database, IniFiles, PangyaPacketsDef, Generics.Collections, System.TypInfo,
+  Database, IniFiles, PacketsDef, Generics.Collections, System.TypInfo,
   PacketReader, PacketWriter;
 
 type
