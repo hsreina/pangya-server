@@ -10,7 +10,7 @@ unit PlayerAction;
 
 interface
 
-uses Vector3;
+uses Types.Vector3;
 
 type
 

@@ -128,7 +128,7 @@ implementation
 
 uses Logging, ConsolePas, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
-  PlayerAction, Vector3, PlayerData, BongdatriShop, PlayerEquipment,
+  PlayerAction, Types.Vector3, PlayerData, BongdatriShop, PlayerEquipment,
   PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem,
   IffManager.HairStyle, PlayerItem, PlayerGenericData, PlayerItems;
 

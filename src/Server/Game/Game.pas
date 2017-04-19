@@ -12,7 +12,7 @@ interface
 
 uses
   Generics.Collections, GameServerPlayer, defs, utils, SysUtils,
-  GameHoleInfo, Vector3, System.TypInfo, PlayersList, GameHoles, PacketsDef,
+  GameHoleInfo, Types.Vector3, System.TypInfo, PlayersList, GameHoles, PacketsDef,
   Packet, PacketReader, PacketWriter;
 
 type
