@@ -204,7 +204,7 @@ constructor TGame.Create(args: TGameCreateArgs; onUpdate: TGameEvent);
 var
   I: Integer;
 begin
-  inherited;
+  inherited Create;
   Console.Log('TGame.Create', C_BLUE);
   m_onUpdateGame := TGameGenericEvent.Create;
   m_onPlayerJoinGame := TGamePlayerGenericEvent.Create;

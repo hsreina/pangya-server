@@ -77,7 +77,7 @@ uses ConsolePas, PacketsDef;
 
 constructor TServer<ClientType>.Create(cryptLib: TCryptLib);
 begin
-  inherited;
+  inherited Create;
   console.Log('TServer<ClientType>.Create');
   m_lock := TCriticalSection.Create;
   m_cryptLib := cryptLib;
