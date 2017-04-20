@@ -29,9 +29,11 @@ uses
   SyncableServer in 'Server\SyncableServer.pas',
   LoginPlayer in 'Server\Login\LoginPlayer.pas',
   LoginServer in 'Server\Login\LoginServer.pas',
-  SyncServer in 'Server\Sync\SyncServer.pas',
   SyncUser in 'Server\Sync\SyncUser.pas',
+{$IFDEF SYNC_SERVER}
   Database in 'Server\Sync\Database.pas',
+  SyncServer in 'Server\Sync\SyncServer.pas',
+{$ENDIF}
   GameServerPlayer in 'Server\Game\GameServerPlayer.pas',
   GameServer in 'Server\Game\GameServer.pas',
   LobbiesList in 'Server\Game\LobbiesList.pas',
@@ -124,8 +126,8 @@ begin
   except
     on E: Exception do
     begin
-      Console.Log(E.ClassName + ': ' + E.Message);
+      Console.Log(E.ClassName + ': ' + E.Message, C_RED);
+      ReadLn;
     end;
   end;
-  
 end.
