@@ -11,27 +11,26 @@ unit CryptLib;
 interface
 
 uses
-  windows, SysUtils, Types.PangyaBytes;
+{$IFDEF MSWINDOWS}
+  windows,
+{$ENDIF}
+  SysUtils, Types.PangyaBytes;
+
+{$IFDEF LINUX}
+const LIBNAME = 'libpang.a';
+{$ENDIF}
+{$IFDEF MSWINDOWS}
+const LIBNAME = 'pang.dll';
+{$ENDIF}
+{$IFDEF MACOS}
+const LIBNAME = 'pang.dylib';
+{$ENDIF}
 
 type
 
-  TPangyaClientDecrypt = function(buffin: PAnsiChar; size: Integer; buffout: PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer; cdecl;
-  TPangyaClientEncrypt = function(buffin: PAnsiChar; size: Integer; buffout: PPAnsiChar; buffoutSize: PInteger; key: Byte; packetId: Byte): Integer; cdecl;
-  TPangyaServerEncrypt = function(buffin: PAnsiChar; size: Integer; buffout: PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer; cdecl;
-  TPangyaServerDecrypt = function(buffin: PAnsiChar; size: Integer; buffout: PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer; cdecl;
-  TPangyaFree = procedure(buffout: PPansiChar); cdecl;
-  TPangyaDeserialize = function(value: UInt32): UInt32; cdecl;
-
   TCryptLib = class
     private
-      var m_pangyaClientDecrypt: TPangyaClientDecrypt;
-      var m_pangyaClientEncrypt: TPangyaClientEncrypt;
-      var m_pangyaServerEncrypt: TPangyaServerEncrypt;
-      var m_pangyaServerDecrypt: TPangyaServerDecrypt;
-      var m_pangyaFree: TPangyaFree;
-      var m_pangyaDeserialize: TPangyaDeserialize;
       var m_init_ok: Boolean;
-      procedure GuardAgainstUninitializedLib;
     public
       function ClientDecrypt(data: AnsiString; key: Byte): AnsiString;
       function ClientDecrypt2(const buffin: TPangyaBytes; var buffout: TPangyaBytes; const key: Byte): Boolean;
@@ -39,12 +38,39 @@ type
       function ServerEncrypt(data: AnsiString; key: Byte): AnsiString;
       function ServerDecrypt(data: ansistring; key: byte): ansistring;
       function Deserialize(value: UInt32): UInt32;
-      function Init: Boolean;
       constructor Create;
       destructor Destroy; override;
     end;
 
-  implementation
+implementation
+
+function pangyaClientDecrypt(buffin: PAnsiChar; size: Integer;
+  buffout: PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer;
+  cdecl; external LIBNAME name '_pangya_client_decrypt'
+  {$IFDEF LINUX}dependency LibCPP{$ENDIF};
+
+function pangyaClientEncrypt(buffin: PAnsiChar; size: Integer; buffout:
+  PPAnsiChar; buffoutSize: PInteger; key: Byte; packetId: Byte): Integer;
+  cdecl; external LIBNAME name '_pangya_client_encrypt'
+  {$IFDEF LINUX}dependency LibCPP{$ENDIF};
+
+function pangyaServerEncrypt(buffin: PAnsiChar; size: Integer; buffout:
+  PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer;
+  cdecl; external LIBNAME name '_pangya_server_encrypt'
+  {$IFDEF LINUX}dependency LibCPP{$ENDIF};
+
+function pangyaServerDecrypt(buffin: PAnsiChar; size: Integer;
+  buffout: PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer;
+  cdecl; external LIBNAME name '_pangya_server_decrypt'
+  {$IFDEF LINUX}dependency LibCPP{$ENDIF};
+
+procedure pangyaFree(buffout: PPansiChar);
+  cdecl; external LIBNAME name '_pangya_free'
+  {$IFDEF LINUX}dependency LibCPP{$ENDIF};
+
+function pangyaDeserialize(value: UInt32): UInt32;
+  cdecl; external LIBNAME name '_pangya_deserialize'
+  {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
 function TCryptLib.ClientDecrypt(data: AnsiString; key: Byte): AnsiString;
 var
@@ -52,9 +78,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
-  GuardAgainstUninitializedLib;
 
-  res := m_pangyaClientDecrypt(
+  res := pangyaClientDecrypt(
     PAnsiChar(data),
     Length(data),
     @buffout,
@@ -66,7 +91,7 @@ begin
   begin
     setLength(result, buffoutSize);
     move(buffout[0], result[1], buffoutSize);
-    m_pangyaFree(@buffout);
+    pangyaFree(@buffout);
   end;
 end;
 
@@ -76,9 +101,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
-  GuardAgainstUninitializedLib;
 
-  res := m_pangyaClientDecrypt(
+  res := pangyaClientDecrypt(
     PAnsiChar(@buffin[0]),
     Length(buffin),
     @decryptedBuffer,
@@ -90,7 +114,7 @@ begin
   begin
     setLength(buffout, buffoutSize);
     move(decryptedBuffer[0], buffout[0], buffoutSize);
-    m_pangyaFree(@decryptedBuffer);
+    pangyaFree(@decryptedBuffer);
   end;
 end;
 
@@ -101,9 +125,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
-  GuardAgainstUninitializedLib;
 
-  res := m_pangyaClientEncrypt(
+  res := pangyaClientEncrypt(
     PAnsiChar(data),
     Length(data),
     @buffout,
@@ -116,7 +139,7 @@ begin
   begin
     setLength(result, buffoutSize);
     move(buffout[0], result[1], buffoutSize);
-    m_pangyaFree(@buffout);
+    pangyaFree(@buffout);
   end;
 end;
 
@@ -126,9 +149,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
-  GuardAgainstUninitializedLib;
 
-  res := m_pangyaServerEncrypt(
+  res := pangyaServerEncrypt(
     PAnsiChar(data),
     Length(data),
     @buffout,
@@ -140,7 +162,7 @@ begin
   begin
     setLength(result, buffoutSize);
     move(buffout[0], result[1], buffoutSize);
-    m_pangyaFree(@buffout);
+    pangyaFree(@buffout);
   end;
 end;
 
@@ -150,9 +172,8 @@ var
   buffoutSize: Integer;
   res: integer;
 begin
-  GuardAgainstUninitializedLib;
 
-  res := m_pangyaServerDecrypt(
+  res := pangyaServerDecrypt(
     PAnsiChar(data),
     Length(data),
     @buffout,
@@ -164,72 +185,13 @@ begin
   begin
     setLength(result, buffoutSize);
     move(buffout[0], result[1], buffoutSize);
-    m_pangyaFree(@buffout);
+    pangyaFree(@buffout);
   end;
-end;
-
-function TCryptLib.Init;
-var
-  hInst: THandle;
-begin
-
-  if m_init_ok then
-  begin
-    Exit(true);
-  end;
-
-  result := false;
-
-  hInst := LoadLibrary(pchar('pang.dll'));
-  if hInst = 0 then
-  begin
-    Exit(result);
-  end;
-
-  m_pangyaClientDecrypt := GetProcAddress(hInst, '_pangya_client_decrypt');
-  if @m_pangyaClientDecrypt = nil then
-  begin
-    Exit(result);
-  end;
-
-  m_pangyaClientEncrypt := GetProcAddress(hInst, '_pangya_client_encrypt');
-  if @m_pangyaClientEncrypt = nil then
-  begin
-    Exit(result);
-  end;
-
-  m_pangyaServerEncrypt := GetProcAddress(hInst, '_pangya_server_encrypt');
-  if @m_pangyaServerEncrypt = nil then
-  begin
-    Exit(False);
-  end;
-
-  m_pangyaServerDecrypt := GetProcAddress(hInst, '_pangya_server_decrypt');
-  if @m_pangyaServerDecrypt = nil then
-  begin
-    Exit(False);
-  end;
-
-  m_pangyaFree := GetProcAddress(hInst, '_pangya_free');
-  if @m_pangyaFree = nil then
-  begin
-    Exit(False);
-  end;
-
-  m_pangyaDeserialize := GetProcAddress(hInst, '_pangya_deserialize');
-  if @m_pangyaDeserialize = nil then
-  begin
-    Exit(False);
-  end;
-
-  m_init_ok := true;
-
-  result := m_init_ok;
 end;
 
 function TCryptLib.Deserialize(value: UInt32): UInt32;
 begin
-  Result := m_pangyaDeserialize(value);
+  Result := pangyaDeserialize(value);
 end;
 
 constructor TCryptLib.Create;
@@ -241,14 +203,6 @@ end;
 destructor TCryptLib.Destroy;
 begin
   inherited;
-end;
-
-procedure TCryptLib.GuardAgainstUninitializedLib;
-begin
-  if not m_init_ok then
-  begin
-    raise Exception.Create('CryptLib is not initialized');
-  end;
 end;
 
 end.

@@ -11,50 +11,30 @@ unit ConsolePas;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ComCtrls, Menus;
+
+{$IFDEF MSWINDOWS}
+  Windows,
+{$ENDIF}
+  SysUtils,
+  Classes,
+  System.UITypes;
 
 type
 
-  TConsoleColor = (
-    CColor_red = clRed,
-    CColor_green = clGreen,
-    CColor_blue = clBlue,
-    CColor_fushia = clFuchsia,
-    CColor_orange = $008CFF
-  );
+  TColor = -$7FFFFFFF-1..$7FFFFFFF;
 
-  TConsoleOnCloseEvent = procedure of Object;
-  PConsole = ^TConsole;
-  TConsole = class(TForm)
-    DebugInfo: TRichEdit;
-    MainMenu1: TMainMenu;
-    Log1: TMenuItem;
-    Clear1: TMenuItem;
-    Close1: TMenuItem;
-    procedure Clear1Click(Sender: TObject);
-    procedure Close1Click(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    procedure FormShow(Sender: TObject);
+  TConsole = class
   private
     { Private declarations }
-    procedure SetTitle(title: string);
-    function GetTitle: string;
-    var m_displayed: boolean;
-  protected
-    FOnClose : TConsoleOnCloseEvent;
   public
     { Public declarations }
     function Log(data: string; p_color: cardinal): ansistring; overload;
     function Log: ansistring; overload;
     function Log(data: string): ansistring; overload;
-    function Log(data: string; pColor: Tcolor): ansistring; overload;
+    function Log(data: string; pColor: TColor): ansistring; overload;
     function Log(data: string; pColor: TColor; bold: boolean): ansistring; overload;
     procedure Error(data: string);
-    function WriteDump(data:ansistring): ansistring;
-    procedure Clear;
-    property Title: string read getTitle write setTitle;
-    property OnClose: TConsoleOnCloseEvent read FOnClose write FOnClose;
+    procedure WriteDump(data: UTF8String);
   end;
 
 var
@@ -63,46 +43,14 @@ var
 const
   C_TAB: char       = #$09;
   C_NL: string      = #13#10;
-  C_BLACK           = clBlack;
-  C_GREEN           = clGreen;
-  C_RED             = clRed;
-  C_BLUE            = clBlue;
-  C_FUSH            = clFuchsia;
+  C_BLACK           = TColors.Black;
+  C_GREEN           = TColors.Green;
+  C_RED             = TColors.Red;
+  C_BLUE            = TColors.Blue;
+  C_FUSH            = TColors.Fuchsia;
   C_ORANGE          = $008CFF;
 
 implementation
-
-{$R *.dfm}
-
-procedure TConsole.clear;
-begin
-  DebugInfo.Clear;
-end;
-
-procedure TConsole.Clear1Click(Sender: TObject);
-begin
-  Clear;
-end;
-
-procedure TConsole.Close1Click(Sender: TObject);
-begin
-  close;
-end;
-
-procedure TConsole.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  m_displayed := false;
-  if Assigned(FOnClose) then begin
-    FOnClose;
-  end;
-end;
-
-procedure TConsole.FormShow(Sender: TObject);
-begin
-  left := Screen.WorkAreaRect.Left;
-  top := Screen.WorkAreaRect.Bottom - height;
-  m_displayed := true;
-end;
 
 function TConsole.log: ansistring;
 begin
@@ -119,10 +67,10 @@ var
   wColor: TColor;
 begin
   case p_color of
-    0 : wColor := clBlack;
-    1 : wColor := clGreen;
-    2 : wColor := clRed;
-    else wColor := clBlack;
+    0 : wColor := C_BLACK;
+    1 : wColor := C_GREEN;
+    2 : wColor := C_RED;
+    else wColor := C_BLACK;
   end;
 
   log(data, wColor);
@@ -130,7 +78,7 @@ end;
 
 function TConsole.Log(data: string): ansistring;
 begin
-  result := log(data, clWindowText);
+  result := log(data, TColors.SysWindowText);
 end;
 
 function TConsole.log(data: string; pColor: TColor): ansistring;
@@ -138,14 +86,15 @@ begin
   result := log(data, pColor, false);
 end;
 
+{$IFDEF MSWINDOWS}
 function GetConsoleAttributes(pColor: TColor): Word;
 begin
   case pColor of
-    clRed:
+    TColors.Red:
       Exit(FOREGROUND_RED);
-    clBlue:
+    TColors.Blue:
       Exit(FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_INTENSITY);
-    clGreen:
+    TColors.Green:
       Exit(FOREGROUND_GREEN or FOREGROUND_INTENSITY);
     else
       Exit(
@@ -155,6 +104,7 @@ begin
       );
   end;
 end;
+{$ENDIF}
 
 // Uggly temporary fix to log from other threads
 function TConsole.log(data: string; pColor: TColor; bold: boolean): ansistring;
@@ -163,6 +113,7 @@ var
   currentThreadId: UInt32;
 begin
 
+{$IFDEF MSWINDOWS}
   currentThreadId := GetCurrentThreadId;
 
   if not (currentThreadId = MainThreadID) Then
@@ -214,43 +165,46 @@ begin
     //result := data;
     {$ENDIF}
   end;
-
+{$ENDIF}
 end;
 
-function TConsole.writeDump(data:ansistring): ansistring;
+procedure TConsole.writeDump(data: UTF8String);
 var
-  nlog:ansistring;
-  offset:DWORD;
-  x,y:integer;
-  value,pos:byte;
+  nlog: UTF8String;
+  offset: UInt32;
+  x, y: integer;
+  value, pos: byte;
 begin
-  with DebugInfo do
-  begin
-    nlog := '';
-    pos := 0;
-    offset := 0;
-    log;
-    nlog := '  offset   0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F';
-    log(nlog, $00A5A5A5);
-    nlog := '';
+  nlog := '';
+  pos := 0;
+  offset := 0;
+  log;
+  nlog := '  offset   0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F';
+  log(nlog, $00A5A5A5);
+  nlog := '';
 
-    for x := 1 to length(data) do
-    begin
-      if pos = 0 then nlog := nlog + inttohex(offset, 8) + '  ';
-    pansichar(@value)[0] := data[x];
-    nlog := nlog + inttohex(value, 2) + ' ';
+  for x := 1 to length(data) do
+  begin
+    if pos = 0 then
+      nlog := nlog + IntToHex(offset, 8) + '  ';
+    PUTF8Char(@value)[0] := data[x];
+    nlog := nlog + IntToHex(value, 2) + ' ';
     if pos = 7 then
     begin
       nlog := nlog + ' ';
       inc(pos);
-    end else inc(pos);
+    end
+    else
+      inc(pos);
     if pos = 16 then
     begin
-      nlog := nlog+'   ';
+      nlog := nlog + '   ';
       for y := 1 to 16 do
       begin
-        if integer(data[y + offset]) < 32 then nlog := nlog + '.'
-        else nlog := nlog + data[y + offset];
+        if integer(data[y + offset]) < 32 then
+          nlog := nlog + '.'
+        else
+          nlog := nlog + data[y + offset];
       end;
       log(nlog);
       nlog := '';
@@ -268,34 +222,25 @@ begin
         if y = 8 then
         begin
           nlog := nlog + '    ';
-        end else
+        end
+        else
         begin
           nlog := nlog + '   ';
         end;
       end;
 
-    nlog := nlog+'   ';
+    nlog := nlog + '   ';
     for y := 1 to 16 - (16 - (length(data) - offset)) do
     begin
-      if integer(data[y + offset]) < 32 then nlog := nlog + '.'
-      else nlog := nlog + data[y + offset];
+      if integer(data[y + offset]) < 32 then
+        nlog := nlog + '.'
+      else
+        nlog := nlog + data[y + offset];
     end;
     log(nlog);
     nlog := '';
   end;
   log;
-end;
-
-end;
-
-procedure TConsole.setTitle(title: string);
-begin
-  caption := title;
-end;
-
-function TConsole.getTitle: string;
-begin
-  result := caption;
 end;
 
 end.
