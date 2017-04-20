@@ -109,7 +109,6 @@ end;
 // Uggly temporary fix to log from other threads
 function TConsole.log(data: string; pColor: TColor; bold: boolean): ansistring;
 var
-  logFile: TextFile;
   currentThreadId: UInt32;
 begin
 
