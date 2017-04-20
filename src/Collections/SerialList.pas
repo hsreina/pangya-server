@@ -20,8 +20,8 @@ implementation
 
 constructor TSerialList<T>.Create;
 begin
-  m_serial := 0;
   inherited;
+  m_serial := 0;
 end;
 
 destructor TSerialList<T>.Destroy;

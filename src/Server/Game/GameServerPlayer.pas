@@ -100,12 +100,12 @@ end;
 
 destructor TGameServerPlayer.Destroy;
 begin
-  inherited;
   m_characters.Free;
   m_items.Free;
   m_caddies.Free;
   m_mascots.Free;
   m_quest.Free;
+  inherited;
 end;
 
 function TGameServerPlayer.FGetPlayerData;

@@ -234,6 +234,7 @@ end;
 
 constructor TCryptLib.Create;
 begin
+  inherited;
   m_init_ok := false;
 end;
 

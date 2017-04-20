@@ -30,16 +30,16 @@ uses
 
 constructor TSyncClientReadThread.Create(const name: string; const client: TIdTCPClient);
 begin
+  inherited Create(False);
   m_name := name;
   m_client := client;
   m_lock := TCriticalSection.Create;
-  inherited Create(False);
 end;
 
 destructor TSyncClientReadThread.Destroy;
 begin
-  inherited;
   m_lock.Free;
+  inherited;
 end;
 
 procedure TSyncClientReadThread.Execute;

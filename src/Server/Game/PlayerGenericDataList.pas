@@ -60,6 +60,7 @@ uses ConsolePas, SysUtils, GameServerExceptions, PacketWriter;
 
 constructor TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Create;
 begin
+  inherited;
   m_dataList := TList<PlayerDataClass>.Create;
   m_emptyData := PlayerDataClass.Create;
 end;
@@ -74,6 +75,7 @@ begin
   end;
   m_dataList.Free;
   m_emptyData.Free;
+  inherited;
 end;
 
 function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Add(IffId: UInt32): PlayerDataClass;

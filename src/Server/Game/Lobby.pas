@@ -93,9 +93,9 @@ end;
 
 destructor TLobby.Destroy;
 begin
-  inherited;
   m_players.Free;
   m_games.Free;
+  inherited;
 end;
 
 procedure TLobby.AddPlayer(player: TGameClient);
