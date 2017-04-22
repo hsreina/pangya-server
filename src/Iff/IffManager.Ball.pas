@@ -32,8 +32,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TBallDataClass.Create(data: PAnsiChar);
 begin
   inherited;

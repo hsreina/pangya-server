@@ -32,8 +32,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TClubSetDataClass.Create(data: PAnsiChar);
 begin
   inherited;

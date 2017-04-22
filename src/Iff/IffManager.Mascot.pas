@@ -32,8 +32,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TMascotDataClass.Create(data: PAnsiChar);
 begin
   inherited;

@@ -20,7 +20,7 @@ uses
   msvcrtMM,
   {$ENDIF }
   SysUtils,
-  ConsolePas in 'ConsolePas.pas' {Console},
+  ConsolePas in 'ConsolePas.pas',
   Logging in 'Logging.pas',
   CryptLib in 'CryptLib.pas',
   SyncClient in 'Client\SyncClient.pas',

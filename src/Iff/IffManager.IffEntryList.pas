@@ -35,7 +35,7 @@ type
 
 implementation
 
-uses ConsolePas, GameServerExceptions, Classes;
+uses GameServerExceptions, Classes;
 
 constructor TIffEntryList<PartData, DataClass>.Create;
 begin

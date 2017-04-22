@@ -57,13 +57,10 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TIffEntry<EntryDataType>.Create(data: PAnsiChar);
 begin
   inherited Create;
   move(data^, m_data, m_dataSize);
-  //Console.Log(Format('Preview : %s', [GetBase.preview]));
 end;
 
 destructor TIffEntry<EntryDataType>.Destroy;

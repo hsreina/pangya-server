@@ -105,12 +105,7 @@
         </DelphiCompile>
         <DCCReference Include="Libs\Fast\FastMM4.pas"/>
         <DCCReference Include="Libs\Fast\FastMM4Messages.pas"/>
-        <DCCReference Include="MainPas.pas">
-            <Form>Main</Form>
-        </DCCReference>
-        <DCCReference Include="ConsolePas.pas">
-            <Form>Console</Form>
-        </DCCReference>
+        <DCCReference Include="ConsolePas.pas"/>
         <DCCReference Include="Logging.pas"/>
         <DCCReference Include="CryptLib.pas"/>
         <DCCReference Include="Client\SyncClient.pas"/>
@@ -184,6 +179,7 @@
         <DCCReference Include="Types\Types.Vector3.pas"/>
         <DCCReference Include="Packets\PacketsDef.pas"/>
         <DCCReference Include="Packets\PacketData.pas"/>
+        <DCCReference Include="ServerApp.pas"/>
         <None Include="Libs\Fast\FastMM4Options.inc"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>

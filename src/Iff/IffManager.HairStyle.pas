@@ -37,8 +37,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor THairStyleDataClass.Create(data: PAnsiChar);
 begin
   inherited;

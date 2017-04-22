@@ -32,8 +32,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TSkinDataClass.Create(data: PAnsiChar);
 begin
   inherited;
