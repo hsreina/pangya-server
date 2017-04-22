@@ -2,8 +2,17 @@ unit ServerApp;
 
 interface
 
-uses LoginServer, GameServer, SyncServer, CryptLib, DataChecker, IffManager, SysUtils,
-  Logging;
+uses
+{$IFDEF LOGIN_SERVER}
+  LoginServer,
+{$ENDIF}
+{$IFDEF GAME_SERVER}
+  GameServer,
+{$ENDIF}
+{$IFDEF SYNC_SERVER}
+  SyncServer,
+{$ENDIF}
+  CryptLib, DataChecker, IffManager, SysUtils, Logging;
 
 type
   TServerApp = class
@@ -12,7 +21,9 @@ type
 
       var m_loginServer: TLoginServer;
       var m_gameServer: TGameServer;
+{$IFDEF SYNC_SERVER}
       var m_synServer: TSyncServer;
+{$ENDIF}
       var m_cryptLib: TCryptLib;
       var m_dataChecker: TDataChecker;
       var m_iffManager: TIffManager;
@@ -55,8 +66,8 @@ begin
 
   if not m_iffManager.Load then
   begin
-    Console.Log('Failed to load Iffs!!', C_RED);
     Console.Log('You should have valid US pangya_gb.iff content in ../data/pangya_gb.iff directory');
+    raise Exception.Create('Failed to load Iff');
     Exit;
   end;
 
