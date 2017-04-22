@@ -8,10 +8,8 @@
 
 program PangyaServer;
 
-{$IFDEF RELEASE}
-  {$APPTYPE CONSOLE}
-  {$DEFINE CONSOLE}
-{$ENDIF}
+{$APPTYPE CONSOLE}
+{$DEFINE CONSOLE}
 
 uses
   {$IFDEF DEBUG}
@@ -21,9 +19,8 @@ uses
   {$IFDEF RELEASE}
   msvcrtMM,
   {$ENDIF }
-  Vcl.Forms,
-  MainPas in 'MainPas.pas' {Main},
-  ConsolePas in 'ConsolePas.pas' {Console},
+  SysUtils,
+  ConsolePas in 'ConsolePas.pas',
   Logging in 'Logging.pas',
   CryptLib in 'CryptLib.pas',
   SyncClient in 'Client\SyncClient.pas',
@@ -32,9 +29,11 @@ uses
   SyncableServer in 'Server\SyncableServer.pas',
   LoginPlayer in 'Server\Login\LoginPlayer.pas',
   LoginServer in 'Server\Login\LoginServer.pas',
-  SyncServer in 'Server\Sync\SyncServer.pas',
   SyncUser in 'Server\Sync\SyncUser.pas',
+{$IFDEF SYNC_SERVER}
   Database in 'Server\Sync\Database.pas',
+  SyncServer in 'Server\Sync\SyncServer.pas',
+{$ENDIF}
   GameServerPlayer in 'Server\Game\GameServerPlayer.pas',
   GameServer in 'Server\Game\GameServer.pas',
   LobbiesList in 'Server\Game\LobbiesList.pas',
@@ -96,21 +95,39 @@ uses
   Types.ShotData in 'Types\Types.ShotData.pas',
   Types.Vector3 in 'Types\Types.Vector3.pas',
   PacketsDef in 'Packets\PacketsDef.pas',
-  PacketData in 'Packets\PacketData.pas';
+  PacketData in 'Packets\PacketData.pas',
+  ServerApp in 'ServerApp.pas';
 
-{$R *.res}
+var
+  serverApp: TServerApp;
+  command: string;
 
 begin
   ReportMemoryLeaksOnShutdown := DebugHook <> 0;
 
-  Application.Initialize;
-  Application.MainFormOnTaskbar := True;
+  try
+    serverApp := TServerApp.Create;
 
-  {$IFDEF CONSOLE}
-  Application.ShowMainForm := false;
-  {$ENDIF}
+    serverApp.Start;
 
-  Application.CreateForm(TMain, Main);
-  Application.CreateForm(TConsole, Console);
-  Application.Run;
+    while serverApp.IsRunning do
+    begin
+      Write('>');
+      ReadLn(command);
+      if not serverApp.ParseCommand(command) then
+      begin
+        Console.Log('Invalid command');
+      end;
+    end;
+
+    serverApp.Stop;
+    serverApp.Free;
+
+  except
+    on E: Exception do
+    begin
+      Console.Log(E.ClassName + ': ' + E.Message, C_RED);
+      ReadLn;
+    end;
+  end;
 end.

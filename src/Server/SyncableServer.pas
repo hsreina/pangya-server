@@ -10,7 +10,7 @@ unit SyncableServer;
 
 interface
 
-uses SyncClient, Server, CryptLib, ScktComp, SysUtils, Packet, PacketReader;
+uses SyncClient, Server, CryptLib, SysUtils, Packet, PacketReader;
 
 type
   TSyncableServer<ClientType> = class abstract (TServer<ClientType>)

@@ -32,8 +32,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TCaddieDataClass.Create(data: PAnsiChar);
 begin
   inherited;

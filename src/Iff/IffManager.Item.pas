@@ -32,8 +32,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TItemDataClass.Create(data: PAnsiChar);
 begin
   inherited;

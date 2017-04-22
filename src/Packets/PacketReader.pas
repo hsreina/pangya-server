@@ -29,8 +29,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TPacketReader.CreateFromAnsiString(const src: AnsiString);
 begin
   inherited Create;

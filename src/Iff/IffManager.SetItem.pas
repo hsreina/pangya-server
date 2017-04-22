@@ -44,8 +44,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TSetItemDataClass.Create(data: PAnsiChar);
 begin
   inherited;

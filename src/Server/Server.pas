@@ -10,7 +10,7 @@ unit Server;
 
 interface
 
-uses Logging, Client, Generics.Collections, ExtCtrls, CryptLib,
+uses Logging, Client, Generics.Collections, CryptLib,
   SyncClient, defs, PacketData, SysUtils,
   SerialList, IdTcpServer, IdContext, IdGlobal, IdComponent,
   IdSchedulerOfThreadPool, SyncObjs, PacketReader, Types.PangyaBytes;

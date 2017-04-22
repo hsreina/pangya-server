@@ -32,8 +32,6 @@ type
 
 implementation
 
-uses ConsolePas;
-
 constructor TAuxPartDataClass.Create(data: PAnsiChar);
 begin
   inherited;
