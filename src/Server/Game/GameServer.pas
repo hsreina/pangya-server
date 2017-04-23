@@ -37,6 +37,7 @@ type
       procedure SyncPlayerAction(const client: TGameClient; const packet: TPacket);
       procedure HandlerSyncServerPlayerSync(const packetReader: TPacketReader; const client: TGameClient);
       procedure HandleSyncServerPlayerAction(const packetReader: TPacketReader; const client: TGameClient);
+      procedure SendServerList(const packetReader: TPacketReader; const client: TGameClient);
 
       procedure SavePlayer(const client: TGameClient);
 
@@ -150,7 +151,7 @@ end;
 
 function TGameServer.LobbiesList: AnsiString;
 begin
-  Result := m_lobbies.Build;
+  Result := #$4D#$00 + m_lobbies.Build;
 end;
 
 procedure TGameServer.Init;
@@ -237,7 +238,7 @@ procedure TGameServer.SyncPlayerAction(const client: TGameClient; const packet: 
 begin
   self.Log('TGameServer.Sync', TLogType.TLogType_not);
   self.Sync(
-    #$02#$00 + // SSPID_PLAYER_ACTION
+    #$02#$00 + // PLAYER_ACTION
     write(client.UID.id, 4) +
     writePStr(client.UID.login) +
     packet.ToStr
@@ -794,13 +795,15 @@ begin
 end;
 
 procedure TGameServer.HandlePlayerRequestServerList(const client: TGameClient; const packetReader: TPacketReader);
+var
+  packetWriter: TPacketWriter;
 begin
   Console.Log('TGameServer.HandlePlayerRequestServerList', C_BLUE);
-  // Should ask this to the sync server?
-  client.Send(
-    #$9F#$00 +
-    #$00 // Number of servers
-  );
+  // Request server list to sync server
+  packetWriter := TPacketWriter.Create;
+  packetWriter.WriteAction(TSSAPID.SEND_SERVER_LIST);
+  self.SyncPlayerAction(client, packetWriter);
+  packetWriter.Free;
 end;
 
 procedure TGameServer.HandlePlayerUpgrade(const client: TGameClient; const packetReader: TPacketReader);
@@ -2367,6 +2370,10 @@ begin
     begin
       lobby.HandlePlayerJoinGame(client, packetReader);
     end;
+    TCGPID.ADMIN_JOIN_GAME:
+    begin
+      lobby.HandleAdminJoinGame(client, packetReader);
+    end;
     TCGPID.PLAYER_BUY_ITEM:
     begin
       self.HandlePlayerBuyItem(client, packetReader);
@@ -2375,7 +2382,7 @@ begin
     begin
       self.HandlePlayerRequestIdentity(client, packetReader);
     end;
-    TCGPID.PLAYER_REQQUEST_SERVERS_LIST:
+    TCGPID.PLAYER_REQUEST_SERVERS_LIST:
     begin
       self.HandlePlayerRequestServerList(client, packetReader);
     end;
@@ -2634,6 +2641,21 @@ begin
   client.Send(packetReader.GetRemainingData);
 end;
 
+procedure TGameServer.SendServerList(const packetReader: TPacketReader; const client: TGameClient);
+var
+  packetWriter: TPacketWriter;
+begin
+  Console.Log('TGameServer.SendServerList', C_BLUE);
+
+  packetWriter := TPacketWriter.Create;
+  packetWriter.WriteStr(#$9F#$00);
+  packetWriter.WriteStr(packetReader.GetRemainingData);
+  packetWriter.WriteStr(m_lobbies.Build);
+  client.Send(packetWriter);
+
+  packetWriter.Free;
+end;
+
 procedure TGameServer.HandleSyncServerPlayerAction(const packetReader: TPacketReader; const client: TGameClient);
 var
   actionId: TSSAPID;
@@ -2648,6 +2670,10 @@ begin
       TSSAPID.SEND_LOBBIES_LIST:
       begin
         client.Send(LobbiesList);
+      end;
+      TSSAPID.SEND_SERVER_LIST:
+      begin
+        SendServerList(packetReader, client);
       end;
       TSSAPID.PLAYER_MAIN_SAVE:
       begin

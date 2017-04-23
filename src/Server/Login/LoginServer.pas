@@ -36,6 +36,7 @@ type
       procedure ServerPlayerAction(const packetReader: TPacketReader; const client: TLoginClient);
 
       procedure HandlePlayerServerSelect(const client: TLoginClient; const packetReader: TPacketReader);
+      procedure HandlePlayerReconnect(const client: TLoginClient; const packetReader: TPacketReader);
       procedure HandlePlayerLogin(const client: TLoginClient; const packetReader: TPacketReader);
 
       procedure RegisterServer;
@@ -228,6 +229,7 @@ begin
     TCLPID.PLAYER_RECONNECT: // ??
     begin
       self.Log('CLPID_PLAYER_RECONNECT', TLogType.TLogType_not);
+      self.HandlePlayerReconnect(client, packetReader);
     end
     else
     begin
@@ -272,6 +274,24 @@ begin
   packetReader.Log;
   // this code will be send by the client to the game server
   client.Send(#$03#$00#$00#$00#$00#$00 + WritePStr('1f766c8'));
+end;
+
+procedure TLoginServer.HandlePlayerReconnect(const client: TLoginClient; const packetReader: TPacketReader);
+var
+  userLogin, token: AnsiString;
+  un: UInt32;
+begin
+  Console.Log('TLoginServer.HandlePlayerReconnect', C_BLUE);
+
+  packetReader.ReadPStr(userLogin);
+  packetReader.ReadUInt32(un);
+  packetReader.ReadPStr(token);
+
+  console.Log(String.Format('userLogin %s', [userLogin]));
+  console.Log(String.Format('un %d', [un]));
+  console.Log(String.Format('token %s', [token]));
+
+  console.Log('should implement that', C_ORANGE);
 end;
 
 procedure TLoginServer.Debug;

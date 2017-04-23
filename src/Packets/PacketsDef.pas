@@ -76,9 +76,10 @@ type
     PLAYER_HOLE_COMPLETE                = $0031,
     PLAYER_EXCEPTION                    = $0033,
     PLAYER_1ST_SHOT_READY               = $0034,
+    ADMIN_JOIN_GAME                     = $003E,
     PLAYER_REQUEST_COOKIES_COUNT        = $003D,
     PLAYER_REQUEST_IDENTITY             = $0041,
-    PLAYER_REQQUEST_SERVERS_LIST        = $0043,
+    PLAYER_REQUEST_SERVERS_LIST         = $0043,
     PLAYER_LOADING_INFO                 = $0048,
     PLAYER_UPGRADE                      = $004B,
     PLAYER_NOTICE                       = $0057,
@@ -157,9 +158,16 @@ type
 
   // Sync server packets from any server to Sync server
   TSSPID = (
+
+    // Register on Sync server
     REGISTER_SERVER             = $0000,
-    PLAYER_SYNC                 = $0001, // send player Sync packet
-    PLAYER_ACTION               = $0002, // do an action related to the player
+
+    // Send player Sync packet
+    PLAYER_SYNC                 = $0001,
+
+    // Do an action related to the player requested by a server
+    PLAYER_ACTION               = $0002,
+
     NOTHING                     = $FFFF
   );
 

@@ -11,11 +11,11 @@ unit LobbiesList;
 interface
 
 uses
-  Generics.Collections, Lobby, PacketData, GameServerPlayer, Game;
+  Generics.Collections, Lobby, PacketData, GameServerPlayer, Game, SerialList;
 
 type
 
-  TLobbyList = TList<TLobby>;
+  TLobbyList = TSerialList<TLobby>;
 
   TLobbiesList = class
     protected
@@ -35,7 +35,7 @@ type
 
 implementation
 
-uses GameServerExceptions;
+uses GameServerExceptions, PacketWriter;
 
 constructor TLobbiesList.Create;
 var
@@ -44,7 +44,7 @@ var
 begin
   inherited;
   m_lobbies := TLobbyList.Create;
-  lobby := TLobby.Create;
+  lobby := TLobby.Create('lobby 1');
   lobby.Id := m_lobbies.Add(lobby);
 end;
 
@@ -105,12 +105,16 @@ end;
 function TLobbiesList.Build: TPacketData;
 var
   lobby: TLobby;
+  packetWriter: TPacketWriter;
 begin
-  Result := #$4D#$00 + #$01;
+  packetWriter := TPacketWriter.Create;
+  packetWriter.WriteUInt8(m_lobbies.Count);
   for lobby in m_lobbies do
   begin
-    Result := Result + lobby.Build;
+    packetWriter.WriteStr(lobby.Build);
   end;
+  Result := packetWriter.ToStr;
+  packetWriter.Free;
 end;
 
 procedure TLobbiesList.Send(const data: AnsiString);

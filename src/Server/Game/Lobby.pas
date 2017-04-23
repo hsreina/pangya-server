@@ -22,6 +22,7 @@ type
       var m_id: UInt8;
       var m_players: TPLayerList;
       var m_games: TGamesList;
+      var m_name: AnsiString;
 
       var m_maxPlayers: UInt16;
       var m_nullGame: TGame;
@@ -55,9 +56,10 @@ type
 
       procedure HandlePlayerCreateGame(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerJoinGame(const client: TGameClient; const packetReader: TPacketReader);
+      procedure HandleAdminJoinGame(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const packetReader: TPacketReader);
 
-      constructor Create;
+      constructor Create(lobbyName: AnsiString);
       destructor Destroy; override;
   end;
 
@@ -70,9 +72,10 @@ var
   gameInfo: TPlayerCreateGameInfo;
   args: TGameCreateArgs;
 begin
-  inherited;
+  inherited Create;
   m_players := TList<TGameClient>.Create;
   m_games := TGamesList.Create;
+  m_name := lobbyName;
 
   m_games.OnCreateGame.Event := self.OnCreateGame;
   m_games.OnDestroyGame.Event := self.OnDestroyGame;
@@ -125,7 +128,7 @@ var
 begin
   packet := TPacketWriter.Create;
 
-  packet.WriteStr('test', 20, #$00);
+  packet.WriteStr(m_name, 20, #$00);
   packet.WriteStr(
     #$00#$01#$00#$00#$01#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$08#$10#$06#$07#$1A +
@@ -133,8 +136,8 @@ begin
     #$00#$00#$00
   );
 
-  packet.WriteUInt16(UInt16(m_maxPlayers));
-  packet.WriteUInt16(UInt16(m_players.Count));
+  packet.WriteUInt16(m_maxPlayers);
+  packet.WriteUInt16(m_players.Count);
   packet.WriteUInt8(m_id);
 
   packet.WriteStr(
@@ -434,6 +437,12 @@ begin
     client.Data.GameInformation +
     #$00
   );
+end;
+
+procedure TLobby.HandleAdminJoinGame(const client: TGameClient; const packetReader: TPacketReader);
+begin
+  Console.Log('TGameServer.HandleAdminJoinGame', C_BLUE);
+  HandlePlayerJoinGame(client, packetReader);
 end;
 
 procedure TLobby.HandlePlayerJoinGame(const client: TGameClient; const packetReader: TPacketReader);

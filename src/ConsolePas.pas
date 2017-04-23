@@ -17,7 +17,7 @@ uses
 {$ENDIF}
   SysUtils,
   Classes,
-  System.UITypes;
+  System.UITypes, SyncObjs;
 
 type
 
@@ -26,6 +26,7 @@ type
   TConsole = class
   private
     { Private declarations }
+    var m_lock: TCriticalSection;
   public
     { Public declarations }
     function Log(data: string; p_color: cardinal): ansistring; overload;
@@ -35,6 +36,8 @@ type
     function Log(data: string; pColor: TColor; bold: boolean): ansistring; overload;
     procedure Error(data: string);
     procedure WriteDump(data: UTF8String);
+    constructor Create;
+    destructor Destroy; override;
   end;
 
 var
@@ -48,9 +51,21 @@ const
   C_RED             = TColors.Red;
   C_BLUE            = TColors.Blue;
   C_FUSH            = TColors.Fuchsia;
-  C_ORANGE          = $008CFF;
+  C_ORANGE          = TColors.Orange;
 
 implementation
+
+constructor TConsole.Create;
+begin
+  inherited;
+  m_lock := TCriticalSection.Create;
+end;
+
+destructor TConsole.Destroy;
+begin
+  m_lock.Free;
+  inherited;
+end;
 
 function TConsole.log: ansistring;
 begin
@@ -96,6 +111,8 @@ begin
       Exit(FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_INTENSITY);
     TColors.Green:
       Exit(FOREGROUND_GREEN or FOREGROUND_INTENSITY);
+    TColors.Orange:
+      Exit(FOREGROUND_RED or FOREGROUND_INTENSITY);
     else
       Exit(
         FOREGROUND_RED or
@@ -111,62 +128,20 @@ function TConsole.log(data: string; pColor: TColor; bold: boolean): ansistring;
 var
   currentThreadId: UInt32;
 begin
-
+  m_lock.Enter;
 {$IFDEF MSWINDOWS}
-  currentThreadId := GetCurrentThreadId;
 
-  if not (currentThreadId = MainThreadID) Then
-  begin
-    TThread.Synchronize(TThread.CurrentThread,
-    procedure
-    begin
-      {$IFDEF CONSOLE}
-      SetConsoleTextAttribute(
-        GetStdHandle(STD_OUTPUT_HANDLE),
-        GetConsoleAttributes(pColor)
-      );
+  SetConsoleTextAttribute(
+    GetStdHandle(STD_OUTPUT_HANDLE),
+    GetConsoleAttributes(pColor)
+  );
 
-      WriteLn(data);
-      {$ELSE}
-      with DebugInfo do
-      begin
-        SelStart := GetTextLen; // move to the end
-        SelAttributes.Color := pColor;
-        if bold then
-        begin
-          SelAttributes.Style := [fsBold];
-        end;
-        SelText := data + C_NL;
-      end;
-      //result := data;
-      {$ENDIF}
-    end);
-  end else
-  begin
-    {$IFDEF CONSOLE}
-    SetConsoleTextAttribute(
-      GetStdHandle(STD_OUTPUT_HANDLE),
-      GetConsoleAttributes(pColor)
-    );
+  WriteLn(data);
 
-    WriteLn(data);
-    {$ELSE}
-    with DebugInfo do
-    begin
-      SelStart := GetTextLen; // move to the end
-      SelAttributes.Color := pColor;
-      if bold then
-      begin
-        SelAttributes.Style := [fsBold];
-      end;
-      SelText := data + C_NL;
-    end;
-    //result := data;
-    {$ENDIF}
-  end;
 {$ELSE}
   WriteLn(data);
 {$ENDIF}
+  m_lock.Leave;
 end;
 
 procedure TConsole.writeDump(data: UTF8String);
@@ -243,5 +218,13 @@ begin
   end;
   log;
 end;
+
+initialization
+
+  Console := TConsole.Create;
+
+finalization
+
+  Console.Free;
 
 end.
