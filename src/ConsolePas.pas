@@ -164,6 +164,8 @@ begin
     //result := data;
     {$ENDIF}
   end;
+{$ELSE}
+  WriteLn(data);
 {$ENDIF}
 end;
 

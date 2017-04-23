@@ -16,16 +16,6 @@ uses
 {$ENDIF}
   SysUtils, Types.PangyaBytes;
 
-{$IFDEF LINUX}
-const LIBNAME = 'libpang.a';
-{$ENDIF}
-{$IFDEF MSWINDOWS}
-const LIBNAME = 'pang.dll';
-{$ENDIF}
-{$IFDEF MACOS}
-const LIBNAME = 'pang.dylib';
-{$ENDIF}
-
 type
 
   TCryptLib = class
@@ -44,32 +34,60 @@ type
 
 implementation
 
+{$IFDEF LINUX}
+const LIBNAME = 'libpang.a';
+const _pangya_client_decrypt = '_pangya_client_decrypt';
+const _pangya_client_encrypt = '_pangya_client_encrypt';
+const _pangya_server_encrypt = '_pangya_server_encrypt';
+const _pangya_server_decrypt = '_pangya_server_decrypt';
+const _pangya_free = '_pangya_free';
+const _pangya_deserialize = '_pangya_deserialize';
+{$ENDIF}
+{$IFDEF MSWINDOWS}
+const LIBNAME = 'pang.dll';
+const _pangya_client_decrypt = '_pangya_client_decrypt';
+const _pangya_client_encrypt = '_pangya_client_encrypt';
+const _pangya_server_encrypt = '_pangya_server_encrypt';
+const _pangya_server_decrypt = '_pangya_server_decrypt';
+const _pangya_free = '_pangya_free';
+const _pangya_deserialize = '_pangya_deserialize';
+{$ENDIF}
+{$IFDEF MACOS}
+const LIBNAME = 'pang.dylib';
+const _pangya_client_decrypt = '__Z21pangya_client_decryptPhjPS_Pjh';
+const _pangya_client_encrypt = '__Z21pangya_client_encryptPhjPS_Pjhh';
+const _pangya_server_encrypt = '__Z21pangya_server_encryptPhjPS_Pjh';
+const _pangya_server_decrypt = '__Z21pangya_server_decryptPhjPS_Pjh';
+const _pangya_free = '__Z11pangya_freePPh';
+const _pangya_deserialize = '__Z18pangya_deserializej';
+{$ENDIF}
+
 function pangyaClientDecrypt(buffin: PAnsiChar; size: Integer;
   buffout: PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer;
-  cdecl; external LIBNAME name '_pangya_client_decrypt'
+  cdecl; external LIBNAME name _pangya_client_decrypt
   {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
 function pangyaClientEncrypt(buffin: PAnsiChar; size: Integer; buffout:
   PPAnsiChar; buffoutSize: PInteger; key: Byte; packetId: Byte): Integer;
-  cdecl; external LIBNAME name '_pangya_client_encrypt'
+  cdecl; external LIBNAME name _pangya_client_encrypt
   {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
 function pangyaServerEncrypt(buffin: PAnsiChar; size: Integer; buffout:
   PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer;
-  cdecl; external LIBNAME name '_pangya_server_encrypt'
+  cdecl; external LIBNAME name _pangya_server_encrypt
   {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
 function pangyaServerDecrypt(buffin: PAnsiChar; size: Integer;
   buffout: PPAnsiChar; buffoutSize: PInteger; key: Byte): Integer;
-  cdecl; external LIBNAME name '_pangya_server_decrypt'
+  cdecl; external LIBNAME name _pangya_server_decrypt
   {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
 procedure pangyaFree(buffout: PPansiChar);
-  cdecl; external LIBNAME name '_pangya_free'
+  cdecl; external LIBNAME name _pangya_free
   {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
 function pangyaDeserialize(value: UInt32): UInt32;
-  cdecl; external LIBNAME name '_pangya_deserialize'
+  cdecl; external LIBNAME name _pangya_deserialize
   {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
 function TCryptLib.ClientDecrypt(data: AnsiString; key: Byte): AnsiString;

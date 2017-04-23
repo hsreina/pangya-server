@@ -30,10 +30,8 @@ uses
   LoginPlayer in 'Server\Login\LoginPlayer.pas',
   LoginServer in 'Server\Login\LoginServer.pas',
   SyncUser in 'Server\Sync\SyncUser.pas',
-{$IFDEF SYNC_SERVER}
   Database in 'Server\Sync\Database.pas',
   SyncServer in 'Server\Sync\SyncServer.pas',
-{$ENDIF}
   GameServerPlayer in 'Server\Game\GameServerPlayer.pas',
   GameServer in 'Server\Game\GameServer.pas',
   LobbiesList in 'Server\Game\LobbiesList.pas',
@@ -103,8 +101,9 @@ var
   command: string;
 
 begin
-  ReportMemoryLeaksOnShutdown := DebugHook <> 0;
-
+{$IFDEF MSWINDOWS}
+	ReportMemoryLeaksOnShutdown := DebugHook <> 0;
+{$ENDIF}
   try
     serverApp := TServerApp.Create;
 

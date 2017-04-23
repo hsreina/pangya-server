@@ -3,15 +3,9 @@ unit ServerApp;
 interface
 
 uses
-{$IFDEF LOGIN_SERVER}
   LoginServer,
-{$ENDIF}
-{$IFDEF GAME_SERVER}
   GameServer,
-{$ENDIF}
-{$IFDEF SYNC_SERVER}
   SyncServer,
-{$ENDIF}
   CryptLib, DataChecker, IffManager, SysUtils, Logging;
 
 type
@@ -21,9 +15,7 @@ type
 
       var m_loginServer: TLoginServer;
       var m_gameServer: TGameServer;
-{$IFDEF SYNC_SERVER}
       var m_synServer: TSyncServer;
-{$ENDIF}
       var m_cryptLib: TCryptLib;
       var m_dataChecker: TDataChecker;
       var m_iffManager: TIffManager;
