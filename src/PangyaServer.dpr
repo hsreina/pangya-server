@@ -94,7 +94,8 @@ uses
   Types.Vector3 in 'Types\Types.Vector3.pas',
   PacketsDef in 'Packets\PacketsDef.pas',
   PacketData in 'Packets\PacketData.pas',
-  ServerApp in 'ServerApp.pas';
+  ServerApp in 'ServerApp.pas',
+  PlayerMoneyPacket in 'Packets\Server\PlayerMoneyPacket.pas';
 
 var
   serverApp: TServerApp;

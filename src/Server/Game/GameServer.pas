@@ -78,10 +78,11 @@ type
       procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerSetAssistMode(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestGuildListSearch(const client: TGameClient; const packetReader: TPacketReader);
+      procedure HandlePlayerCharMastery(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerCreateGuild(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerCheckGuildName(const client: TGameClient; const packetReader: TPacketReader);
-      procedure HandlePlayerRequestJoinGuild(const client: TGameClient; const packetReader: TPacketReader);      
-	  procedure HandlePlayerRequestGuildList(const client: TGameClient; const packetReader: TPacketReader);
+      procedure HandlePlayerRequestJoinGuild(const client: TGameClient; const packetReader: TPacketReader);
+      procedure HandlePlayerRequestGuildList(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestAchievements(const client: TGameClient; const packetReader: TPacketReader);
@@ -131,7 +132,8 @@ uses Logging, ConsolePas, utils, PacketData, defs,
         PlayerCharacter, GameServerExceptions,
   PlayerAction, Types.Vector3, PlayerData, BongdatriShop, PlayerEquipment,
   PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem,
-  IffManager.HairStyle, PlayerItem, PlayerGenericData, PlayerItems;
+  IffManager.HairStyle, PlayerItem, PlayerGenericData, PlayerItems,
+  PlayerMoneyPacket;
 
 constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
 begin
@@ -500,6 +502,7 @@ var
   writeInfo: Boolean;
   character: TPlayerCharacter;
   totalCost: UInt32;
+  packetWriter: TPacketWriter;
 begin
   self.Log('TGameServer.HandlePlayerBuyItem', TLogType_not);
 
@@ -726,12 +729,9 @@ begin
     #$00#$00#$00#$00#$00#$00#$00#$00
   );
 
-  // Pangs and cookies info
-  client.Send(
-    #$C8#$00 +
-    self.Write(client.Data.data.playerInfo2.pangs, 8) +
-    self.Write(client.Data.Cookies, 8)
-  );
+  packetWriter := TPlayerMoneyPacket.CreateForPlayer(client.data);
+  client.Send(packetWriter);
+  packetWriter.Free;
 
   {
     0x01: purchase failed
@@ -1117,6 +1117,53 @@ begin
   client.Send(#$EB#$01#$00#$00#$00#$00#$00);
 end;
 
+procedure TGameServer.HandlePlayerCharMastery(const client: TGameClient; const packetReader: TPacketReader);
+var
+  packetWriter: TPacketWriter;
+begin
+  Console.Log('TGameServer.HandlePlayerCharMastery', C_BLUE);
+  packetReader.Log;
+             //hsreina
+  {
+  client.Send(
+    #$16#$02#$D2#$6E#$FE#$58#$01#$00#$00#$00#$02#$84#$00#$40#$6C#$4A +
+    #$C7#$00#$00#$00#$00#$00#$00#$03#$00#$00#$00#$04#$00#$00#$00#$01 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+  }
+
+  {
+  client.Send(
+    #$2E#$02#$00#$00#$00#$00
+  );
+  }
+  {
+  client.Send(
+    #$20#$02#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+  }
+
+  packetWriter := TPlayerMoneyPacket.CreateForPlayer(client.data);
+  client.Send(packetWriter);
+  packetWriter.Free;
+
+  {
+  client.Send(
+    #$16#$02#$D3#$6E#$FE#$58#$01#$00#$00#$00#$C9#$00#$00#$00#$04#$B9 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$01#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+  }
+
+  // confirm action
+  client.Send(
+    #$6F#$02#$00#$00#$00#$00#$00#$00#$00#$00
+  );
+
+end;
+
 procedure TGameServer.HandlePlayerRequestGuildListSearch(const client: TGameClient; const packetReader: TPacketReader);
 var
   keyword: AnsiString;
@@ -1337,6 +1384,8 @@ var
 begin
   Console.Log('TGameServer.HandlePlayerRequestAchievements', C_BLUE);
 
+  packetReader.Log;
+
   if not packetReader.ReadUInt32(something) then
   begin
     Console.Error('Faield to read something');
@@ -1345,10 +1394,8 @@ begin
 
   console.Log(Format('something %x', [something]));
 
-  {
-    supposed to send all achievement data here
-    packet $022D (check the logs)
-  }
+  // Achievements
+  client.Send(GetDataFromFile('../data/achievements.dbg'));
 
   client.Send(#$2C#$02 + #$00#$00#$00#$00);
 end;
@@ -1457,6 +1504,7 @@ var
   count: UInt32;
   itemInfo: TRecycleItemInfo;
   I: Integer;
+  packetWriter: TPacketWriter;
 begin
   Console.Log('TGameServer.HandlePlayerRecycleItem', C_BLUE);
   {
@@ -1483,12 +1531,9 @@ begin
     console.Log(Format('Un %x', [itemInfo.Un]));
   end;
 
-  // Pangs and cookies info
-  client.Send(
-    #$C8#$00 +
-    self.Write(client.Data.data.playerInfo2.pangs, 8) +
-    self.Write(client.Data.Cookies, 8)
-  );
+  packetWriter := TPlayerMoneyPacket.CreateForPlayer(client.data);
+  client.Send(packetWriter);
+  packetWriter.Free;
 
   // again this transaction
   client.Send(
@@ -1917,6 +1962,7 @@ var
   mailTo: AnsiString;
   mailBody: AnsiString;
   un1, un2: UInt32;
+  packetWriter: TPacketWriter;
 begin
   Console.Log('TGameServer.HandlerPlayerSendMail', C_BLUE);
 
@@ -1939,12 +1985,9 @@ begin
   console.Log(Format('mailTo : %s', [mailto]));
   console.Log(Format('mailBody : %s', [mailBody]));
 
-  // Should Send Pang left
-  client.Send(
-    #$C8#$00 +
-    self.Write(client.Data.data.playerInfo2.pangs, 8) +
-    self.Write(client.Data.Cookies, 8)
-  );
+  packetWriter := TPlayerMoneyPacket.CreateForPlayer(client.data);
+  client.Send(packetWriter);
+  packetWriter.Free;
 
   // Shound send a transaction result
   client.Send(
@@ -2565,6 +2608,10 @@ begin
     TCGPID.PLAYER_GUILD_LIST_SEARCH:
     begin
       self.HandlePlayerRequestGuildListSearch(client, packetReader);
+    end;
+    TCGPID.PLAYER_CHAR_MASTERY:
+    begin
+      self.HandlePlayerCharMastery(client, packetReader);
     end
     else begin
       try

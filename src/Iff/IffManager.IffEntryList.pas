@@ -15,6 +15,7 @@ uses
   IffManager.DataCheck, System.Zip;
 
 type
+
   TIffEntryList<PartData: record; DataClass: TIffEntry<PartData>, constructor> = class
     private
       var m_entriesCount: UInt16;
@@ -30,7 +31,7 @@ type
       function Load(const zip: TZipFile; const filename: string): Boolean; overload;
       function GetByIffId(iffId: UInt32): TIffEntrybase;
       function TryGetByIffId(iffid: UInt32; var entry: TIffEntrybase): Boolean;
-
+      property IsLoaded: Boolean read m_loaded;
   end;
 
 implementation
