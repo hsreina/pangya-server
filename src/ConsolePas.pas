@@ -163,7 +163,7 @@ begin
   begin
     if pos = 0 then
       nlog := nlog + IntToHex(offset, 8) + '  ';
-    PUTF8Char(@value)[0] := data[x];
+    value := byte(data[x]);
     nlog := nlog + IntToHex(value, 2) + ' ';
     if pos = 7 then
     begin
