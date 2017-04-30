@@ -24,12 +24,13 @@ type
     procedure TestServerDecrypt;
     procedure TestClientEncrypt;
     procedure TestServerEncrypt;
+    procedure TestClientDecrypt2;
   end;
 
 implementation
 
 uses
-  SysUtils, Utils;
+  SysUtils, Utils, Types.PangyaBytes;
 
 const
   encryptedClientData: AnsiString =
@@ -52,7 +53,6 @@ const
 procedure TestTCryptLib.SetUp;
 begin
   FCryptLib := TCryptLib.Create;
-  FCryptLib.Init;
 end;
 
 procedure TestTCryptLib.TearDown;
@@ -64,6 +64,22 @@ end;
 procedure TestTCryptLib.TestClientDecrypt;
 begin
   Check(FCryptLib.ClientDecrypt(encryptedClientData, 0) = decryptedClientData, 'Failed to decrypted client data');
+end;
+
+procedure TestTCryptLib.TestClientDecrypt2;
+var
+  buffinSize, buffoutSize: UInt32;
+  buffin, buffout: TPangyaBytes;
+  strBuffout: AnsiString;
+begin
+  buffinSize := Length(encryptedClientData);
+  setLength(buffin, buffinSize);
+  move(encryptedClientData[1], buffin[0], buffinSize);
+  FCryptLib.ClientDecrypt2(buffin, buffout, 0);
+  buffoutSize := Length(buffout);
+  setLength(strBuffout, buffoutSize);
+  move(buffout[0], strBuffout[1], buffoutSize);
+  Check(strBuffout = decryptedClientData, 'Failed to decrypt client data');
 end;
 
 procedure TestTCryptLib.TestServerDecrypt;

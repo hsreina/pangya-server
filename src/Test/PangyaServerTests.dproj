@@ -109,8 +109,7 @@
         <DCCReference Include="TestCryptLib.pas"/>
         <DCCReference Include="..\CryptLib.pas"/>
         <DCCReference Include="Tools\Utils.pas"/>
-        <DCCReference Include="..\PangyaBuffer.pas"/>
-        <DCCReference Include="..\PangyaPacketsDef.pas"/>
+        <DCCReference Include="..\Types\Types.PangyaBytes.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

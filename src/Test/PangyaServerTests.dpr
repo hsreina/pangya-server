@@ -19,8 +19,7 @@ uses
   TestCryptLib in 'TestCryptLib.pas',
   CryptLib in '..\CryptLib.pas',
   Utils in 'Tools\Utils.pas',
-  PangyaBuffer in '..\PangyaBuffer.pas',
-  PangyaPacketsDef in '..\PangyaPacketsDef.pas';
+  Types.PangyaBytes in '..\Types\Types.PangyaBytes.pas';
 
 {$R *.RES}
 
