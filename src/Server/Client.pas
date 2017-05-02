@@ -104,8 +104,9 @@ begin
   inherited Create;
   m_context := AContext;
   m_useIndy := true;
+  Randomize;
   rnd := Byte(Random(9));
-  //m_key := 2;
+  m_key := rnd;
   m_cryptLib := cryptLib;
 end;
 

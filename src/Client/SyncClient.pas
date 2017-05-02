@@ -17,6 +17,7 @@ type
 
   TSyncClientReadEvent = procedure (sender: TObject; const packetReader: TPacketReader) of object;
   TSyncClientConnectEvent = procedure (sender: TObject) of object;
+  TSyncClientConnectSuccessEvent = procedure (sender: TObject) of object;
 
   TSyncClient = class (TLogging)
     private
@@ -32,6 +33,9 @@ type
       var FOnConnect: TSyncClientConnectEvent;
       procedure TriggerOnConnect;
 
+      var FOnConnectSuccess: TSyncClientConnectSuccessEvent;
+      procedure TriggerConnectSuccess;
+
       procedure OnClientRead(const sender: TObject; const buffer: TPangyaBytes);
       procedure OnClientConnected(Sender: TObject);
       procedure OnClientDisconnected(Sender: TObject);
@@ -43,6 +47,7 @@ type
 
       property OnRead: TSyncClientReadEvent read FOnRead write FOnRead;
       property OnConnect: TSyncClientConnectEvent read FOnConnect write FOnConnect;
+      property OnConnectSuccess: TSyncClientConnectSuccessEvent read FOnConnectSuccess write FOnConnectSuccess;
 
       procedure SetPort(port: integer);
       procedure SetHost(host: string);
@@ -149,6 +154,14 @@ begin
   end;
 end;
 
+procedure TSyncClient.TriggerConnectSuccess;
+begin
+  if Assigned(FOnConnectSuccess) then
+  begin
+    FOnConnectSuccess(self);
+  end;
+end;
+
 procedure TSyncClient.OnClientRead(const sender: TObject; const buffer: TPangyaBytes);
 var
   packetReader: TPacketReader;
@@ -159,6 +172,12 @@ begin
     packetReader := TPacketReader.CreateFromPangyaBytes(buffer);
     HandleReadKey(packetReader);
     packetReader.Free;
+
+    if m_haveKey then
+    begin
+      TriggerConnectSuccess;
+    end;
+
   end else
   begin
     m_cryptLib.ClientDecrypt2(buffer, decryptedBuffer, m_key);

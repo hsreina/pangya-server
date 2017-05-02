@@ -25,6 +25,7 @@ type
 
       procedure OnReceiveSyncData(const packetReader: TPacketReader); virtual; abstract;
       procedure OnConnect(sender: TObject); virtual; abstract;
+      procedure OnConnectSuccess(sender: TObject); virtual; abstract;
 
     private
       var m_syncClient: TSyncClient;
@@ -46,6 +47,7 @@ begin
   m_syncClient := TSyncClient.Create(name + 'SyncableServer', cryptLib);
   m_syncClient.OnRead := self.OnClientRead;
   m_syncClient.OnConnect := OnConnect;
+  m_syncClient.OnConnectSuccess := OnConnectSuccess;
 end;
 
 destructor TSyncableServer<ClientType>.Destroy;

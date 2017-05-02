@@ -38,6 +38,7 @@ type
       procedure HandlerSyncServerPlayerSync(const packetReader: TPacketReader; const client: TGameClient);
       procedure HandleSyncServerPlayerAction(const packetReader: TPacketReader; const client: TGameClient);
       procedure SendServerList(const packetReader: TPacketReader; const client: TGameClient);
+      procedure OnConnectSuccess(sender: TObject); override;
 
       procedure SavePlayer(const client: TGameClient);
 
@@ -223,6 +224,12 @@ procedure TGameServer.OnStart;
 begin
   self.Log('TGameServer.OnStart', TLogType_not);
   self.StartSyncClient;
+end;
+
+procedure TGameServer.OnConnectSuccess(sender: TObject);
+begin
+  Console.Log('TGameServer.OnConnectSuccess', C_BLUE);
+  self.RegisterServer;
 end;
 
 procedure TGameServer.Sync(const client: TGameClient; const packetReader: TPacketReader);
@@ -2815,7 +2822,6 @@ end;
 procedure TGameServer.OnConnect(sender: TObject);
 begin
   self.Log('TGameServer.OnConnect', TLogType_not);
-  self.RegisterServer;
 end;
 
 procedure TGameServer.OnReceiveSyncData(const packetReader: TPacketReader);

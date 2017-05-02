@@ -31,6 +31,7 @@ type
       procedure OnDestroyClient(const client: TLoginClient); override;
       procedure OnStart; override;
 
+      procedure OnConnectSuccess(sender: TObject);  override;
       procedure Sync(const client: TLoginClient; const packetReader: TPacketReader); overload;
       procedure PlayerSync(const packetReader: TPacketReader; const client: TLoginClient);
       procedure ServerPlayerAction(const packetReader: TPacketReader; const client: TLoginClient);
@@ -148,7 +149,6 @@ end;
 procedure TLoginServer.OnConnect(sender: TObject);
 begin
   self.Log('TLoginServer.OnConnect', TLogType_not);
-  self.RegisterServer;
 end;
 
 procedure TLoginServer.OnReceiveSyncData(const packetReader: TPacketReader);
@@ -236,6 +236,12 @@ begin
       self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
     end;
   end;
+end;
+
+procedure TLoginServer.OnConnectSuccess(sender: TObject);
+begin
+  Console.Log('TLoginServer.OnConnectSuccess', C_BLUE);
+  self.RegisterServer;
 end;
 
 procedure TLoginServer.Sync(const client: TLoginClient; const packetReader: TPacketReader);
