@@ -13,7 +13,7 @@ interface
 uses Logging, Client, Generics.Collections, CryptLib,
   SyncClient, defs, PacketData, SysUtils,
   SerialList, IdTcpServer, IdContext, IdGlobal, IdComponent,
-  IdSchedulerOfThreadPool, SyncObjs, PacketReader, Types.PangyaBytes;
+  IdSchedulerOfThreadPool, PacketReader, Types.PangyaBytes, MMO.Lock;
 
 type
 
@@ -28,7 +28,7 @@ type
       var m_clients: TSerialList<TClient<ClientType>>;
       var m_server: TIdTCPServer;
       var m_idSchedulerOfThreadPool: TIdSchedulerOfThreadPool;
-      var m_lock: TCriticalSection;
+      var m_lock: TLock;
       var m_cryptLib: TCryptLib;
       var m_maxPlayers: UInt32;
 
@@ -79,7 +79,7 @@ constructor TServer<ClientType>.Create(cryptLib: TCryptLib);
 begin
   inherited Create;
   console.Log('TServer<ClientType>.Create');
-  m_lock := TCriticalSection.Create;
+  m_lock := TLock.Create(True);
   m_cryptLib := cryptLib;
   m_clients := TSerialList<TClient<ClientType>>.Create;
   m_server := TIdTCPServer.Create(nil);
@@ -193,45 +193,45 @@ procedure TServer<ClientType>.ServerOnConnect(AContext: TIdContext);
 var
   client: TClient<ClientType>;
 begin
-  m_lock.Enter;
-  Console.Log('TServer<ClientType>.ServerOnConnect');
-  if (m_clients.Count >= m_maxPlayers) then
+  m_lock.Synchronyze(procedure
   begin
-    Console.Log('Server full', C_RED);
-    AContext.Connection.Disconnect;
-    Exit;
-  end;
+    Console.Log('TServer<ClientType>.ServerOnConnect');
+    if (m_clients.Count >= m_maxPlayers) then
+    begin
+      Console.Log('Server full', C_RED);
+      AContext.Connection.Disconnect;
+      Exit;
+    end;
 
-  client := TClient<ClientType>.Create(AContext, m_cryptLib);
-  client.ID := m_clients.Add(client);
-  SetContextData(AContext, client);
-  OnClientConnect(client);
-  m_lock.leave;
+    client := TClient<ClientType>.Create(AContext, m_cryptLib);
+    client.ID := m_clients.Add(client);
+    SetContextData(AContext, client);
+    OnClientConnect(client);
+  end);
 end;
 
 procedure TServer<ClientType>.ServerOnDisconnect(AContext: TIdContext);
 var
   client: TClient<ClientType>;
 begin
-  m_lock.Enter;
-  //Console.Log('TServer<ClientType>.ServerOnDisconnect');
-
-  client := GetClientByContext(AContext);
-  if client = nil then
+  m_lock.Synchronyze(procedure
   begin
-    Exit;
-  end;
+    client := GetClientByContext(AContext);
+    if client = nil then
+    begin
+      Exit;
+    end;
 
-  SetContextData(AContext, nil);
+    SetContextData(AContext, nil);
 
-  self.OnClientDisconnect(client);
+    self.OnClientDisconnect(client);
 
-  m_clients.Remove(client);
+    m_clients.Remove(client);
 
-  OnDestroyClient(client);
+    OnDestroyClient(client);
 
-  client.Free;
-  m_lock.Leave;
+    client.Free;
+  end);
 end;
 
 procedure TServer<ClientType>.ServerOnExecute(AContext: TIdContext);
@@ -276,9 +276,10 @@ begin
 
   packetReader := TPacketReader.CreateFromPangyaBytes(decryptedBuffer);
 
-  m_lock.Enter;
-  OnReceiveClientData(client, packetReader);
-  m_lock.Leave;
+  m_lock.Synchronyze(procedure
+  begin
+    OnReceiveClientData(client, packetReader);
+  end);
 
   packetReader.Free;
 end;
@@ -286,18 +287,19 @@ end;
 procedure TServer<ClientType>.ServerOnException(AContext: TIdContext;
   AException: Exception);
 begin
-  m_lock.Enter;
-  //Console.Log('TServer<ClientType>.ServerOnException');
-  m_lock.Leave;
+  m_lock.Synchronyze(procedure
+  begin
+    //Console.Log('TServer<ClientType>.ServerOnException');
+  end);
 end;
 
 procedure TServer<ClientType>.ServerOnStatus(ASender: TObject;
   const AStatus: TIdStatus; const AStatusText: string);
 begin
-  m_lock.Enter;
-  //Console.Log('TServer<ClientType>.ServerOnStatus');
-
-  m_lock.Leave;
+  m_lock.Synchronyze(procedure
+  begin
+    //Console.Log('TServer<ClientType>.ServerOnStatus');
+  end);
 end;
 
 function TServer<ClientType>.GetClientByContext(AContext: TIdContext): TClient<ClientType>;
