@@ -95,7 +95,9 @@ uses
   PacketsDef in 'Packets\PacketsDef.pas',
   PacketData in 'Packets\PacketData.pas',
   ServerApp in 'ServerApp.pas',
-  PlayerMoneyPacket in 'Packets\Server\PlayerMoneyPacket.pas';
+  PlayerMoneyPacket in 'Packets\Server\PlayerMoneyPacket.pas',
+  MMO.Lock in 'Libs\MMO\MMO.Lock.pas',
+  MMO.OptionalCriticalSection in 'Libs\MMO\MMO.OptionalCriticalSection.pas';
 
 var
   serverApp: TServerApp;
