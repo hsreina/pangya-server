@@ -193,7 +193,7 @@ procedure TServer<ClientType>.ServerOnConnect(AContext: TIdContext);
 var
   client: TClient<ClientType>;
 begin
-  m_lock.Synchronyze(procedure
+  m_lock.Synchronize(procedure
   begin
     Console.Log('TServer<ClientType>.ServerOnConnect');
     if (m_clients.Count >= m_maxPlayers) then
@@ -214,7 +214,7 @@ procedure TServer<ClientType>.ServerOnDisconnect(AContext: TIdContext);
 var
   client: TClient<ClientType>;
 begin
-  m_lock.Synchronyze(procedure
+  m_lock.Synchronize(procedure
   begin
     client := GetClientByContext(AContext);
     if client = nil then
@@ -276,7 +276,7 @@ begin
 
   packetReader := TPacketReader.CreateFromPangyaBytes(decryptedBuffer);
 
-  m_lock.Synchronyze(procedure
+  m_lock.Synchronize(procedure
   begin
     OnReceiveClientData(client, packetReader);
   end);
@@ -287,7 +287,7 @@ end;
 procedure TServer<ClientType>.ServerOnException(AContext: TIdContext;
   AException: Exception);
 begin
-  m_lock.Synchronyze(procedure
+  m_lock.Synchronize(procedure
   begin
     //Console.Log('TServer<ClientType>.ServerOnException');
   end);
@@ -296,7 +296,7 @@ end;
 procedure TServer<ClientType>.ServerOnStatus(ASender: TObject;
   const AStatus: TIdStatus; const AStatusText: string);
 begin
-  m_lock.Synchronyze(procedure
+  m_lock.Synchronize(procedure
   begin
     //Console.Log('TServer<ClientType>.ServerOnStatus');
   end);

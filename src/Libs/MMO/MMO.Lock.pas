@@ -14,7 +14,7 @@ type
     public
       constructor Create(enabled: Boolean);
       destructor Destroy; override;
-      procedure Synchronyze(const callback: TAnonymousProcedure);
+      procedure Synchronize(const callback: TAnonymousProcedure);
   end;
 
 implementation
@@ -31,7 +31,7 @@ begin
   inherited;
 end;
 
-procedure TLock.Synchronyze(const callback: TAnonymousProcedure);
+procedure TLock.Synchronize(const callback: TAnonymousProcedure);
 begin
   m_criticalSection.Enter;
   try
