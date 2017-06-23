@@ -18,8 +18,8 @@ type
       function Seek(offset, origin: integer): integer;
       function GetSize: UInt32;
 
-      function ToStr: AnsiString;
-      function GetRemainingData: AnsiString;
+      function ToStr: UTF8String;
+      function GetRemainingData: UTF8String;
       procedure Log;
   end;
 
@@ -46,7 +46,7 @@ end;
 
 function TPacket.Seek(offset, origin: integer): integer;
 begin
-  Exit(m_data.Seek(offset, origin));
+  Exit(m_data.Seek(Int64(offset), origin));
 end;
 
 function TPacket.GetSize;
@@ -59,12 +59,12 @@ var
   previousOffset: integer;
   Size: integer;
 begin
-  previousOffset := m_data.Seek(0, 1);
-  m_data.Seek(0, 0);
+  previousOffset := m_data.Seek(Int64(0), 1);
+  m_data.Seek(Int64(0), 0);
   size := m_data.Size;
   SetLength(Result, size);
   m_data.Read(Result[1], size);
-  m_data.Seek(previousOffset, 0);
+  m_data.Seek(Int64(previousOffset), 0);
 end;
 
 function TPacket.GetRemainingData;
@@ -72,11 +72,11 @@ var
   previousOffset: integer;
   Size: integer;
 begin
-  previousOffset := m_data.Seek(0, 1);
+  previousOffset := m_data.Seek(Int64(0), 1);
   size := m_data.Size - previousOffset;
   SetLength(Result, size);
   m_data.Read(Result[1], size);
-  m_data.Seek(previousOffset, 0);
+  m_data.Seek(Int64(previousOffset), 0);
 end;
 
 procedure TPacket.Log;

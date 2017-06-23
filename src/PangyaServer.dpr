@@ -13,8 +13,10 @@ program PangyaServer;
 
 uses
   {$IFDEF DEBUG}
+  	{$IFNDEF LINUX}
   FastMM4 in 'Libs\Fast\FastMM4.pas',
   FastMM4Messages in 'Libs\Fast\FastMM4Messages.pas',
+  	{$ENDIF}
   {$ENDIF }
   {$IFDEF RELEASE}
   msvcrtMM,

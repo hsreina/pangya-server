@@ -17,12 +17,12 @@ type
 
   TSkinData = packed Record // $DC
     var base: TIffbase;
-    var un: array [0..$4B] of AnsiChar;
+    var un: array [0..$4B] of UTF8Char;
   End;
 
   TSkinDataClass = class (TIffEntry<TSkinData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
   end;
 
   TSkin = class (TIffEntryList<TSkinData, TSkinDataClass>)
@@ -32,7 +32,7 @@ type
 
 implementation
 
-constructor TSkinDataClass.Create(data: PAnsiChar);
+constructor TSkinDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;

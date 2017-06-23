@@ -15,8 +15,8 @@ uses PlayerGenericData;
 type
   TPlayerCaddieData = packed record
     var base: TPlayerItemBase;
-    var Un: array [0..$10] of AnsiChar;
-    function ToStr: AnsiString;
+    var Un: array [0..$10] of UTF8Char;
+    function ToStr: UTF8String;
   end;
 
   TPlayerCaddie = class (TPlayerGenericData<TPlayerCaddieData>)
@@ -51,7 +51,7 @@ begin
 end;
 }
 
-function TPlayerCaddieData.ToStr: AnsiString;
+function TPlayerCaddieData.ToStr: UTF8String;
 begin
   setLength(result, sizeof(TPlayerCaddieData));
   move(self, result[1], sizeof(TPlayerCaddieData));

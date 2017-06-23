@@ -22,16 +22,16 @@ type
 
   TSetItemData = packed Record // $F4
     var base: TIffbase;
-    var un1: array [0..$17] of AnsiChar;
+    var un1: array [0..$17] of UTF8Char;
     var nbOfItems : cardinal;
     var IffIds: array [0..$7] of cardinal;
-    var un2: array [0..7] of AnsiChar;
+    var un2: array [0..7] of UTF8Char;
     var counts: array [0..$7] of cardinal;
   End;
 
   TSetItemDataClass = class (TIffEntry<TSetItemData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
 
       // Will do better later
       function GetItem(index: UInt32): TItemSetDetail;
@@ -44,7 +44,7 @@ type
 
 implementation
 
-constructor TSetItemDataClass.Create(data: PAnsiChar);
+constructor TSetItemDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;

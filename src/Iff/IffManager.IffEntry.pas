@@ -18,10 +18,10 @@ type
   TIffbase = packed record // $90
     var enabled: UInt32;
     var iffId: UInt32;
-    var name: array [0..$27] of AnsiChar;
+    var name: array [0..$27] of UTF8Char;
     var minLVL: Byte;
-    var preview: array [0..$27] of AnsiChar;
-    var un1: array [0..2] of AnsiChar;
+    var preview: array [0..$27] of UTF8Char;
+    var un1: array [0..2] of UTF8Char;
     var itemPrice: UInt32;
     var discountPrice: UInt32;
     var usedPrice: UInt32;
@@ -31,7 +31,7 @@ type
     var time: UInt8;
     var tpItemCount: UInt32;
     var tpCount: UInt32;
-    var un2: array [0..$1B] of AnsiChar;
+    var un2: array [0..$1B] of UTF8Char;
   end;
 
   TIffEntry<EntryDataType: record> = class (TIffEntrybase)
@@ -40,7 +40,7 @@ type
       function GetBase: PIffbase;
       const m_dataSize = SizeOf(EntryDataType);
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
       destructor Destroy; override;
       function GetIffId: UInt32; override;
       function IsEnabled: Boolean; override;
@@ -57,7 +57,7 @@ type
 
 implementation
 
-constructor TIffEntry<EntryDataType>.Create(data: PAnsiChar);
+constructor TIffEntry<EntryDataType>.Create(data: PUTF8Char);
 begin
   inherited Create;
   move(data^, m_data, m_dataSize);

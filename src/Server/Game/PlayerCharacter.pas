@@ -18,7 +18,7 @@ type
     var IffId: Uint32;
     var Id: Uint32;
     var HairColor: UInt8;
-    var Un: array [0..$1F7] of AnsiChar;
+    var Un: array [0..$1F7] of UTF8Char;
   end;
 
   TPlayerCharacterData = TGenericDataRecord<TPlayerCharacterBaseData>;

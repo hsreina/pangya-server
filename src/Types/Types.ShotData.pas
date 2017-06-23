@@ -9,10 +9,10 @@ type
     connectionId: UInt32;
     pos: TVector3;
     fallType: UInt8;
-    un: array [0..1] of ansichar;
+    un: array [0..1] of UTF8Char;
     pangs: integer;
     bonusPangs: integer;
-    un1: array [0..$1C] of AnsiChar;
+    un1: array [0..$1C] of UTF8Char;
   end;
 
 implementation

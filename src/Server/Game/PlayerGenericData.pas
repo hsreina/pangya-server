@@ -20,7 +20,7 @@ type
 
   TGenericPacketData = class
     public
-      function ToPacketData: AnsiString; virtual; abstract;
+      function ToPacketData: UTF8String; virtual; abstract;
   end;
 
   TGenericPacketDatabase = class (TGenericPacketData)
@@ -43,8 +43,8 @@ type
       destructor Destroy; override;
 
       procedure Clear;
-      function ToPacketData: AnsiString; override;
-      function Load(packetData: AnsiString): Boolean;
+      function ToPacketData: UTF8String; override;
+      function Load(packetData: UTF8String): Boolean;
       function GetData: DataType;
 
       function GetIffId: UInt32; override;
@@ -83,13 +83,13 @@ begin
   FillChar(m_data, SizeOf(DataType), 0);
 end;
 
-function TPlayerGenericData<DataType>.ToPacketData: AnsiString;
+function TPlayerGenericData<DataType>.ToPacketData: UTF8String;
 begin
   setLength(result, sizeof(DataType));
   move(m_data, result[1], sizeof(DataType));
 end;
 
-function TPlayerGenericData<DataType>.Load(packetData: AnsiString): Boolean;
+function TPlayerGenericData<DataType>.Load(packetData: UTF8String): Boolean;
 const
   sizeOfData = SizeOf(DataType);
 begin

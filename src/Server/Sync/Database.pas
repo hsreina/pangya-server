@@ -30,28 +30,28 @@ type
       constructor Create;
       destructor Destroy; override;
 
-      function DoLogin(userName: AnsiString; password: AnsiString): Integer;
-      function GetPlayerId(userName: AnsiString): Integer;
-      function NicknameAvailable(nickname: AnsiString): Boolean;
-      function SetNickname(playerId: integer; nickname: AnsiString): Boolean;
-      function PlayerHaveNicknameSet(playerUID: AnsiString): Boolean;
-      function PlayerHaveAnInitialCharacter(playerUID: AnsiString): Boolean;
+      function DoLogin(userName: UTF8String; password: UTF8String): Integer;
+      function GetPlayerId(userName: UTF8String): Integer;
+      function NicknameAvailable(nickname: UTF8String): Boolean;
+      function SetNickname(playerId: integer; nickname: UTF8String): Boolean;
+      function PlayerHaveNicknameSet(playerUID: UTF8String): Boolean;
+      function PlayerHaveAnInitialCharacter(playerUID: UTF8String): Boolean;
 
       procedure SavePlayerCharacters(playerId: integer; playerCharacters: TPlayerCharacters);
-      function GetPlayerCharacters(playerId: integer): AnsiString;
+      function GetPlayerCharacters(playerId: integer): UTF8String;
 
       procedure SavePlayerItems(playerId: integer; playerItems: TPlayerItems);
-      function GetPlayerItems(playerId: integer): AnsiString;
+      function GetPlayerItems(playerId: integer): UTF8String;
 
       procedure SavePlayerMascots(playerId: integer; playerMascots: TPlayerMascots);
-      function GetPlayerMascots(playerId: integer): AnsiString;
+      function GetPlayerMascots(playerId: integer): UTF8String;
 
       procedure SavePlayerCaddies(playerId: integer; playerCaddies: TPlayerCaddies);
-      function GetPlayerCaddies(playerId: integer): AnsiString;
+      function GetPlayerCaddies(playerId: integer): UTF8String;
 
       procedure SavePlayerMainSave(playerId: integer; playerData: TPlayerData);
-      function GetPlayerMainSave(playerid: integer): AnsiString;
-      function CreatePlayer(login, password: AnsiString; playerData: TPlayerData): Integer;
+      function GetPlayerMainSave(playerid: integer): UTF8String;
+      function CreatePlayer(login, password: UTF8String; playerData: TPlayerData): Integer;
 
       procedure Init;
   end;
@@ -142,7 +142,7 @@ begin
   end;
 end;
 
-function TDatabase.NicknameAvailable(nickname: AnsiString): Boolean;
+function TDatabase.NicknameAvailable(nickname: UTF8String): Boolean;
 var
   query: TFDQuery;
 begin
@@ -159,7 +159,7 @@ begin
   end;
 end;
 
-function TDatabase.PlayerHaveAnInitialCharacter(playerUID: AnsiString): Boolean;
+function TDatabase.PlayerHaveAnInitialCharacter(playerUID: UTF8String): Boolean;
 var
   query: TFDQuery;
 begin
@@ -176,7 +176,7 @@ begin
   end;
 end;
 
-function TDatabase.PlayerHaveNicknameSet(playerUID: AnsiString): Boolean;
+function TDatabase.PlayerHaveNicknameSet(playerUID: UTF8String): Boolean;
 var
   query: TFDQuery;
 begin
@@ -193,7 +193,7 @@ begin
   end;
 end;
 
-function TDatabase.SetNickname(playerId: integer; nickname: AnsiString): Boolean;
+function TDatabase.SetNickname(playerId: integer; nickname: UTF8String): Boolean;
 var
   query: TFDQuery;
 begin
@@ -211,7 +211,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerId(userName: AnsiString): Integer;
+function TDatabase.GetPlayerId(userName: UTF8String): Integer;
 var
   query: TFDQuery;
 begin
@@ -235,7 +235,7 @@ begin
 end;
 
 
-function TDatabase.DoLogin(userName: AnsiString; password: AnsiString): integer;
+function TDatabase.DoLogin(userName: UTF8String; password: UTF8String): integer;
 var
   query: TFDQuery;
 begin
@@ -245,7 +245,7 @@ begin
     query.Connection := m_connection;
     query.SQL.Text := 'SELECT id FROM player WHERE login = :login/* AND password = :password*/ LIMIT 1';
     query.ParamByName('login').AsAnsiString := userName;
-    //query.ParamByName('password').AsAnsiString := password;
+    //query.ParamByName('password').AsUTF8String := password;
     query.Open();
 
     if query.RowsAffected = 1 then
@@ -267,7 +267,7 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'INSERT OR REPLACE INTO "character" ("player_id", "data") VALUES (:player_id, :data)';
-    query.ParamByName('data').AsBlob := playerCharacters.ToPacketData;
+    query.ParamByName('data').AsBlob := TFDByteString(playerCharacters.ToPacketData);
     query.ParamByName('player_id').AsInteger := playerId;
     query.ExecSQL;
   finally
@@ -276,7 +276,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerCharacters(playerId: integer): AnsiString;
+function TDatabase.GetPlayerCharacters(playerId: integer): UTF8String;
 var
   query: TFDQuery;
 begin
@@ -304,7 +304,7 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'UPDATE "player" SET data = :data WHERE id = :player_id;';
-    query.ParamByName('data').AsBlob := playerData.ToPacketData;
+    query.ParamByName('data').AsBlob := TFDByteString(playerData.ToPacketData);
     query.ParamByName('player_id').AsInteger := playerId;
     query.ExecSQL;
   finally
@@ -313,7 +313,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerMainSave(playerid: integer): AnsiString;
+function TDatabase.GetPlayerMainSave(playerid: integer): UTF8String;
 var
   query: TFDQuery;
 begin
@@ -335,7 +335,7 @@ begin
   end;
 end;
 
-function TDatabase.CreatePlayer(login, password: AnsiString; playerData: TPlayerData): Integer;
+function TDatabase.CreatePlayer(login, password: UTF8String; playerData: TPlayerData): Integer;
 var
   query: TFDQuery;
 begin
@@ -345,7 +345,7 @@ begin
     query.SQL.Text := 'INSERT INTO "player" ("login", "password", "data") VALUES (:login, :password, :data)';
     query.ParamByName('login').AsString := login;
     query.ParamByName('password').AsString := password;
-    query.ParamByName('data').AsBlob := playerData.ToPacketData;
+    query.ParamByName('data').AsBlob := TFDByteString(playerData.ToPacketData);
     query.ExecSQL;
 
     Result := m_connection.GetLastAutoGenValue('player');
@@ -365,7 +365,7 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'INSERT OR REPLACE INTO "items" ("player_id", "data") VALUES (:player_id, :data)';
-    query.ParamByName('data').AsBlob := playerItems.ToPacketData;
+    query.ParamByName('data').AsBlob := TFDByteString(playerItems.ToPacketData);
     query.ParamByName('player_id').AsInteger := playerId;
     query.ExecSQL;
   finally
@@ -374,7 +374,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerItems(playerId: integer): AnsiString;
+function TDatabase.GetPlayerItems(playerId: integer): UTF8String;
 var
   query: TFDQuery;
 begin
@@ -402,7 +402,7 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'INSERT OR REPLACE INTO "caddies" ("player_id", "data") VALUES (:player_id, :data)';
-    query.ParamByName('data').AsBlob := playerCaddies.ToPacketData;
+    query.ParamByName('data').AsBlob := TFDByteString(playerCaddies.ToPacketData);
     query.ParamByName('player_id').AsInteger := playerId;
     query.ExecSQL;
   finally
@@ -411,7 +411,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerCaddies(playerId: integer): AnsiString;
+function TDatabase.GetPlayerCaddies(playerId: integer): UTF8String;
 var
   query: TFDQuery;
 begin
@@ -439,7 +439,7 @@ begin
   try
     query.Connection := m_connection;
     query.SQL.Text := 'INSERT OR REPLACE INTO "mascots" ("player_id", "data") VALUES (:player_id, :data)';
-    query.ParamByName('data').AsBlob := playerMascots.ToPacketData;
+    query.ParamByName('data').AsBlob := TFDByteString(playerMascots.ToPacketData);
     query.ParamByName('player_id').AsInteger := playerId;
     query.ExecSQL;
   finally
@@ -448,7 +448,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerMascots(playerId: integer): AnsiString;
+function TDatabase.GetPlayerMascots(playerId: integer): UTF8String;
 var
   query: TFDQuery;
 begin

@@ -16,10 +16,10 @@ type
       function WriteInt64(const src: Int64): Boolean;
       function Write(const src; const count: UInt32): Boolean;
       function WriteDouble(const src: Double): boolean;
-      function WriteStr(const src: AnsiString): Boolean; overload;
-      function WriteStr(const src: AnsiString; count: UInt32): Boolean; overload;
-      function WriteStr(const src: AnsiString; count: UInt32; overflow: AnsiChar): Boolean; overload;
-      function WritePStr(const src: AnsiString): Boolean;
+      function WriteStr(const src: UTF8String): Boolean; overload;
+      function WriteStr(const src: UTF8String; count: UInt32): Boolean; overload;
+      function WriteStr(const src: UTF8String; count: UInt32; overflow: UTF8Char): Boolean; overload;
+      function WritePStr(const src: UTF8String): Boolean;
       function WriteAction(actionId: TSGPID): Boolean; overload;
       function WriteAction(actionId: TSSPID): Boolean; overload;
       function WriteAction(actionId: TSSAPID): Boolean; overload;
@@ -74,21 +74,21 @@ begin
   Exit(Write(src, 4));
 end;
 
-function TPacketWriter.WriteStr(const src: AnsiString): Boolean;
+function TPacketWriter.WriteStr(const src: UTF8String): Boolean;
 begin
   Exit(WriteStr(src, Length(src)));
 end;
 
-function TPacketWriter.WriteStr(const src: AnsiString; count: UInt32): Boolean;
+function TPacketWriter.WriteStr(const src: UTF8String; count: UInt32): Boolean;
 begin
   Exit(WriteStr(src, count, #$00));
 end;
 
-function TPacketWriter.WriteStr(const src: AnsiString; count: UInt32; overflow: AnsiChar): Boolean;
+function TPacketWriter.WriteStr(const src: UTF8String; count: UInt32; overflow: UTF8Char): Boolean;
 var
   dataSize: UInt32;
   remainingDataSize: integer;
-  remainningData: AnsiString;
+  remainningData: UTF8String;
 begin
   dataSize := Length(src);
   if dataSize < count then
@@ -102,7 +102,7 @@ begin
   end;
 end;
 
-function TPacketWriter.WritePStr(const src: AnsiString): Boolean;
+function TPacketWriter.WritePStr(const src: UTF8String): Boolean;
 var
   size: UInt16;
 begin

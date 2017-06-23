@@ -20,7 +20,7 @@ type
       var m_key: Byte;
       var m_context: TIdContext;
       var m_cryptLib: TCryptLib;
-      function FGetHost: AnsiString;
+      function FGetHost: UTF8String;
       var m_useIndy: Boolean;
     public
       constructor Create(const AContext: TIdContext; const cryptLib: TCryptLib); overload;
@@ -28,13 +28,13 @@ type
 
       function GetKey: Byte;
       procedure Send(data: TPacket; encrypt: Boolean = True); overload;
-      procedure Send(data: AnsiString); overload;
-      procedure Send(data: AnsiString; encrypt: Boolean); overload;
+      procedure Send(data: UTF8String); overload;
+      procedure Send(data: UTF8String; encrypt: Boolean); overload;
       function HasUID(playerUID: TPlayerUID): Boolean;
 
       procedure Disconnect;
 
-      property Host: AnsiString read FGetHost;
+      property Host: UTF8String read FGetHost;
 
       var Data: ClientType;
       var UID: TPlayerUID;
@@ -45,7 +45,7 @@ implementation
 
 uses ConsolePas;
 
-function TClient<ClientType>.FGetHost: AnsiString;
+function TClient<ClientType>.FGetHost: UTF8String;
 begin
   Exit('www.google.com');
   //Exit(m_socket.RemoteHost);
@@ -59,14 +59,14 @@ begin
   Send(data.ToStr, encrypt);
 end;
 
-procedure TClient<ClientType>.Send(data: AnsiString);
+procedure TClient<ClientType>.Send(data: UTF8String);
 begin
   self.Send(data, true);
 end;
 
-procedure TClient<ClientType>.Send(data: AnsiString; encrypt: Boolean);
+procedure TClient<ClientType>.Send(data: UTF8String; encrypt: Boolean);
 var
-  encrypted: AnsiString;
+  encrypted: UTF8String;
   tmp: TMemoryStream;
 begin
 

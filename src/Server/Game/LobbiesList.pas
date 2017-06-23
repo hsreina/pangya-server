@@ -29,7 +29,7 @@ type
       function GetPlayerLobby(const player: TGameClient): TLobby;
       function TryGetPlayerLobby(const player: TGameClient; var lobby: TLobby): Boolean;
       function GetPlayerGame(const player: TGameClient): TGame;
-      procedure Send(const data: AnsiString);
+      procedure Send(const data: UTF8String);
       function Build: TPacketData;
   end;
 
@@ -117,7 +117,7 @@ begin
   packetWriter.Free;
 end;
 
-procedure TLobbiesList.Send(const data: AnsiString);
+procedure TLobbiesList.Send(const data: UTF8String);
 var
   lobby: TLobby;
 begin

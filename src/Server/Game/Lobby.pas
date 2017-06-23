@@ -22,7 +22,7 @@ type
       var m_id: UInt8;
       var m_players: TPLayerList;
       var m_games: TGamesList;
-      var m_name: AnsiString;
+      var m_name: UTF8String;
 
       var m_maxPlayers: UInt16;
       var m_nullGame: TGame;
@@ -42,7 +42,7 @@ type
       procedure RemovePlayer(player: TGameClient);
       function GetGameById(gameId: Uint16): TGame;
       function GetPlayerGame(player: TGameClient): TGame;
-      procedure Send(data: AnsiString); overload;
+      procedure Send(data: UTF8String); overload;
       procedure Send(data: TPacket); overload;
 
       property Players: TPLayerList read m_players;
@@ -59,7 +59,7 @@ type
       procedure HandleAdminJoinGame(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const packetReader: TPacketReader);
 
-      constructor Create(lobbyName: AnsiString);
+      constructor Create(lobbyName: UTF8String);
       destructor Destroy; override;
   end;
 
@@ -161,7 +161,7 @@ begin
   Exit(m_games.GetGameById(gameId));
 end;
 
-procedure TLobby.Send(data: AnsiString);
+procedure TLobby.Send(data: UTF8String);
 var
   client: TGameClient;
 begin
@@ -240,7 +240,7 @@ var
   player: TGameClient;
   game: TGame;
   playersInList: UInt32;
-  outData: AnsiString;
+  outData: UTF8String;
   firstPacket: Boolean;
   gamesInList: UInt32;
 begin
@@ -263,12 +263,12 @@ begin
       if firstPacket then
       begin
         outdata := #$46#$00 + #$04
-          + ansichar(playersinlist) + outdata;
+          + UTF8Char(playersinlist) + outdata;
         firstPacket := false;
       end else
       begin
         outdata := #$46#$00 + #$05
-          + ansichar(playersinlist) + outdata;
+          + UTF8Char(playersinlist) + outdata;
       end;
       client.Send(outdata);
       playersinlist := 0;
@@ -278,7 +278,7 @@ begin
 
   if playersinlist > 0 then begin
     outdata := #$46#$00 + #$05 +
-      ansichar(playersinlist) +
+      UTF8Char(playersinlist) +
       outdata;
       client.Send(outdata);
   end;
@@ -303,11 +303,11 @@ begin
     begin
       if firstPacket then begin
         outdata := #$47#$00 +
-          ansichar(gamesInList) + #$00 + #$FF#$FF + outdata;
+          UTF8Char(gamesInList) + #$00 + #$FF#$FF + outdata;
         firstPacket := false;
       end else begin
         outdata := #$47#$00 +
-          ansichar(gamesInList) + #$00 + #$FF#$FF + outdata;
+          UTF8Char(gamesInList) + #$00 + #$FF#$FF + outdata;
       end;
       self.Send(outdata);
       gamesInList := 0;
@@ -317,7 +317,7 @@ begin
 
   if gamesInList > 0 then begin
     outdata := #$47#$0 +
-      ansichar(gamesInList) + #$01 + #$FF#$FF + outdata;
+      UTF8Char(gamesInList) + #$01 + #$FF#$FF + outdata;
       self.Send(outdata);
   end;
 
@@ -366,11 +366,11 @@ end;
 procedure TLobby.HandlePlayerCreateGame(const client: TGameClient; const packetReader: TPacketReader);
 var
   gameInfo: TPlayerCreateGameInfo;
-  gameName: AnsiString;
-  gamePassword: AnsiString;
+  gameName: UTF8String;
+  gamePassword: UTF8String;
   artifact: UInt32;
   game: TGame;
-  d: AnsiString;
+  d: UTF8String;
   res: TPacketWriter;
   args: TGameCreateArgs;
 begin
@@ -448,7 +448,7 @@ end;
 procedure TLobby.HandlePlayerJoinGame(const client: TGameClient; const packetReader: TPacketReader);
 var
   gameId: UInt16;
-  password: AnsiString;
+  password: UTF8String;
   game: TGame;
 begin
   Console.Log('TGameServer.HandlePlayerJoinGame', C_BLUE);

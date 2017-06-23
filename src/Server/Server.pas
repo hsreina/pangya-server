@@ -54,9 +54,9 @@ type
 
       function GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
 
-      function Write(const source; const count: UInt32): AnsiString;
-      function WritePStr(const str: AnsiString): AnsiString;
-      function FillStr(data: AnsiString; size: UInt32; withWhat: AnsiChar): AnsiString;
+      function Write(const source; const count: UInt32): UTF8String;
+      function WritePStr(const str: UTF8String): UTF8String;
+      function FillStr(data: UTF8String; size: UInt32; withWhat: UTF8Char): UTF8String;
 
       function Deserialize(value: UInt32): UInt32;
 
@@ -144,13 +144,13 @@ begin
   end;
 end;
 
-function TServer<ClientType>.Write(const source; const count: UInt32): AnsiString;
+function TServer<ClientType>.Write(const source; const count: UInt32): UTF8String;
 begin
   setlength(result, count);
   move(source, result[1], count);
 end;
 
-function TServer<ClientType>.WritePStr(const str: AnsiString): AnsiString;
+function TServer<ClientType>.WritePStr(const str: UTF8String): UTF8String;
 var
   size: UInt32;
 begin
@@ -158,7 +158,7 @@ begin
   Result :=  Write(size, 2) + str;
 end;
 
-function TServer<ClientType>.FillStr(data: AnsiString; size: UInt32; withWhat: AnsiChar): AnsiString;
+function TServer<ClientType>.FillStr(data: UTF8String; size: UInt32; withWhat: UTF8Char): UTF8String;
 begin
   while length(data) < size do
   begin
@@ -323,7 +323,8 @@ end;
 
 procedure TServer<ClientType>.SetContextData(AContext: TIdContext; data: TObject);
 begin
-  {$IFDEF USE_OBJECT_ARC}
+  {$IFDEF LINUX}
+  { $IFDEF USE_OBJECT_ARC}
   AContext.DataObject := data;
   {$ELSE}
   AContext.Data := data;
@@ -332,7 +333,8 @@ end;
 
 function TServer<ClientType>.GetContextData(AContext: TIdContext): TObject;
 begin
-  {$IFDEF USE_OBJECT_ARC}
+  {$IFDEF LINUX}
+  { $IFDEF USE_OBJECT_ARC}
   Exit(AContext.DataObject);
   {$ELSE}
   Exit(AContext.Data);

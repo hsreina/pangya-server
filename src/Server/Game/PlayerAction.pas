@@ -19,7 +19,7 @@ type
     lastAction: cardinal;
     pos: TVector3;
     procedure clear;
-    function toAnsiString: ansistring;
+    function toAnsiString: UTF8String;
   end;
 
 implementation
@@ -29,7 +29,7 @@ begin
   FillChar(self.lastAction, SizeOf(TPlayerAction), 0);
 end;
 
-function TPlayerAction.toAnsiString: ansistring;
+function TPlayerAction.toAnsiString: UTF8String;
 begin
   setLength(result, sizeof(TPlayerAction));
   move(lastAction, result[1], sizeof(TPlayerAction));

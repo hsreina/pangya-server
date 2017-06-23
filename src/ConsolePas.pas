@@ -29,11 +29,11 @@ type
     var m_lock: TCriticalSection;
   public
     { Public declarations }
-    function Log(data: string; p_color: cardinal): ansistring; overload;
-    function Log: ansistring; overload;
-    function Log(data: string): ansistring; overload;
-    function Log(data: string; pColor: TColor): ansistring; overload;
-    function Log(data: string; pColor: TColor; bold: boolean): ansistring; overload;
+    function Log(data: string; p_color: cardinal): UTF8String; overload;
+    function Log: UTF8String; overload;
+    function Log(data: string): UTF8String; overload;
+    function Log(data: string; pColor: TColor): UTF8String; overload;
+    function Log(data: string; pColor: TColor; bold: boolean): UTF8String; overload;
     procedure Error(data: string);
     procedure WriteDump(data: UTF8String);
     constructor Create;
@@ -67,7 +67,7 @@ begin
   inherited;
 end;
 
-function TConsole.log: ansistring;
+function TConsole.log: UTF8String;
 begin
   result := log('');
 end;
@@ -77,7 +77,7 @@ begin
   self.Log(data, C_RED);
 end;
 
-function TConsole.log(data: string; p_color: cardinal): ansistring;
+function TConsole.log(data: string; p_color: cardinal): UTF8String;
 var
   wColor: TColor;
 begin
@@ -91,12 +91,12 @@ begin
   log(data, wColor);
 end;
 
-function TConsole.Log(data: string): ansistring;
+function TConsole.Log(data: string): UTF8String;
 begin
   result := log(data, TColors.SysWindowText);
 end;
 
-function TConsole.log(data: string; pColor: TColor): ansistring;
+function TConsole.log(data: string; pColor: TColor): UTF8String;
 begin
   result := log(data, pColor, false);
 end;
@@ -124,7 +124,7 @@ end;
 {$ENDIF}
 
 // Uggly temporary fix to log from other threads
-function TConsole.log(data: string; pColor: TColor; bold: boolean): ansistring;
+function TConsole.log(data: string; pColor: TColor; bold: boolean): UTF8String;
 var
   currentThreadId: UInt32;
 begin

@@ -13,7 +13,7 @@ interface
 type
   TPlayerUID = record
     var id: UInt32;
-    var login: AnsiString;
+    var login: UTF8String;
     procedure SetId(id: integer);
   end;
 

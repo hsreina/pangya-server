@@ -17,12 +17,12 @@ type
 
   TCharacterData = packed Record // $18C
     var base: TIffbase;
-    var un1: array [0..$FB] of AnsiChar;
+    var un1: array [0..$FB] of UTF8Char;
   End;
 
   TCharacterDataClass = class (TIffEntry<TCharacterData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
   end;
 
   TCharacter = class (TIffEntryList<TCharacterData, TCharacterDataClass>)
@@ -31,7 +31,7 @@ type
 
 implementation
 
-constructor TCharacterDataClass.Create(data: PAnsiChar);
+constructor TCharacterDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;

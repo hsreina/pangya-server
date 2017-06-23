@@ -42,9 +42,9 @@ type
 
       procedure RegisterServer;
 
-      var m_host: AnsiString;
+      var m_host: UTF8String;
       var m_port: Integer;
-      var m_name: AnsiString;
+      var m_name: UTF8String;
 
     public
       procedure Debug;
@@ -97,7 +97,7 @@ begin
   self.Log('TLoginServer.OnConnectClient', TLogType_not);
   player := TLoginPlayer.Create;
   client.Data := player;
-  client.Send(#$00#$0B#$00#$00#$00#$00 + ansichar(client.GetKey) + #$00#$00#$00#$0F#$27#$00#$00, false);
+  client.Send(#$00#$0B#$00#$00#$00#$00 + UTF8Char(client.GetKey) + #$00#$00#$00#$0F#$27#$00#$00, false);
 end;
 
 procedure TLoginServer.OnClientDisconnect(const client: TLoginClient);
@@ -114,7 +114,7 @@ end;
 procedure TLoginServer.PlayerSync(const packetReader: TPacketReader; const client: TLoginClient);
 var
   playerUID: TPlayerUID;
-  test: AnsiString;
+  test: UTF8String;
 begin
   self.Log('TLoginServer.PlayerSync', TLogType_not);
   // Then forward the data
@@ -266,7 +266,7 @@ end;
 
 procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const packetReader: TPacketReader);
 var
-  login: AnsiString;
+  login: UTF8String;
 begin
   packetReader.ReadPStr(login);
   client.UID.login := login;
@@ -284,7 +284,7 @@ end;
 
 procedure TLoginServer.HandlePlayerReconnect(const client: TLoginClient; const packetReader: TPacketReader);
 var
-  userLogin, token: AnsiString;
+  userLogin, token: UTF8String;
   un: UInt32;
 begin
   Console.Log('TLoginServer.HandlePlayerReconnect', C_BLUE);

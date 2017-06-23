@@ -17,12 +17,12 @@ type
 
   TItemData = packed Record // $E0
     var base: TIffbase;
-    var un: array [0..$4F] of AnsiChar;
+    var un: array [0..$4F] of UTF8Char;
   End;
 
   TItemDataClass = class (TIffEntry<TItemData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
   end;
 
   TItem = class (TIffEntryList<TItemData, TItemDataClass>)
@@ -32,7 +32,7 @@ type
 
 implementation
 
-constructor TItemDataClass.Create(data: PAnsiChar);
+constructor TItemDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;
