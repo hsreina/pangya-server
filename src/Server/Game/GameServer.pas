@@ -45,7 +45,7 @@ type
       var m_lobbies: TLobbiesList;
 
       var m_host: UTF8String;
-      var m_port: Integer;
+      var m_port: UInt16;
       var m_name: UTF8String;
 
       var m_iffManager: TIffManager;
@@ -167,12 +167,15 @@ begin
   self.SetPort(m_port);
 
   m_host := iniFile.ReadString('game', 'host', '127.0.0.1');
-  self.setSyncHost(m_host);
 
   m_name := iniFile.ReadString('game', 'name', 'GameServer');
 
   self.SetSyncPort(
     iniFile.ReadInteger('sync', 'port', 7998)
+  );
+
+  self.setSyncHost(
+    iniFile.ReadString('sync', 'host', '127.0.0.1')
   );
 
   iniFile.Free;
@@ -2813,7 +2816,7 @@ begin
   res.WriteUInt16(0);
   res.WriteUInt8(2); // Login server
   res.WritePStr(m_name);
-  res.WriteInt32(m_port);
+  res.WriteUInt16(m_port);
   res.WritePStr(m_host);
   self.Sync(res);
   res.Free;

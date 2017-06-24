@@ -29,7 +29,7 @@ type
       var Registred: Boolean;
       var Name: UTF8String;
       var Host: UTF8String;
-      var Port: Integer;
+      var Port: UInt16;
   end;
 
 implementation

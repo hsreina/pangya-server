@@ -38,7 +38,7 @@ type
 
       var Data: ClientType;
       var UID: TPlayerUID;
-      var ID: integer;
+      var ID: UInt32;
   end;
 
 implementation

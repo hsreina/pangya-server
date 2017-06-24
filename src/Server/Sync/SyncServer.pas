@@ -701,7 +701,7 @@ begin
   if
     not packetReader.Read(clientType, 1) or
     not packetReader.ReadPStr(client.Data.Name) or
-    not packetReader.ReadInt32(client.Data.Port) or
+    not packetReader.ReadUInt16(client.Data.Port) or
     not packetReader.ReadPStr(client.Data.Host)
   then
   begin

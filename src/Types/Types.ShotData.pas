@@ -11,7 +11,7 @@ type
     fallType: UInt8;
     un: array [0..1] of UTF8Char;
     pangs: integer;
-    bonusPangs: integer;
+    bonusPangs: Int32;
     un1: array [0..$1C] of UTF8Char;
   end;
 

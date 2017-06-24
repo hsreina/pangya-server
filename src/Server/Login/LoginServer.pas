@@ -43,7 +43,7 @@ type
       procedure RegisterServer;
 
       var m_host: UTF8String;
-      var m_port: Integer;
+      var m_port: UInt16;
       var m_name: UTF8String;
 
     public
@@ -258,7 +258,7 @@ begin
   res.WriteUInt16(0);
   res.WriteUInt8(1); // Login server
   res.WritePStr(m_name);
-  res.WriteInt32(m_port);
+  res.WriteUInt16(m_port);
   res.WritePStr(m_host);
   self.Sync(res);
   res.Free;
