@@ -13,16 +13,19 @@ program PangyaServer;
 
 uses
   {$IFDEF DEBUG}
-  	{$IFNDEF LINUX}
-      {$IFNDEF WIN64}
+
+    {$IFDEF MSWINDOWS}
+      {$IFDEF CPUX32}
   FastMM4 in 'Libs\Fast\FastMM4.pas',
   FastMM4Messages in 'Libs\Fast\FastMM4Messages.pas',
       {$ENDIF}
-  	{$ENDIF}
-  {$ENDIF }
+    {$ENDIF}
+  {$ENDIF}
+
   {$IFDEF RELEASE}
   msvcrtMM,
-  {$ENDIF }
+  {$ENDIF}
+
   SysUtils,
   ConsolePas in 'ConsolePas.pas',
   Logging in 'Logging.pas',

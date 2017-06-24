@@ -44,7 +44,11 @@ const _pangya_free = 'pangya_free';
 const _pangya_deserialize = 'pangya_deserialize';
 {$ENDIF}
 {$IFDEF MSWINDOWS}
+{$IFDEF CPUX64}
+const LIBNAME = 'pang64.dll';
+{$ELSE}
 const LIBNAME = 'pang.dll';
+{$ENDIF}
 const _pangya_client_decrypt = 'pangya_client_decrypt';
 const _pangya_client_encrypt = 'pangya_client_encrypt';
 const _pangya_server_encrypt = 'pangya_server_encrypt';

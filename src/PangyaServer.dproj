@@ -3,12 +3,12 @@
         <ProjectGuid>{9B131009-D847-4EB5-A007-A14A11F5FD8C}</ProjectGuid>
         <MainSource>PangyaServer.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">GameServer</Config>
-        <TargetedPlatforms>133</TargetedPlatforms>
+        <Config Condition="'$(Config)'==''">AllInOne</Config>
+        <TargetedPlatforms>135</TargetedPlatforms>
         <AppType>Console</AppType>
         <FrameworkType>None</FrameworkType>
         <ProjectVersion>18.2</ProjectVersion>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -166,7 +166,6 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="Libs\Fast\FastMM4.pas"/>
-        <DCCReference Include="Libs\Fast\FastMM4Messages.pas"/>
         <DCCReference Include="ConsolePas.pas"/>
         <DCCReference Include="Logging.pas"/>
         <DCCReference Include="CryptLib.pas"/>
@@ -290,7 +289,7 @@
                 <Platform value="Linux64">True</Platform>
                 <Platform value="OSX32">True</Platform>
                 <Platform value="Win32">True</Platform>
-                <Platform value="Win64">False</Platform>
+                <Platform value="Win64">True</Platform>
             </Platforms>
             <Deployment Version="3">
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">
