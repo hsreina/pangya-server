@@ -56,8 +56,8 @@ type
   end;
 
   TGameCreateArgs = record
-    var Name: UTF8String;
-    var Password: UTF8String;
+    var Name: RawByteString;
+    var Password: RawByteString;
     var GameInfo: TPlayerCreateGameInfo;
     var Artifact: UInt32;
     var GrandPrix: UInt32;
@@ -67,8 +67,8 @@ type
     private
       var m_id: UInt16;
       var m_players: TPlayersList;
-      var m_name: UTF8String;
-      var m_password: UTF8String;
+      var m_name: RawByteString;
+      var m_password: RawByteString;
       var m_gameInfo: TPlayerCreateGameInfo;
       var m_artifact: UInt32;
       var m_gameStarted: Boolean;
@@ -98,7 +98,7 @@ type
       procedure ReorderPlayers(setRoomMaster: Boolean);
       procedure SendWind;
 
-      function playersData: UTF8String;
+      function playersData: RawByteString;
 
       procedure HandlePlayerLoadingInfo(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerHoleInformations(const client: TGameClient; const packetReader: TPacketReader);
@@ -146,10 +146,10 @@ type
 
       function AddPlayer(player: TGameClient): Boolean;
       function RemovePlayer(player: TGameClient): Boolean;
-      function GameInformation: UTF8String;
-      function GameResume: UTF8String;
+      function GameInformation: RawByteString;
+      function GameResume: RawByteString;
       procedure GoToNextHole;
-      procedure Send(data: UTF8String); overload;
+      procedure Send(data: RawByteString); overload;
       procedure Send(data: TPacket); overload;
 
       procedure HandleRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const packetReader: TPacketReader);
@@ -400,7 +400,7 @@ begin
   end;
 end;
 
-function TGame.GameInformation: UTF8String;
+function TGame.GameInformation: RawByteString;
 var
   packet: TPacketWriter;
   pl: integer;
@@ -480,7 +480,7 @@ begin
   packet.Free;
 end;
 
-function TGame.GameResume: UTF8String;
+function TGame.GameResume: RawByteString;
 var
   packet: TPacketWriter;
   gameType: UInt8;
@@ -509,7 +509,7 @@ begin
   packet.Free;
 end;
 
-procedure TGame.Send(data: UTF8String);
+procedure TGame.Send(data: RawByteString);
 var
   client: TGameClient;
 begin
@@ -534,7 +534,7 @@ begin
   Exit(Uint16(m_players.Count));
 end;
 
-function TGame.playersData: UTF8String;
+function TGame.playersData: RawByteString;
 var
   player: TGameClient;
   clientPacket: TPacketWriter;
@@ -837,7 +837,7 @@ var
   nbOfActions: UInt8;
   action: UInt8;
   i: UInt8;
-  tmpStr: UTF8String;
+  tmpStr: RawByteString;
   tmpUInt8: UInt8;
   tmpUInt16: UInt16;
   tmpUInt32: UInt32;
@@ -1447,7 +1447,7 @@ end;
 
 procedure TGame.HandlePlayerEditShopName(const client: TGameClient; const packetReader: TPacketReader);
 var
-  shopName: UTF8String;
+  shopName: RawByteString;
   res: TPacketWriter;
 begin
   Console.Log('TGame.HandlePlayerEditShopName', C_BLUE);
@@ -1640,7 +1640,7 @@ end;
 procedure TGame.HandlePlayerShotData(const client: TGameClient; const packetReader: TPacketReader);
 var
   shotData: TShotData;
-  str: UTF8String;
+  str: RawByteString;
   res: TPacketWriter;
 begin
   console.Log('TGame.HandlePlayerShotData', C_BLUE);
@@ -1846,8 +1846,8 @@ var
   action: TPLAYER_ACTION;
   subAction: TPLAYER_ACTION_SUB;
   pos: TVector3;
-  tmp: UTF8String;
-  animationName: UTF8String;
+  tmp: RawByteString;
+  animationName: RawByteString;
   gamePlayer: TGameServerPlayer;
   test: TPlayerAction;
   res: TPacketWriter;

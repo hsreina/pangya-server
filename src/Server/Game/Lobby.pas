@@ -22,7 +22,7 @@ type
       var m_id: UInt8;
       var m_players: TPLayerList;
       var m_games: TGamesList;
-      var m_name: UTF8String;
+      var m_name: RawByteString;
 
       var m_maxPlayers: UInt16;
       var m_nullGame: TGame;
@@ -42,7 +42,7 @@ type
       procedure RemovePlayer(player: TGameClient);
       function GetGameById(gameId: Uint16): TGame;
       function GetPlayerGame(player: TGameClient): TGame;
-      procedure Send(data: UTF8String); overload;
+      procedure Send(data: RawByteString); overload;
       procedure Send(data: TPacket); overload;
 
       property Players: TPLayerList read m_players;
@@ -59,7 +59,7 @@ type
       procedure HandleAdminJoinGame(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const packetReader: TPacketReader);
 
-      constructor Create(lobbyName: UTF8String);
+      constructor Create(lobbyName: RawByteString);
       destructor Destroy; override;
   end;
 
@@ -161,7 +161,7 @@ begin
   Exit(m_games.GetGameById(gameId));
 end;
 
-procedure TLobby.Send(data: UTF8String);
+procedure TLobby.Send(data: RawByteString);
 var
   client: TGameClient;
 begin
@@ -240,7 +240,7 @@ var
   player: TGameClient;
   game: TGame;
   playersInList: UInt32;
-  outData: UTF8String;
+  outData: RawByteString;
   firstPacket: Boolean;
   gamesInList: UInt32;
 begin
@@ -366,11 +366,11 @@ end;
 procedure TLobby.HandlePlayerCreateGame(const client: TGameClient; const packetReader: TPacketReader);
 var
   gameInfo: TPlayerCreateGameInfo;
-  gameName: UTF8String;
-  gamePassword: UTF8String;
+  gameName: RawByteString;
+  gamePassword: RawByteString;
   artifact: UInt32;
   game: TGame;
-  d: UTF8String;
+  d: RawByteString;
   res: TPacketWriter;
   args: TGameCreateArgs;
 begin
@@ -448,7 +448,7 @@ end;
 procedure TLobby.HandlePlayerJoinGame(const client: TGameClient; const packetReader: TPacketReader);
 var
   gameId: UInt16;
-  password: UTF8String;
+  password: RawByteString;
   game: TGame;
 begin
   Console.Log('TGameServer.HandlePlayerJoinGame', C_BLUE);

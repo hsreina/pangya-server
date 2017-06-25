@@ -53,8 +53,8 @@ type
       procedure SetHost(host: string);
       procedure Start;
       procedure Stop;
-      procedure Send(data: UTF8String); overload;
-      procedure Send(data: UTF8String; encrypt: Boolean); overload;
+      procedure Send(data: RawByteString); overload;
+      procedure Send(data: RawByteString; encrypt: Boolean); overload;
     end;
 
   implementation
@@ -103,15 +103,15 @@ begin
   m_client.Host := host;
 end;
 
-procedure TSyncClient.Send(data: UTF8String);
+procedure TSyncClient.Send(data: RawByteString);
 begin
   self.Send(data, true);
 end;
 
-procedure TSyncClient.Send(data: UTF8String; encrypt: Boolean);
+procedure TSyncClient.Send(data: RawByteString; encrypt: Boolean);
 var
   tmp: TMemoryStream;
-  dataToSend: UTF8String;
+  dataToSend: RawByteString;
 begin
   if encrypt then
   begin

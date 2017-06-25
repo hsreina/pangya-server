@@ -15,7 +15,7 @@ type
   PPlayerEquipedItems = ^TPlayerEquipedItems;
   TPlayerEquipedItems = packed record
     var ItemIffId : array [0..9] of UInt32;
-    function ToPacketData: UTF8String;
+    function ToPacketData: RawByteString;
   end;
 
   TDecorations = packed record
@@ -50,18 +50,18 @@ type
     var un26: UInt32;
     var un27: UInt32;
 
-    function ToPacketData: UTF8String;
+    function ToPacketData: RawByteString;
   end;
 
 implementation
 
-function TPlayerEquipment.ToPacketData: UTF8String;
+function TPlayerEquipment.ToPacketData: RawByteString;
 begin
   setLength(result, sizeof(TPlayerEquipment));
   move(caddieId, result[1], sizeof(TPlayerEquipment));
 end;
 
-function TPlayerEquipedItems.ToPacketData: UTF8String;
+function TPlayerEquipedItems.ToPacketData: RawByteString;
 begin
   setLength(result, sizeof(TPlayerEquipedItems));
   move(ItemIffId[0], result[1], sizeof(TPlayerEquipedItems));

@@ -21,17 +21,17 @@ type
   TEvent<T> = procedure(enventObject: T) of object;
   TEvent2<T1, T2> = procedure(enventObject1: T1; eventObject2: T2) of object;
 
-function GetDataFromfile(filePath: string): UTF8String; overload;
-function GetDataFromfile(filePath: string; offset: UInt32): UTF8String; overload;
-procedure WriteDataToFile(filePath: string; data: UTF8String);
+function GetDataFromfile(filePath: string): RawByteString; overload;
+function GetDataFromfile(filePath: string; offset: UInt32): RawByteString; overload;
+procedure WriteDataToFile(filePath: string; data: RawByteString);
 
 implementation
 
-function GetDataFromfile(filePath: string): UTF8String;
+function GetDataFromfile(filePath: string): RawByteString;
 var
   x: THandle;
   size: Integer;
-  data: UTF8String;
+  data: RawByteString;
 begin
   x := fileopen(filepath, $40);
   size := fileseek(x, 0, 2);
@@ -42,11 +42,11 @@ begin
   Exit(data);
 end;
 
-function GetDataFromfile(filePath: string; offset: UInt32): UTF8String;
+function GetDataFromfile(filePath: string; offset: UInt32): RawByteString;
 var
   x: THandle;
   size: Integer;
-  data: UTF8String;
+  data: RawByteString;
 begin
   x := fileopen(filepath, $40);
   size := fileseek(x, 0, 2);
@@ -58,7 +58,7 @@ begin
   Exit(data);
 end;
 
-procedure WriteDataToFile(filePath: string; data: UTF8String);
+procedure WriteDataToFile(filePath: string; data: RawByteString);
 var
   x: THandle;
   size: Integer;

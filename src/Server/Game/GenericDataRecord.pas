@@ -15,8 +15,8 @@ type
   TGenericDataRecord<DataType> = packed record
     var Data: DataType;
     procedure Clear;
-    function ToPacketData: UTF8String;
-    function Load(packetData: UTF8String): Boolean;
+    function ToPacketData: RawByteString;
+    function Load(packetData: RawByteString): Boolean;
   end;
 
 implementation
@@ -26,13 +26,13 @@ begin
   FillChar(Data, SizeOf(DataType), 0);
 end;
 
-function TGenericDataRecord<DataType>.ToPacketData: UTF8String;
+function TGenericDataRecord<DataType>.ToPacketData: RawByteString;
 begin
   setLength(result, sizeof(DataType));
   move(Data, result[1], sizeof(DataType));
 end;
 
-function TGenericDataRecord<DataType>.Load(packetData: UTF8String): Boolean;
+function TGenericDataRecord<DataType>.Load(packetData: RawByteString): Boolean;
 const
   sizeOfData = SizeOf(DataType);
 begin

@@ -79,8 +79,8 @@ type
     procedure Clear;
     function ToPacketData: TPacketData;
     procedure Load(packetData: TPacketData);
-    procedure SetLogin(login: UTF8String);
-    procedure SetNickname(nickname: UTF8String);
+    procedure SetLogin(login: RawByteString);
+    procedure SetNickname(nickname: RawByteString);
   end;
 
 implementation
@@ -98,12 +98,12 @@ begin
   move(self.playerInfo1.game, result[1], sizeOfTPlayerData);
 end;
 
-procedure TPlayerData.Load(packetData: UTF8String);
+procedure TPlayerData.Load(packetData: TPacketData);
 begin
   move(packetData[1], self.playerInfo1.game, SizeOf(TPlayerData));
 end;
 
-procedure TPlayerData.SetLogin(login: UTF8String);
+procedure TPlayerData.SetLogin(login: RawByteString);
 var
   size: Integer;
 begin
@@ -113,7 +113,7 @@ begin
   move(login[1], self.playerInfo1.login[0], size);
 end;
 
-procedure TPlayerData.SetNickname(nickname: UTF8String);
+procedure TPlayerData.SetNickname(nickname: RawByteString);
 var
   size: Integer;
 begin

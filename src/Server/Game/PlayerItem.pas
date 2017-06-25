@@ -39,7 +39,7 @@ uses ConsolePas;
 
 constructor TPlayerItem.Create;
 var
-  uccCode: UTF8String;
+  uccCode: RawByteString;
 begin
   inherited;
   //uccCode := '11111111';

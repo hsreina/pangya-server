@@ -29,13 +29,13 @@ type
     var m_lock: TCriticalSection;
   public
     { Public declarations }
-    function Log(data: string; p_color: cardinal): UTF8String; overload;
-    function Log: UTF8String; overload;
-    function Log(data: string): UTF8String; overload;
-    function Log(data: string; pColor: TColor): UTF8String; overload;
-    function Log(data: string; pColor: TColor; bold: boolean): UTF8String; overload;
+    function Log(data: string; p_color: cardinal): RawByteString; overload;
+    function Log: RawByteString; overload;
+    function Log(data: string): RawByteString; overload;
+    function Log(data: string; pColor: TColor): RawByteString; overload;
+    function Log(data: string; pColor: TColor; bold: boolean): RawByteString; overload;
     procedure Error(data: string);
-    procedure WriteDump(data: UTF8String);
+    procedure WriteDump(data: RawByteString);
     constructor Create;
     destructor Destroy; override;
   end;
@@ -67,7 +67,7 @@ begin
   inherited;
 end;
 
-function TConsole.log: UTF8String;
+function TConsole.log: RawByteString;
 begin
   result := log('');
 end;
@@ -77,7 +77,7 @@ begin
   self.Log(data, C_RED);
 end;
 
-function TConsole.log(data: string; p_color: cardinal): UTF8String;
+function TConsole.log(data: string; p_color: cardinal): RawByteString;
 var
   wColor: TColor;
 begin
@@ -91,12 +91,12 @@ begin
   log(data, wColor);
 end;
 
-function TConsole.Log(data: string): UTF8String;
+function TConsole.Log(data: string): RawByteString;
 begin
   result := log(data, TColors.SysWindowText);
 end;
 
-function TConsole.log(data: string; pColor: TColor): UTF8String;
+function TConsole.log(data: string; pColor: TColor): RawByteString;
 begin
   result := log(data, pColor, false);
 end;
@@ -124,7 +124,7 @@ end;
 {$ENDIF}
 
 // Uggly temporary fix to log from other threads
-function TConsole.log(data: string; pColor: TColor; bold: boolean): UTF8String;
+function TConsole.log(data: string; pColor: TColor; bold: boolean): RawByteString;
 var
   currentThreadId: UInt32;
 begin
@@ -144,9 +144,9 @@ begin
   m_lock.Leave;
 end;
 
-procedure TConsole.writeDump(data: UTF8String);
+procedure TConsole.writeDump(data: RawByteString);
 var
-  nlog: UTF8String;
+  nlog: RawByteString;
   offset: UInt32;
   x, y: integer;
   value, pos: byte;

@@ -46,9 +46,9 @@ type
       var Cookies: Int64;
       var Action: TPlayerAction;
 
-      function GameInformation: UTF8String; overload;
-      function GameInformation(level: UInt8): UTF8String; overload;
-      function LobbyInformations: UTF8String;
+      function GameInformation: RawByteString; overload;
+      function GameInformation(level: UInt8): RawByteString; overload;
+      function LobbyInformations: RawByteString;
 
       function SubStractIffEntryPrice(iffEntry: TIffEntrybase; quandtity: UInt32): Boolean;
       function AddPangs(amount: UInt32): Boolean;
@@ -113,12 +113,12 @@ begin
   Exit(@m_data);
 end;
 
-function TGameServerPlayer.GameInformation: UTF8String;
+function TGameServerPlayer.GameInformation: RawByteString;
 begin
   Exit(GameInformation(2));
 end;
 
-function TGameServerPlayer.GameInformation(level: UInt8): UTF8String;
+function TGameServerPlayer.GameInformation(level: UInt8): RawByteString;
 var
   packet: TPacketWriter;
 begin
@@ -174,7 +174,7 @@ begin
     );
 
     packet.WriteStr(
-      Action.toAnsiString
+      Action.toRawByteString
     );
 
     packet.WriteStr(
@@ -209,7 +209,7 @@ begin
   packet.free;
 end;
 
-function TGameServerPlayer.LobbyInformations: UTF8String;
+function TGameServerPlayer.LobbyInformations: RawByteString;
 var
   packet: TPacketWriter;
   tmpGameId: UInt16;

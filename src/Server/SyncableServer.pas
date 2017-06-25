@@ -15,7 +15,7 @@ uses SyncClient, Server, CryptLib, SysUtils, Packet, PacketReader;
 type
   TSyncableServer<ClientType> = class abstract (TServer<ClientType>)
     protected
-      procedure Sync(data: UTF8String); overload;
+      procedure Sync(data: RawByteString); overload;
       procedure Sync(data: TPacket); overload;
 
       procedure SetSyncPort(port: Integer);
@@ -63,7 +63,7 @@ begin
   m_syncClient.SetPort(port);
 end;
 
-procedure TSyncableServer<ClientType>.Sync(data: UTF8String);
+procedure TSyncableServer<ClientType>.Sync(data: RawByteString);
 begin
   self.Log('TSyncableServer<ClientType>.Sync', TLogType_not);
   m_syncClient.Send(data);

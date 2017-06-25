@@ -19,12 +19,12 @@ type
     IffId: UInt32;
     Un1: array [0..$9] of UTF8Char;
     Stats: TClubStats;
-    function ToStr: UTF8String;
+    function ToStr: RawByteString;
   end;
 
 implementation
 
-function TPlayerClubData.ToStr: UTF8String;
+function TPlayerClubData.ToStr: RawByteString;
 begin
   setLength(result, sizeof(TPlayerClubData));
   move(self, result[1], sizeof(TPlayerClubData));

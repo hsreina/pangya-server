@@ -43,7 +43,7 @@ type
       function GetContextData(AContext: TIdContext): TObject;
 
     protected
-      procedure SetPort(port: UInt16);
+      procedure SetPort(port: Integer);
       procedure Init; virtual; abstract;
 
       procedure OnClientConnect(const client: TClient<ClientType>); virtual; abstract;
@@ -54,9 +54,9 @@ type
 
       function GetClientByUID(UID: TPlayerUID): TClient<ClientType>;
 
-      function Write(const source; const count: UInt32): UTF8String;
-      function WritePStr(const str: UTF8String): UTF8String;
-      function FillStr(data: UTF8String; size: UInt32; withWhat: UTF8Char): UTF8String;
+      function Write(const source; const count: UInt32): RawByteString;
+      function WritePStr(const str: RawByteString): RawByteString;
+      function FillStr(data: RawByteString; size: UInt32; withWhat: UTF8Char): RawByteString;
 
       function Deserialize(value: UInt32): UInt32;
 
@@ -111,7 +111,7 @@ begin
   inherited;
 end;
 
-procedure TServer<ClientType>.SetPort(port: UInt16);
+procedure TServer<ClientType>.SetPort(port: Integer);
 begin
   Console.Log('TServer.SetPort', C_BLUE);
   Console.Log(Format('Port : %d', [port]));
@@ -144,13 +144,13 @@ begin
   end;
 end;
 
-function TServer<ClientType>.Write(const source; const count: UInt32): UTF8String;
+function TServer<ClientType>.Write(const source; const count: UInt32): RawByteString;
 begin
   setlength(result, count);
   move(source, result[1], count);
 end;
 
-function TServer<ClientType>.WritePStr(const str: UTF8String): UTF8String;
+function TServer<ClientType>.WritePStr(const str: RawByteString): RawByteString;
 var
   size: UInt32;
 begin
@@ -158,7 +158,7 @@ begin
   Result :=  Write(size, 2) + str;
 end;
 
-function TServer<ClientType>.FillStr(data: UTF8String; size: UInt32; withWhat: UTF8Char): UTF8String;
+function TServer<ClientType>.FillStr(data: RawByteString; size: UInt32; withWhat: UTF8Char): RawByteString;
 begin
   while length(data) < size do
   begin
@@ -323,8 +323,8 @@ end;
 
 procedure TServer<ClientType>.SetContextData(AContext: TIdContext; data: TObject);
 begin
-  {$IFDEF LINUX}
   { $IFDEF USE_OBJECT_ARC}
+  {$IFDEF LINUX}
   AContext.DataObject := data;
   {$ELSE}
   AContext.Data := data;
@@ -333,8 +333,8 @@ end;
 
 function TServer<ClientType>.GetContextData(AContext: TIdContext): TObject;
 begin
-  {$IFDEF LINUX}
   { $IFDEF USE_OBJECT_ARC}
+  {$IFDEF LINUX}
   Exit(AContext.DataObject);
   {$ELSE}
   Exit(AContext.Data);

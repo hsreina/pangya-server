@@ -16,7 +16,7 @@ type
   TPlayerCaddieData = packed record
     var base: TPlayerItemBase;
     var Un: array [0..$10] of UTF8Char;
-    function ToStr: UTF8String;
+    function ToStr: RawByteString;
   end;
 
   TPlayerCaddie = class (TPlayerGenericData<TPlayerCaddieData>)
@@ -51,7 +51,7 @@ begin
 end;
 }
 
-function TPlayerCaddieData.ToStr: UTF8String;
+function TPlayerCaddieData.ToStr: RawByteString;
 begin
   setLength(result, sizeof(TPlayerCaddieData));
   move(self, result[1], sizeof(TPlayerCaddieData));

@@ -30,28 +30,28 @@ type
       constructor Create;
       destructor Destroy; override;
 
-      function DoLogin(userName: UTF8String; password: UTF8String): Integer;
-      function GetPlayerId(userName: UTF8String): Integer;
-      function NicknameAvailable(nickname: UTF8String): Boolean;
-      function SetNickname(playerId: integer; nickname: UTF8String): Boolean;
-      function PlayerHaveNicknameSet(playerUID: UTF8String): Boolean;
-      function PlayerHaveAnInitialCharacter(playerUID: UTF8String): Boolean;
+      function DoLogin(userName: RawByteString; password: RawByteString): Integer;
+      function GetPlayerId(userName: RawByteString): Integer;
+      function NicknameAvailable(nickname: RawByteString): Boolean;
+      function SetNickname(playerId: integer; nickname: RawByteString): Boolean;
+      function PlayerHaveNicknameSet(playerUID: RawByteString): Boolean;
+      function PlayerHaveAnInitialCharacter(playerUID: RawByteString): Boolean;
 
       procedure SavePlayerCharacters(playerId: integer; playerCharacters: TPlayerCharacters);
-      function GetPlayerCharacters(playerId: integer): UTF8String;
+      function GetPlayerCharacters(playerId: integer): RawByteString;
 
       procedure SavePlayerItems(playerId: integer; playerItems: TPlayerItems);
-      function GetPlayerItems(playerId: integer): UTF8String;
+      function GetPlayerItems(playerId: integer): RawByteString;
 
       procedure SavePlayerMascots(playerId: integer; playerMascots: TPlayerMascots);
-      function GetPlayerMascots(playerId: integer): UTF8String;
+      function GetPlayerMascots(playerId: integer): RawByteString;
 
       procedure SavePlayerCaddies(playerId: integer; playerCaddies: TPlayerCaddies);
-      function GetPlayerCaddies(playerId: integer): UTF8String;
+      function GetPlayerCaddies(playerId: integer): RawByteString;
 
       procedure SavePlayerMainSave(playerId: integer; playerData: TPlayerData);
-      function GetPlayerMainSave(playerid: integer): UTF8String;
-      function CreatePlayer(login, password: UTF8String; playerData: TPlayerData): Integer;
+      function GetPlayerMainSave(playerid: integer): RawByteString;
+      function CreatePlayer(login, password: RawByteString; playerData: TPlayerData): Integer;
 
       procedure Init;
   end;
@@ -142,7 +142,7 @@ begin
   end;
 end;
 
-function TDatabase.NicknameAvailable(nickname: UTF8String): Boolean;
+function TDatabase.NicknameAvailable(nickname: RawByteString): Boolean;
 var
   query: TFDQuery;
 begin
@@ -159,7 +159,7 @@ begin
   end;
 end;
 
-function TDatabase.PlayerHaveAnInitialCharacter(playerUID: UTF8String): Boolean;
+function TDatabase.PlayerHaveAnInitialCharacter(playerUID: RawByteString): Boolean;
 var
   query: TFDQuery;
 begin
@@ -176,7 +176,7 @@ begin
   end;
 end;
 
-function TDatabase.PlayerHaveNicknameSet(playerUID: UTF8String): Boolean;
+function TDatabase.PlayerHaveNicknameSet(playerUID: RawByteString): Boolean;
 var
   query: TFDQuery;
 begin
@@ -193,7 +193,7 @@ begin
   end;
 end;
 
-function TDatabase.SetNickname(playerId: integer; nickname: UTF8String): Boolean;
+function TDatabase.SetNickname(playerId: integer; nickname: RawByteString): Boolean;
 var
   query: TFDQuery;
 begin
@@ -211,7 +211,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerId(userName: UTF8String): Integer;
+function TDatabase.GetPlayerId(userName: RawByteString): Integer;
 var
   query: TFDQuery;
 begin
@@ -235,7 +235,7 @@ begin
 end;
 
 
-function TDatabase.DoLogin(userName: UTF8String; password: UTF8String): integer;
+function TDatabase.DoLogin(userName: RawByteString; password: RawByteString): integer;
 var
   query: TFDQuery;
 begin
@@ -245,7 +245,7 @@ begin
     query.Connection := m_connection;
     query.SQL.Text := 'SELECT id FROM player WHERE login = :login/* AND password = :password*/ LIMIT 1';
     query.ParamByName('login').AsAnsiString := userName;
-    //query.ParamByName('password').AsUTF8String := password;
+    //query.ParamByName('password').AsAnsiString := password;
     query.Open();
 
     if query.RowsAffected = 1 then
@@ -276,7 +276,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerCharacters(playerId: integer): UTF8String;
+function TDatabase.GetPlayerCharacters(playerId: integer): RawByteString;
 var
   query: TFDQuery;
 begin
@@ -313,7 +313,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerMainSave(playerid: integer): UTF8String;
+function TDatabase.GetPlayerMainSave(playerid: integer): RawByteString;
 var
   query: TFDQuery;
 begin
@@ -335,7 +335,7 @@ begin
   end;
 end;
 
-function TDatabase.CreatePlayer(login, password: UTF8String; playerData: TPlayerData): Integer;
+function TDatabase.CreatePlayer(login, password: RawByteString; playerData: TPlayerData): Integer;
 var
   query: TFDQuery;
 begin
@@ -374,7 +374,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerItems(playerId: integer): UTF8String;
+function TDatabase.GetPlayerItems(playerId: integer): RawByteString;
 var
   query: TFDQuery;
 begin
@@ -411,7 +411,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerCaddies(playerId: integer): UTF8String;
+function TDatabase.GetPlayerCaddies(playerId: integer): RawByteString;
 var
   query: TFDQuery;
 begin
@@ -448,7 +448,7 @@ begin
   end;
 end;
 
-function TDatabase.GetPlayerMascots(playerId: integer): UTF8String;
+function TDatabase.GetPlayerMascots(playerId: integer): RawByteString;
 var
   query: TFDQuery;
 begin

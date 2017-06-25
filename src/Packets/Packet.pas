@@ -18,8 +18,8 @@ type
       function Seek(offset, origin: integer): integer;
       function GetSize: UInt32;
 
-      function ToStr: UTF8String;
-      function GetRemainingData: UTF8String;
+      function ToStr: RawByteString;
+      function GetRemainingData: RawByteString;
       procedure Log;
   end;
 

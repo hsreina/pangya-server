@@ -42,9 +42,9 @@ type
 
       procedure RegisterServer;
 
-      var m_host: UTF8String;
-      var m_port: UInt16;
-      var m_name: UTF8String;
+      var m_host: RawByteString;
+      var m_port: Integer;
+      var m_name: RawByteString;
 
     public
       procedure Debug;
@@ -114,7 +114,7 @@ end;
 procedure TLoginServer.PlayerSync(const packetReader: TPacketReader; const client: TLoginClient);
 var
   playerUID: TPlayerUID;
-  test: UTF8String;
+  test: RawByteString;
 begin
   self.Log('TLoginServer.PlayerSync', TLogType_not);
   // Then forward the data
@@ -258,7 +258,7 @@ begin
   res.WriteUInt16(0);
   res.WriteUInt8(1); // Login server
   res.WritePStr(m_name);
-  res.WriteUInt16(m_port);
+  res.WriteInt32(m_port);
   res.WritePStr(m_host);
   self.Sync(res);
   res.Free;
@@ -266,7 +266,7 @@ end;
 
 procedure TLoginServer.HandlePlayerLogin(const client: TLoginClient; const packetReader: TPacketReader);
 var
-  login: UTF8String;
+  login: RawByteString;
 begin
   packetReader.ReadPStr(login);
   client.UID.login := login;
@@ -284,7 +284,7 @@ end;
 
 procedure TLoginServer.HandlePlayerReconnect(const client: TLoginClient; const packetReader: TPacketReader);
 var
-  userLogin, token: UTF8String;
+  userLogin, token: RawByteString;
   un: UInt32;
 begin
   Console.Log('TLoginServer.HandlePlayerReconnect', C_BLUE);

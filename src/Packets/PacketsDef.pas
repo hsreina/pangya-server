@@ -187,32 +187,32 @@ type
 
 {$SCOPEDENUMS OFF}
 
-function WriteAction(actionId: TSGPID): UTF8String; overload;
-function WriteAction(actionId: TSSPID): UTF8String; overload;
-function WriteAction(actionId: TSSAPID): UTF8String; overload;
-function WriteAction(actionId: TCGPID): UTF8String; overload;
+function WriteAction(actionId: TSGPID): RawByteString; overload;
+function WriteAction(actionId: TSSPID): RawByteString; overload;
+function WriteAction(actionId: TSSAPID): RawByteString; overload;
+function WriteAction(actionId: TCGPID): RawByteString; overload;
 
 implementation
 
-function WriteAction(actionId: TSGPID): UTF8String;
+function WriteAction(actionId: TSGPID): RawByteString;
 begin
   setLength(result, 2);
   move(actionId, result[1], 2);
 end;
 
-function WriteAction(actionId: TSSPID): UTF8String;
+function WriteAction(actionId: TSSPID): RawByteString;
 begin
   setLength(result, 2);
   move(actionId, result[1], 2);
 end;
 
-function WriteAction(actionId: TSSAPID): UTF8String;
+function WriteAction(actionId: TSSAPID): RawByteString;
 begin
   setLength(result, 2);
   move(actionId, result[1], 2);
 end;
 
-function WriteAction(actionId: TCGPID): UTF8String;
+function WriteAction(actionId: TCGPID): RawByteString;
 begin
   setLength(result, 2);
   move(actionId, result[1], 2);

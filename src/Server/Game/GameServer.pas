@@ -44,20 +44,20 @@ type
 
       var m_lobbies: TLobbiesList;
 
-      var m_host: UTF8String;
-      var m_port: UInt16;
-      var m_name: UTF8String;
+      var m_host: RawByteString;
+      var m_port: Integer;
+      var m_name: RawByteString;
 
       var m_iffManager: TIffManager;
       var m_serverOptions: TServerOptions;
 
-      function LobbiesList: UTF8String;
+      function LobbiesList: RawByteString;
 
       procedure HandleLobbyRequests(const lobby: TLobby; const packetId: TCGPID; const client: TGameClient; const packetReader: TPacketReader);
       procedure HandleGameRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const packetReader: TPacketReader);
 
       procedure HandlePlayerLogin(const client: TGameClient; const packetReader: TPacketReader);
-      procedure HandleDebugCommands(const client: TGameClient; const packetReader: TPacketReader; msg: UTF8String);
+      procedure HandleDebugCommands(const client: TGameClient; const packetReader: TPacketReader; msg: RawByteString);
       procedure HandlerPlayerWhisper(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerSendMessage(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestServerTime(const client: TGameClient; const packetReader: TPacketReader);
@@ -112,13 +112,13 @@ type
       procedure HandlePlayerPlayBongdariShop(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestInfo(const client: TGameClient; const packetReader: TPacketReader);
 
-      procedure SendToGame(const client: TGameClient; data: UTF8String); overload;
+      procedure SendToGame(const client: TGameClient; data: RawByteString); overload;
       procedure SendToGame(const client: TGameClient; data: TPacket); overload;
-      procedure SendToLobby(const client: TGameClient; data: UTF8String); overload;
+      procedure SendToLobby(const client: TGameClient; data: RawByteString); overload;
       procedure SendToLobby(const client: TGameClient; data: TPacket); overload;
 
       function TryGetPlayerById(Id: UInt32; var player: TGameClient): Boolean;
-      function GetPlayerByNickname(nickname: UTF8String): TGameClient;
+      function GetPlayerByNickname(nickname: RawByteString): TGameClient;
 
       procedure RegisterServer;
 
@@ -152,7 +152,7 @@ begin
   inherited;
 end;
 
-function TGameServer.LobbiesList: UTF8String;
+function TGameServer.LobbiesList: RawByteString;
 begin
   Result := #$4D#$00 + m_lobbies.Build;
 end;
@@ -185,7 +185,7 @@ procedure TGameServer.OnClientConnect(const client: TGameClient);
 var
   player: TGameServerPlayer;
   res: TPacketWriter;
-  tmp: UTF8String;
+  tmp: RawByteString;
 begin
   self.Log('TGameServer.OnConnectClient', TLogType_not);
 
@@ -259,12 +259,12 @@ end;
 
 procedure TGameServer.HandlePlayerLogin(const client: TGameClient; const packetReader: TPacketReader);
 var
-  login: UTF8String;
+  login: RawByteString;
   UID: UInt32;
-  checkA: UTF8String;
-  checkB: UTF8String;
+  checkA: RawByteString;
+  checkB: RawByteString;
   checkC: UInt32;
-  clientVersion: UTF8String;
+  clientVersion: RawByteString;
 begin
   self.Log('TGameServer.HandlePlayerLogin', TLogType_not);
 
@@ -292,7 +292,7 @@ begin
   self.Sync(client, packetReader);
 end;
 
-procedure TGameServer.HandleDebugCommands(const client: TGameClient; const packetReader: TPacketReader; msg: UTF8String);
+procedure TGameServer.HandleDebugCommands(const client: TGameClient; const packetReader: TPacketReader; msg: RawByteString);
 var
   game: TGame;
 begin
@@ -318,7 +318,7 @@ begin
   end;
 end;
 
-function TGameServer.GetPlayerByNickname(nickname: UTF8String): TGameClient;
+function TGameServer.GetPlayerByNickname(nickname: RawByteString): TGameClient;
 var
   player: TGameClient;
 begin
@@ -349,8 +349,8 @@ end;
 
 procedure TGameServer.HandlerPlayerWhisper(const client: TGameClient; const packetReader: TPacketReader);
 var
-  targetNickname: UTF8String;
-  msg: UTF8String;
+  targetNickname: RawByteString;
+  msg: RawByteString;
   res: TPacketWriter;
   target: TGameClient;
 begin
@@ -404,8 +404,8 @@ end;
 
 procedure TGameServer.HandlePlayerSendMessage(const client: TGameClient; const packetReader: TPacketReader);
 var
-  userNickname: UTF8String;
-  msg: UTF8String;
+  userNickname: RawByteString;
+  msg: RawByteString;
   reply: TPacketWriter;
 begin
   Console.Log('TGameeServer.HandlePlayerSendMessage', C_BLUE);
@@ -444,7 +444,7 @@ end;
 
 procedure TGameServer.HandlerPlayerException(const client: TGameClient; const packetReader: TPacketReader);
 var
-  msg: UTF8String;
+  msg: RawByteString;
 begin
   self.Log('TGameServer.HandlerPlayerException', TLogType_not);
   packetReader.Log;
@@ -501,7 +501,7 @@ var
   I, J: integer;
   shopItem: TShopItemDesc;
 
-  shopResult: UTF8String;
+  shopResult: RawByteString;
   successCount: uint16;
   test: TITEM_TYPE;
   itemId: UInt32;
@@ -778,7 +778,7 @@ end;
 procedure TGameServer.HandlePlayerRequestIdentity(const client: TGameClient; const packetReader: TPacketReader);
 var
   mode: UInt32;
-  playerName: UTF8String;
+  playerName: RawByteString;
 begin
   Console.Log('TGameServer.HandlePlayerRequestIdentity', C_BLUE);
   packetReader.ReadUInt32(mode);
@@ -890,7 +890,7 @@ end;
 
 procedure TGameServer.HandlePlayerNotice(const client: TGameClient; const packetReader: TPacketReader);
 var
-  notice: UTF8String;
+  notice: RawByteString;
 begin
   Console.Log('TGameServer.HandlePlayerNotice', C_BLUE);
 
@@ -1029,7 +1029,7 @@ var
   tmpUInt16: UInt16;
   tmpUInt8: UInt8;
   tmp1UInt8: UInt8;
-  tmpPStr: UTF8String;
+  tmpPStr: RawByteString;
   game: TGame;
 begin
   Console.Log('TGameServer.HandlePlayerGMCommand', C_BLUE);
@@ -1176,7 +1176,7 @@ end;
 
 procedure TGameServer.HandlePlayerRequestGuildListSearch(const client: TGameClient; const packetReader: TPacketReader);
 var
-  keyword: UTF8String;
+  keyword: RawByteString;
   un1: UInt32;
   res: TPacketWriter;
 begin
@@ -1217,8 +1217,8 @@ end;
 
 procedure TGameServer.HandlePlayerCreateGuild(const client: TGameClient; const packetReader: TPacketReader);
 var
-  name: UTF8String;
-  description: UTF8String;
+  name: RawByteString;
+  description: RawByteString;
   res: TPacketWriter;
 begin
   Console.Log('TGameServer.HandlePlayerCreateGuild', C_BLUE);
@@ -1242,7 +1242,7 @@ end;
 
 procedure TGameServer.HandlePlayerCheckGuildName(const client: TGameClient; const packetReader: TPacketReader);
 var
-  guildName: UTF8String;
+  guildName: RawByteString;
   res: TPacketWriter;
 begin
   Console.Log('TGameServer.HandlePlayerCheckGuildName', C_BLUE);
@@ -1263,7 +1263,7 @@ end;
 procedure TGameServer.HandlePlayerRequestJoinGuild(const client: TGameClient; const packetReader: TPacketReader);
 var
   un1: UInt32;
-  applicationMessage: UTF8String;
+  applicationMessage: RawByteString;
 begin
   console.Log('TGameServer.HandlePlayerRequestJoinGuild', C_BLUE);
   packetReader.ReadUInt32(un1);
@@ -1344,7 +1344,7 @@ procedure TGameServer.HandlePlayerEnterScratchyCardSerial(const client: TGameCli
 const
   validSerialSize = 13;
 var
-  serial: UTF8String;
+  serial: RawByteString;
   serialSize: Uint32;
 begin
   Console.Log('TGameServer.HandlePlayerEnterScratchyCardSerial', C_BLUE);
@@ -1391,6 +1391,7 @@ end;
 procedure TGameServer.HandlePlayerRequestAchievements(const client: TGameClient; const packetReader: TPacketReader);
 var
   something: UInt32;
+  achievementsData: RawByteString;
 begin
   Console.Log('TGameServer.HandlePlayerRequestAchievements', C_BLUE);
 
@@ -1404,8 +1405,15 @@ begin
 
   console.Log(Format('something %x', [something]));
 
+  achievementsData := GetDataFromFile('../data/achievements.dbg');
+
+  if Length(achievementsData) = 0 then
+  begin
+    Console.Log('missing achievement data', C_RED);
+  end;
+
   // Achievements
-  client.Send(GetDataFromFile('../data/achievements.dbg'));
+  client.Send(achievementsData);
 
   client.Send(#$2C#$02 + #$00#$00#$00#$00);
 end;
@@ -1780,8 +1788,8 @@ end;
 
 procedure TGameServer.HandlePlayerChangeLockerPassword(const client: TGameClient; const packetReader: TPacketReader);
 var
-  oldPassword: UTF8String;
-  newPassword: UTF8String;
+  oldPassword: RawByteString;
+  newPassword: RawByteString;
 begin
   Console.Log('TGameServer.HandlePlayerChangeLockerPassword', C_BLUE);
 
@@ -1801,7 +1809,7 @@ end;
 
 procedure TGameServer.HandlerPlayerRequestLockerAccess(const client: TGameClient; const packetReader: TPacketReader);
 var
-  password: UTF8String;
+  password: RawByteString;
 begin
   Console.Log('TGameServer.HandlerPlayerRequestLockerAccess', C_BLUE);
   if not packetReader.ReadPStr(password) then
@@ -1823,7 +1831,7 @@ end;
 procedure TGameServer.HandlePlayerSetMascotText(const client: TGameClient; const packetReader: TPacketReader);
 var
   mascotId: UInt32;
-  text: UTF8String;
+  text: RawByteString;
   mascot: TPlayerMascot;
   res: TPacketWriter;
 begin
@@ -1918,8 +1926,8 @@ end;
 
 procedure TGameServer.HandlerPlayerDeleteMail(const client: TGameClient; const packetReader: TPacketReader);
 var
-  mailTo: UTF8String;
-  mailBody: UTF8String;
+  mailTo: RawByteString;
+  mailBody: RawByteString;
   un1, un2: UInt32;
   res: TPacketWriter;
 begin
@@ -1969,8 +1977,8 @@ end;
 
 procedure TGameServer.HandlerPlayerSendMail(const client: TGameClient; const packetReader: TPacketReader);
 var
-  mailTo: UTF8String;
-  mailBody: UTF8String;
+  mailTo: RawByteString;
+  mailBody: RawByteString;
   un1, un2: UInt32;
   packetWriter: TPacketWriter;
 begin
@@ -2021,7 +2029,7 @@ end;
 
 procedure TGameServer.HandlePlayerRequestOfflinePlayerInfo(const client: TGameClient; const packetReader: TPacketReader);
 var
-  nick: UTF8String;
+  nick: RawByteString;
   res: TPacketWriter;
 begin
   Console.Log('TGameServer.HandlePlayerRequestOfflinePlayerInfo', C_BLUE);
@@ -2716,8 +2724,8 @@ end;
 procedure TGameServer.HandleSyncServerPlayerAction(const packetReader: TPacketReader; const client: TGameClient);
 var
   actionId: TSSAPID;
-  buffer: UTF8String;
-  d: UTF8String;
+  buffer: RawByteString;
+  d: RawByteString;
   mascot: TPlayerMascot;
 begin
   self.Log('TGameServer.HandleSyncServerPlayerAction', TLogType_not);
@@ -2816,7 +2824,7 @@ begin
   res.WriteUInt16(0);
   res.WriteUInt8(2); // Login server
   res.WritePStr(m_name);
-  res.WriteUInt16(m_port);
+  res.WriteInt32(m_port);
   res.WritePStr(m_host);
   self.Sync(res);
   res.Free;
@@ -2871,7 +2879,7 @@ begin
   end;
 end;
 
-procedure TGameServer.SendToGame(const client: TGameClient; data: UTF8String);
+procedure TGameServer.SendToGame(const client: TGameClient; data: RawByteString);
 var
   game: TGame;
 begin
@@ -2906,7 +2914,7 @@ begin
   end;
 end;
 
-procedure TGameServer.SendToLobby(const client: TGameClient; data: UTF8String);
+procedure TGameServer.SendToLobby(const client: TGameClient; data: RawByteString);
 var
   lobby: TLobby;
 begin

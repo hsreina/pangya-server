@@ -27,9 +27,9 @@ type
       destructor Destroy; override;
       var ClientType: TSYNC_CLIENT_TYPE;
       var Registred: Boolean;
-      var Name: UTF8String;
-      var Host: UTF8String;
-      var Port: UInt16;
+      var Name: RawByteString;
+      var Host: RawByteString;
+      var Port: Integer;
   end;
 
 implementation

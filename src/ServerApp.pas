@@ -120,12 +120,15 @@ end;
 procedure TServerApp.Start;
 begin
 {$IFDEF SYNC_SERVER}
+  Sleep(1000);
   m_synServer.Start;
 {$ENDIF}
 {$IFDEF GAME_SERVER}
+  Sleep(1000);
   m_gameServer.Start;
 {$ENDIF}
 {$IFDEF LOGIN_SERVER}
+  Sleep(1000);
   m_loginServer.Start;
 {$ENDIF}
 end;
