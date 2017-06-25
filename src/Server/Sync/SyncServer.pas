@@ -34,8 +34,8 @@ type
       procedure OnReceiveLoginClientData(const packetId: TSSPID; const client: TSyncClient; const packetReader: TPacketReader);
       procedure OnReceiveGameClientData(const packetId: TSSPID; const client: TSyncClient; const packetReader: TPacketReader);
 
-      procedure SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
-      procedure PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
+      procedure SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: RawByteString);
+      procedure PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: RawByteString);
 
       procedure SyncLoginPlayer(const client: TSyncClient; const packetReader: TPacketReader);
       procedure SyncGamePlayer(const client: TSyncClient; const packetReader: TPacketReader);
@@ -48,7 +48,7 @@ type
       procedure HandlePlayerSetNickname(const client: TSyncClient; const packetReader: TPacketReader; const playerUID: TPlayerUID);
 
       procedure LoginGamePlayer(const client: TSyncClient; const playerUID: TPlayerUID);
-      function CreatePlayer(login: AnsiString; password: AnsiString): integer;
+      function CreatePlayer(login: RawByteString; password: RawByteString): integer;
 
       procedure InitPlayerData(playerId: integer);
 
@@ -57,7 +57,7 @@ type
 
       procedure RegisterServer(const client: TSyncClient; const packetReader: TPacketReader);
 
-      function GameServerList: AnsiString;
+      function GameServerList: RawByteString;
 
     public
       constructor Create(cryptLib: TCryptLib);
@@ -127,7 +127,7 @@ begin
   self.Log('TSyncServer.OnStart', TLogType_not);
 end;
 
-procedure TSyncServer.SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
+procedure TSyncServer.SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: RawByteString);
 var
   packetWriter: TPacketWriter;
 begin
@@ -145,7 +145,7 @@ begin
   packetWriter.Free;
 end;
 
-procedure TSyncServer.PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: AnsiString);
+procedure TSyncServer.PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: RawByteString);
 var
   packetWriter: TPacketWriter;
 begin
@@ -171,6 +171,7 @@ var
   playerCharacter: TPlayerCharacter;
   characterData: TPacketData;
   playerData: TPlayerData;
+  characterDataPath: string;
 begin
   self.Log('TSyncServer.HandlePlayerSelectCharacter', TLogType_not);
 
@@ -183,8 +184,10 @@ begin
   playerCharacters := TPlayerCharacters.Create;
   playerCharacter := playerCharacters.Add(characterId);
 
-  characterData := GetDataFromFile(Format('../data/c_%x.dat', [characterId]));
-  Console.Log(Format('Load "../data/c_%x.dat"', [characterId]));
+  characterDataPath := Format('%s../data/c_%x.dat', [ExtractFilePath(ParamStr(0)) , characterId]);
+
+  characterData := GetDataFromFile(characterDataPath);
+  Console.Log(Format('Load "%s"', [characterDataPath]));
   if not playerCharacter.Load(characterData) then
   begin
     Console.Log(Format('character data not found %x', [characterId]), C_RED);
@@ -213,7 +216,7 @@ end;
 
 procedure TSyncServer.HandlePlayerConfirmNickname(const client: TSyncClient; const packetReader: TPacketReader; const playerUID: TPlayerUID);
 var
-  nickname: AnsiString;
+  nickname: RawByteString;
 begin
   self.Log('TSyncServer.HandlePlayerConfirmNickname', TLogType_not);
   packetReader.ReadPStr(nickname);
@@ -229,8 +232,8 @@ end;
 
 procedure TSyncServer.HandleLoginPlayerLogin(const client: TSyncClient; const packetReader: TPacketReader; const playerUID: TPlayerUID);
 var
-  login: AnsiString;
-  md5Password: AnsiString;
+  login: RawByteString;
+  md5Password: RawByteString;
   userId: integer;
 begin
   Console.Log('TSyncServer.HandleLoginPlayerLogin', C_BLUE);
@@ -328,7 +331,7 @@ begin
   mascots.Free
 end;
 
-function TSyncServer.CreatePlayer(login: AnsiString; password: AnsiString): integer;
+function TSyncServer.CreatePlayer(login: RawByteString; password: RawByteString): integer;
 var
   playerData: TPlayerData;
 begin
@@ -361,14 +364,14 @@ end;
 
 procedure TSyncServer.HandleGamePlayerLogin(const client: TSyncClient; const packetReader: TPacketReader; const playerUID: TPlayerUID);
 var
-  login: AnsiString;
+  login: RawByteString;
   UID: UInt32;
-  checkA: AnsiString;
-  checkB: AnsiString;
+  checkA: RawByteString;
+  checkB: RawByteString;
   checkC: UInt32;
-  clientVersion: AnsiString;
+  clientVersion: RawByteString;
   I: integer;
-  d: ansiString;
+  d: RawByteString;
   playerId: integer;
   playerData: TPlayerData;
   cookies: UInt64;
@@ -461,7 +464,7 @@ end;
 
 procedure TSyncServer.HandlePlayerSetNickname(const client: TSyncClient; const packetReader: TPacketReader; const playerUID: TPlayerUID);
 var
-  nickname: AnsiString;
+  nickname: RawByteString;
   playerData: TPlayerData;
 begin
   Console.Log('TLoginServer.HandleConfirmNickname', C_BLUE);
@@ -520,7 +523,7 @@ var
   playerMascots: TPlayerMascots;
   playerCharacters: TPlayerCharacters;
   playerCaddies: TPlayerCaddies;
-  tmp: AnsiString;
+  tmp: RawByteString;
 begin
   Console.Log('TSyncServer.HandleGameServerPlayerAction', C_BLUE);
 
@@ -757,7 +760,7 @@ procedure TSyncServer.Debug;
 begin
 end;
 
-function TSyncServer.GameServerList: AnsiString;
+function TSyncServer.GameServerList: RawByteString;
 var
   port: UInt32;
   packet: TPacketWriter;

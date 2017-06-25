@@ -3,7 +3,7 @@ unit PacketData;
 interface
 
 type
-  TPacketData = AnsiString;
+  TPacketData = RawByteString;
 
 implementation
 

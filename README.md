@@ -10,7 +10,9 @@ The server is as always, an experiment on trying to code strange things. And hop
     -Create a game and set it up
 
 # How to compile?
-I created the project with Delphi XE8, you should be able to open the project with the same version or above and compile it.
+I created the project with Delphi XE8 professional, you should be able to open the project with the same version or above and compile it.
+For Linux build, you'll need to use Delphi 10.2 Enterprise.
+
 
 # External files
 To run the server, you should provide extracted Iff files from the original US game into the directory ./data/pangya_gb.iff/
@@ -27,23 +29,23 @@ https://github.com/hsreina/pang.dll-sample
 - The BCC32 version is the one we use on this server.
 
 To make it work with your project, "pangya.dll" must share some functions the server will be able to understand.
-  - _pangya_client_decrypt
-  - _pangya_server_encrypt
-  - _pangya_client_encrypt
-  - _pangya_server_decrypt (not used but must be present)
-  - _deserialize
-  - _pangya_free (used to free buffout pointer allocated by the library)
+  - pangya_client_decrypt
+  - pangya_server_encrypt
+  - pangya_client_encrypt
+  - pangya_server_decrypt (not used but must be present)
+  - deserialize
+  - pangya_free (used to free buffout pointer allocated by the library)
 
 defined as:
 
     #define DLLEXPORT EXTERN_C __declspec(dllexport)
     
-    DLLEXPORT int _pangya_client_decrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
-    DLLEXPORT int _pangya_server_encrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
-    DLLEXPORT int _pangya_client_encrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key, char packetid);
-	DLLEXPORT int _pangya_server_decrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
-    DLLEXPORT UInt32 _pangya_deserialize(UInt32 deserialize);
-	DLLEXPORT void _pangya_free(char **buffout);
+    DLLEXPORT int pangya_client_decrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
+    DLLEXPORT int pangya_server_encrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
+    DLLEXPORT int pangya_client_encrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key, char packetid);
+	DLLEXPORT int pangya_server_decrypt(char *buffin, int size, char **buffout, int *buffoutSize, char key);
+    DLLEXPORT UInt32 pangya_deserialize(UInt32 deserialize);
+	DLLEXPORT void pangya_free(char **buffout);
 
 "pangya_client_decrypt" must accept the full packet send by the client as data and must return the decrypted packet starting with the Id of the packet.
 

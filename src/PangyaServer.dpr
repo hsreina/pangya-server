@@ -13,8 +13,12 @@ program PangyaServer;
 
 uses
   {$IFDEF DEBUG}
+  {$IFDEF MSWINDOWS}
+  {$IFDEF CPUX32}
   FastMM4 in 'Libs\Fast\FastMM4.pas',
   FastMM4Messages in 'Libs\Fast\FastMM4Messages.pas',
+  {$ENDIF}
+  {$ENDIF }
   {$ENDIF }
   {$IFDEF RELEASE}
   msvcrtMM,
@@ -97,7 +101,8 @@ uses
   ServerApp in 'ServerApp.pas',
   PlayerMoneyPacket in 'Packets\Server\PlayerMoneyPacket.pas',
   MMO.Lock in 'Libs\MMO\MMO.Lock.pas',
-  MMO.OptionalCriticalSection in 'Libs\MMO\MMO.OptionalCriticalSection.pas';
+  MMO.OptionalCriticalSection in 'Libs\MMO\MMO.OptionalCriticalSection.pas',
+  Types.PangyaTypes in 'Types\Types.PangyaTypes.pas';
 
 var
   serverApp: TServerApp;

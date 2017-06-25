@@ -18,9 +18,9 @@ type
     var base: TPlayerItemBase;
     var un0: UInt32;
     var qty: UInt32;
-    var Un1: array [0..$41] of AnsiChar;
-    var UccCode: array [0 .. $7] of AnsiChar;
-    var Un2: array [0..$69] of AnsiChar;
+    var Un1: array [0..$41] of UTF8Char;
+    var UccCode: array [0 .. $7] of UTF8Char;
+    var Un2: array [0..$69] of UTF8Char;
   end;
 
   TPlayerItem = class (TPlayerGenericData<TPlayerItemData>)
@@ -39,7 +39,7 @@ uses ConsolePas;
 
 constructor TPlayerItem.Create;
 var
-  uccCode: AnsiString;
+  uccCode: RawByteString;
 begin
   inherited;
   //uccCode := '11111111';

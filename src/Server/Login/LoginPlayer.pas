@@ -13,7 +13,7 @@ interface
 type
   TLoginPlayer = class
     private
-      var m_debug: AnsiString;
+      var m_debug: RawByteString;
     public
       constructor Create;
       destructor Destroy; override;

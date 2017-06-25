@@ -17,12 +17,12 @@ type
 
   TPartData = packed Record // $220
     var base: TIffbase;
-    var un: array [0..$18F] of AnsiChar;
+    var un: array [0..$18F] of UTF8Char;
   End;
 
   TPartDataClass = class (TIffEntry<TPartData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
   end;
 
   TPart = class (TIffEntryList<TPartData, TPartDataClass>)
@@ -32,7 +32,7 @@ type
 
 implementation
 
-constructor TPartDataClass.Create(data: PAnsiChar);
+constructor TPartDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;

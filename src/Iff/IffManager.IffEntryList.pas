@@ -62,7 +62,7 @@ var
   totalSize: UInt32;
   bytes: TBytes;
   memoryStream: TMemoryStream;
-  buff: PAnsiChar;
+  buff: PUTF8Char;
 begin
   zip.Read(filename, bytes);
   totalSize := Length(bytes);
@@ -70,7 +70,7 @@ begin
   with TMemoryStream.Create do
   try
     Write(bytes, totalSize);
-    Seek(0, 0);
+    Seek(Int64(0), 0);
 
     Read(m_entriesCount, 2);
 
@@ -79,7 +79,7 @@ begin
       Exit(false);
     end;
 
-    Seek(6, 1);
+    Seek(Int64(6), 1);
 
     // Should check the data Size
     buff := allocMem(SizeOf(PartData));
@@ -101,7 +101,7 @@ end;
 function TIffEntryList<PartData, DataClass>.Load(filePath: string): Boolean;
 var
   handler: Integer;
-  buff: PAnsiChar;
+  buff: PUTF8Char;
   entry: DataClass;
   totalSize: UInt32;
 begin

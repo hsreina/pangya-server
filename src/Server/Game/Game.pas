@@ -56,8 +56,8 @@ type
   end;
 
   TGameCreateArgs = record
-    var Name: AnsiString;
-    var Password: AnsiString;
+    var Name: RawByteString;
+    var Password: RawByteString;
     var GameInfo: TPlayerCreateGameInfo;
     var Artifact: UInt32;
     var GrandPrix: UInt32;
@@ -67,13 +67,13 @@ type
     private
       var m_id: UInt16;
       var m_players: TPlayersList;
-      var m_name: AnsiString;
-      var m_password: AnsiString;
+      var m_name: RawByteString;
+      var m_password: RawByteString;
       var m_gameInfo: TPlayerCreateGameInfo;
       var m_artifact: UInt32;
       var m_gameStarted: Boolean;
       var m_rain_drop_ratio: UInt8;
-      var m_gameKey: array [0 .. $F] of ansichar;
+      var m_gameKey: array [0 .. $F] of UTF8Char;
 
       var m_grandPrix: Boolean;
 
@@ -92,13 +92,13 @@ type
       procedure generateKey;
       function FGetPlayerCount: UInt16;
       procedure TriggerGameUpdated;
-      procedure DecryptShot(data: PansiChar; size: UInt32);
+      procedure DecryptShot(data: PUTF8Char; size: UInt32);
       procedure SendGameResult;
 
       procedure ReorderPlayers(setRoomMaster: Boolean);
       procedure SendWind;
 
-      function playersData: AnsiString;
+      function playersData: RawByteString;
 
       procedure HandlePlayerLoadingInfo(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerHoleInformations(const client: TGameClient; const packetReader: TPacketReader);
@@ -146,10 +146,10 @@ type
 
       function AddPlayer(player: TGameClient): Boolean;
       function RemovePlayer(player: TGameClient): Boolean;
-      function GameInformation: AnsiString;
-      function GameResume: AnsiString;
+      function GameInformation: RawByteString;
+      function GameResume: RawByteString;
       procedure GoToNextHole;
-      procedure Send(data: AnsiString); overload;
+      procedure Send(data: RawByteString); overload;
       procedure Send(data: TPacket); overload;
 
       procedure HandleRequests(const game: TGame; const packetId: TCGPID; const client: TGameClient; const packetReader: TPacketReader);
@@ -396,11 +396,11 @@ var
 begin
   randomize;
   for I := 0 to length(m_gameKey) - 1 do begin
-    m_gameKey[I] := ansichar(random($F));
+    m_gameKey[I] := UTF8Char(random($F));
   end;
 end;
 
-function TGame.GameInformation: AnsiString;
+function TGame.GameInformation: RawByteString;
 var
   packet: TPacketWriter;
   pl: integer;
@@ -480,7 +480,7 @@ begin
   packet.Free;
 end;
 
-function TGame.GameResume: AnsiString;
+function TGame.GameResume: RawByteString;
 var
   packet: TPacketWriter;
   gameType: UInt8;
@@ -509,7 +509,7 @@ begin
   packet.Free;
 end;
 
-procedure TGame.Send(data: AnsiString);
+procedure TGame.Send(data: RawByteString);
 var
   client: TGameClient;
 begin
@@ -534,7 +534,7 @@ begin
   Exit(Uint16(m_players.Count));
 end;
 
-function TGame.playersData: AnsiString;
+function TGame.playersData: RawByteString;
 var
   player: TGameClient;
   clientPacket: TPacketWriter;
@@ -578,7 +578,7 @@ end;
 procedure TGame.HandlePlayerHoleInformations(const client: TGameClient; const packetReader: TPacketReader);
 type
   TData = packed record
-    un1: array [0..9] of AnsiChar;
+    un1: array [0..9] of UTF8Char;
     a, b, // start pos?
     x, z: Single; // hole position
   end;
@@ -837,7 +837,7 @@ var
   nbOfActions: UInt8;
   action: UInt8;
   i: UInt8;
-  tmpStr: AnsiString;
+  tmpStr: RawByteString;
   tmpUInt8: UInt8;
   tmpUInt16: UInt16;
   tmpUInt32: UInt32;
@@ -972,7 +972,7 @@ end;
 procedure TGame.HandlePlayerActionShot(const client: TGameClient; const packetReader: TPacketReader);
 type
   TInfo = packed record
-    un1: array [0..$3D] of AnsiChar;
+    un1: array [0..$3D] of UTF8Char;
   end;
 var
   shotType: UInt16;
@@ -1055,13 +1055,13 @@ begin
   res.Free;
 end;
 
-procedure TGame.DecryptShot(data: PAnsiChar; size: UInt32);
+procedure TGame.DecryptShot(data: PUTF8Char; size: UInt32);
 var
   x: Integer;
 begin
   for x := 0 to size-1 do
   begin
-    data[x] := ansichar(byte(data[x]) xor byte(m_gameKey[x mod 16]));
+    data[x] := UTF8Char(byte(data[x]) xor byte(m_gameKey[x mod 16]));
   end;
 end;
 
@@ -1113,7 +1113,7 @@ begin
         client.Send(
           #$6B#$00 +
           #$04 + // no clue about it for now
-          AnsiChar(itemType) + // the above action?
+          UTF8Char(itemType) + // the above action?
           characterData.ToPacketData
         );
         Ok := true;
@@ -1127,7 +1127,7 @@ begin
         client.Send(
           #$6B#$00 +
           #$04 + // no clue about it for now
-          AnsiChar(itemType) + // the above action?
+          UTF8Char(itemType) + // the above action?
           equipedItem.ToPacketData
         );
       end;
@@ -1447,7 +1447,7 @@ end;
 
 procedure TGame.HandlePlayerEditShopName(const client: TGameClient; const packetReader: TPacketReader);
 var
-  shopName: AnsiString;
+  shopName: RawByteString;
   res: TPacketWriter;
 begin
   Console.Log('TGame.HandlePlayerEditShopName', C_BLUE);
@@ -1640,7 +1640,7 @@ end;
 procedure TGame.HandlePlayerShotData(const client: TGameClient; const packetReader: TPacketReader);
 var
   shotData: TShotData;
-  str: AnsiString;
+  str: RawByteString;
   res: TPacketWriter;
 begin
   console.Log('TGame.HandlePlayerShotData', C_BLUE);
@@ -1846,8 +1846,8 @@ var
   action: TPLAYER_ACTION;
   subAction: TPLAYER_ACTION_SUB;
   pos: TVector3;
-  tmp: AnsiString;
-  animationName: AnsiString;
+  tmp: RawByteString;
+  animationName: RawByteString;
   gamePlayer: TGameServerPlayer;
   test: TPlayerAction;
   res: TPacketWriter;

@@ -157,9 +157,9 @@ var
   playerData: PlayerDataClass;
   count: UInt16;
   i: integer;
-  tmp: AnsiString;
+  tmp: RawByteString;
 begin
-  packetReader := TPacketReader.CreateFromAnsiString(PacketData);
+  packetReader := TPacketReader.CreateFromRawByteString(PacketData);
 
   count := 0;
   // TODO: should rethink that

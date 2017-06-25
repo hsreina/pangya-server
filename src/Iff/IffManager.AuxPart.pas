@@ -17,12 +17,12 @@ type
 
   TAuxPartData = packed Record // $CC
     var base: TIffbase;
-    var un: array [0..$3B] of AnsiChar;
+    var un: array [0..$3B] of UTF8Char;
   End;
 
   TAuxPartDataClass = class (TIffEntry<TAuxPartData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
   end;
 
   TAuxPart = class (TIffEntryList<TAuxPartData, TAuxPartDataClass>)
@@ -32,7 +32,7 @@ type
 
 implementation
 
-constructor TAuxPartDataClass.Create(data: PAnsiChar);
+constructor TAuxPartDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;

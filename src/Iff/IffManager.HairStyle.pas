@@ -17,15 +17,15 @@ type
 
   THairStyleData = packed Record // $AC
     var base: TIffbase;
-    var un1: array [0..$17] of AnsiChar;
+    var un1: array [0..$17] of UTF8Char;
     var Color: UInt8;
     var Character: UInt8;
-    var un2: array [0..$1] of AnsiChar;
+    var un2: array [0..$1] of UTF8Char;
   End;
 
   THairStyleDataClass = class (TIffEntry<THairStyleData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
       function GetColor: UInt8;
       function GetCharacterIffId: UInt32;
   end;
@@ -37,7 +37,7 @@ type
 
 implementation
 
-constructor THairStyleDataClass.Create(data: PAnsiChar);
+constructor THairStyleDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;

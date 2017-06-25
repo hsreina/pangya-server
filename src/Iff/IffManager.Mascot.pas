@@ -17,12 +17,12 @@ type
 
   TMascotData = packed Record // $11C
     var base: TIffbase;
-    var un: array [0..$8B] of AnsiChar;
+    var un: array [0..$8B] of UTF8Char;
   End;
 
   TMascotDataClass = class (TIffEntry<TMascotData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
   end;
 
   TMascot = class (TIffEntryList<TMascotData, TMascotDataClass>)
@@ -32,7 +32,7 @@ type
 
 implementation
 
-constructor TMascotDataClass.Create(data: PAnsiChar);
+constructor TMascotDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;

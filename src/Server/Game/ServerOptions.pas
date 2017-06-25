@@ -7,9 +7,9 @@ uses PacketData;
 type
 
   TServerOptionsData = packed record
-    var un0001: array [0..$11] of AnsiChar;
-    var un00FF: array [0..$05] of AnsiChar;
-    var moreUnknow: Array [0..$03] of AnsiChar;
+    var un0001: array [0..$11] of UTF8Char;
+    var un00FF: array [0..$05] of UTF8Char;
+    var moreUnknow: Array [0..$03] of UTF8Char;
     var MaintenanceFlags: UInt64;
     var unknow6B: Byte;
     var moreUnknow2: UInt32;
@@ -18,7 +18,7 @@ type
     var aFlag: UInt8;
 
     // now sound like something related to guilds
-    var un0004: array [0..$116] of AnsiChar;
+    var un0004: array [0..$116] of UTF8Char;
   end;
 
   TServerOptions = class

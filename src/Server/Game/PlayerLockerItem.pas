@@ -17,7 +17,7 @@ type
     var IffId: UInt32;
     var Un2: UInt32;
     var Count: UInt32;
-    var Un3: array [0..$9B] of AnsiChar;
+    var Un3: array [0..$9B] of UTF8Char;
   end;
 
 implementation

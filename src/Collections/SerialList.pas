@@ -8,7 +8,7 @@ uses
 type
   TSerialList<T> = class (TList<T>)
     private
-      var m_serial: integer;
+      var m_serial: UInt32;
       var m_lastInsertedIndex: integer;
     public
       constructor Create;

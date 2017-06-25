@@ -43,7 +43,7 @@ uses ConsolePas;
 
 constructor TGameHoles.Create;
 var
-  I: Integer;
+  I: UInt8;
 begin
   inherited;
 
@@ -109,7 +109,7 @@ end;
 procedure TGameHoles.InitGameHoles(gameMode: TGAME_MODE; map: UInt8);
 var
   hole: UInt8;
-  x, randomPosition, temp: Integer;
+  x, randomPosition, temp: Int32;
   holeInfo: TGameHoleInfo;
 begin
   randomize;
@@ -133,7 +133,7 @@ begin
     end;
     TGAME_MODE.GAME_MODE_RANDOM : begin
       for x := 0 to 17 do begin
-        m_gameHoles[x].Hole := Integer(random(19));
+        m_gameHoles[x].Hole := Int32(random(19));
       end;
     end;
     TGAME_MODE.GAME_MODE_SHUFFLE : begin
@@ -142,7 +142,7 @@ begin
       end;
       for x := 0 to 17 do begin
         temp := m_gameHoles[x].Hole;
-        randomposition := Integer(random(18));
+        randomposition := Int32(random(18));
         m_gameHoles[x].Hole := m_gameHoles[randomposition].Hole;
         m_gameHoles[randomposition].Hole := temp;
       end;

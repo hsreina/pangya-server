@@ -17,12 +17,12 @@ type
 
   TClubSetData = packed Record // $EC
     var base: TIffbase;
-    var un: array [0..$5B] of AnsiChar;
+    var un: array [0..$5B] of UTF8Char;
   End;
 
   TClubSetDataClass = class (TIffEntry<TClubSetData>)
     public
-      constructor Create(data: PAnsiChar);
+      constructor Create(data: PUTF8Char);
   end;
 
   TClubSet = class (TIffEntryList<TClubSetData, TClubSetDataClass>)
@@ -32,7 +32,7 @@ type
 
 implementation
 
-constructor TClubSetDataClass.Create(data: PAnsiChar);
+constructor TClubSetDataClass.Create(data: PUTF8Char);
 begin
   inherited;
 end;
