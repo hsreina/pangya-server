@@ -447,6 +447,7 @@
         <DCCReference Include="Libs\MMO\MMO.Lock.pas"/>
         <DCCReference Include="Libs\MMO\MMO.OptionalCriticalSection.pas"/>
         <DCCReference Include="Types\Types.PangyaTypes.pas"/>
+        <DCCReference Include="Packets\Server\PlayerMacrosPacket.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -503,6 +504,12 @@
                 <DeployFile LocalName="..\bin\bin\PangyaServer" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Linux64">
                         <RemoteName>PangyaServer</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\bin\bin\PangyaServer.exe" Configuration="AllInOne" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>PangyaServer.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

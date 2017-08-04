@@ -24,6 +24,7 @@ type
       function WriteAction(actionId: TSSPID): Boolean; overload;
       function WriteAction(actionId: TSSAPID): Boolean; overload;
       function WriteAction(actionId: TCGPID): Boolean; overload;
+      function WriteAction(actionId: TSLPID): Boolean; overload;
       procedure Clear;
   end;
 
@@ -127,6 +128,11 @@ begin
 end;
 
 function TPacketWriter.WriteAction(actionId: TCGPID): Boolean;
+begin
+  Exit(Write(actionId, 2));
+end;
+
+function TPacketWriter.WriteAction(actionId: TSLPID): Boolean;
 begin
   Exit(Write(actionId, 2));
 end;

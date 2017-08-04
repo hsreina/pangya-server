@@ -16,12 +16,11 @@ uses
   {$IFDEF MSWINDOWS}
   {$IFDEF CPUX32}
   FastMM4 in 'Libs\Fast\FastMM4.pas',
-  FastMM4Messages in 'Libs\Fast\FastMM4Messages.pas',
-  {$ENDIF}
-  {$ENDIF }
   {$ENDIF }
   {$IFDEF RELEASE}
   msvcrtMM,
+  {$ENDIF }
+  {$ENDIF }
   {$ENDIF }
   SysUtils,
   ConsolePas in 'ConsolePas.pas',
@@ -102,7 +101,8 @@ uses
   PlayerMoneyPacket in 'Packets\Server\PlayerMoneyPacket.pas',
   MMO.Lock in 'Libs\MMO\MMO.Lock.pas',
   MMO.OptionalCriticalSection in 'Libs\MMO\MMO.OptionalCriticalSection.pas',
-  Types.PangyaTypes in 'Types\Types.PangyaTypes.pas';
+  Types.PangyaTypes in 'Types\Types.PangyaTypes.pas',
+  PlayerMacrosPacket in 'Packets\Server\PlayerMacrosPacket.pas';
 
 var
   serverApp: TServerApp;

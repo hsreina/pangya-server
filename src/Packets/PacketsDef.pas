@@ -35,6 +35,7 @@ type
     LOGIN                                = $0001,
     SERVERS_LIST                         = $0002,
     PLAYER_SECURITY2                     = $0003,
+    PLAYER_MACROS                        = $0006,
     UN_0009                              = $0009,
     PLAYER_SECURITY1                     = $0010,
     GG_CHECK                             = $0040,

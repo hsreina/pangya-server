@@ -8,7 +8,7 @@ type
   TPlayerMoneyPacket = class (TPacketWriter)
     public
       constructor CreateForPlayer(player: TGameServerPlayer);
-      destructor Destroy;
+      destructor Destroy; override;
   end;
 
 implementation

@@ -12,7 +12,7 @@ interface
 
 uses Client, SyncUser, Server, CryptLib, SysUtils, defs,
   Database, IniFiles, PacketsDef, Generics.Collections, System.TypInfo,
-  PacketReader, PacketWriter;
+  PacketReader, PacketWriter, Packet;
 
 type
 
@@ -34,7 +34,9 @@ type
       procedure OnReceiveLoginClientData(const packetId: TSSPID; const client: TSyncClient; const packetReader: TPacketReader);
       procedure OnReceiveGameClientData(const packetId: TSSPID; const client: TSyncClient; const packetReader: TPacketReader);
 
-      procedure SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: RawByteString);
+      procedure SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: RawByteString); overload;
+      procedure SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: TPacket); overload;
+
       procedure PlayerAction(const client: TSyncClient; const playerUID: TPlayerUID; const data: RawByteString);
 
       procedure SyncLoginPlayer(const client: TSyncClient; const packetReader: TPacketReader);
@@ -69,7 +71,7 @@ implementation
 
 uses Logging, ConsolePas, PlayerCharacters, PlayerCharacter,
   PacketData, utils, PlayerData, PlayerItems, PlayerItem, PlayerCaddies,
-  PlayerMascots, PlayerEquipment;
+  PlayerMascots, PlayerEquipment, PlayerMacrosPacket;
 
 constructor TSyncServer.Create(cryptLib: TCryptLib);
 begin
@@ -139,6 +141,24 @@ begin
   packetWriter.WriteUInt32(playerUID.id);
   packetWriter.WritePStr(playerUID.login);
   packetWriter.WriteStr(data);
+
+  client.Send(packetWriter);
+
+  packetWriter.Free;
+end;
+
+procedure TSyncServer.SendToGame(const client: TSyncClient; const playerUID: TPlayerUID; const data: TPacket);
+var
+  packetWriter: TPacketWriter;
+begin
+  self.Log('TSyncServer.SendToGame', TLogType_not);
+
+  packetWriter := TPacketWriter.Create;
+
+  packetWriter.WriteAction(TSSPID.PLAYER_SYNC);
+  packetWriter.WriteUInt32(playerUID.id);
+  packetWriter.WritePStr(playerUID.login);
+  packetWriter.WriteStr(data.ToStr);
 
   client.Send(packetWriter);
 
@@ -342,7 +362,7 @@ begin
   with playerData.playerInfo2 do
   begin
     rank := TRANK.INFINITY_LEGEND_A;
-    pangs := 99999999;
+    pangs := 999999999;
     experience := 99999999;
   end;
 
@@ -483,6 +503,8 @@ begin
 end;
 
 procedure TSyncServer.LoginGamePlayer(const client: TSyncClient; const playerUID: TPlayerUID);
+var
+  res: TPacketWriter;
 begin
   Console.Log('TSyncServer.LoginPlayer', C_BLUE);
 
@@ -500,6 +522,11 @@ begin
   end;
 
   self.SendToGame(client, playerUID, #$10#$00 + WritePStr('178d22e'));
+
+  // Send player macros
+  res := TPlayerMacrosPacket.Create;
+  self.SendToGame(client, playerUID, res);
+  res.Free;
 
   // Should send server list
   self.SendToGame(client, playerUID, #$02#$00 + Self.GameServerList);
