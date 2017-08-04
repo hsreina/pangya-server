@@ -99,10 +99,10 @@ uses
   PacketData in 'Packets\PacketData.pas',
   ServerApp in 'ServerApp.pas',
   PlayerMoneyPacket in 'Packets\Server\PlayerMoneyPacket.pas',
-  MMO.Lock in 'Libs\MMO\MMO.Lock.pas',
-  MMO.OptionalCriticalSection in 'Libs\MMO\MMO.OptionalCriticalSection.pas',
   Types.PangyaTypes in 'Types\Types.PangyaTypes.pas',
-  PlayerMacrosPacket in 'Packets\Server\PlayerMacrosPacket.pas';
+  PlayerMacrosPacket in 'Packets\Server\PlayerMacrosPacket.pas',
+  MMO.Lock in 'Libs\delphi-mmo-lib\MMO.Lock.pas',
+  MMO.OptionalCriticalSection in 'Libs\delphi-mmo-lib\MMO.OptionalCriticalSection.pas';
 
 var
   serverApp: TServerApp;

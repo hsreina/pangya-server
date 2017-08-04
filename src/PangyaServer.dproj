@@ -444,10 +444,10 @@
         <DCCReference Include="Packets\PacketData.pas"/>
         <DCCReference Include="ServerApp.pas"/>
         <DCCReference Include="Packets\Server\PlayerMoneyPacket.pas"/>
-        <DCCReference Include="Libs\MMO\MMO.Lock.pas"/>
-        <DCCReference Include="Libs\MMO\MMO.OptionalCriticalSection.pas"/>
         <DCCReference Include="Types\Types.PangyaTypes.pas"/>
         <DCCReference Include="Packets\Server\PlayerMacrosPacket.pas"/>
+        <DCCReference Include="Libs\delphi-mmo-lib\MMO.Lock.pas"/>
+        <DCCReference Include="Libs\delphi-mmo-lib\MMO.OptionalCriticalSection.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
