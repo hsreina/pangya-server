@@ -11,8 +11,9 @@ unit GameServer;
 interface
 
 uses Client, GameServerPlayer, Server, SysUtils, LobbiesList, CryptLib,
-  SyncableServer, PacketsDef, Lobby, Game, IniFiles,
-  IffManager, ServerOptions, Packet, PacketReader, PacketWriter;
+  SyncableServer, PacketsDef, Lobby, Game,
+  IffManager, ServerOptions, Packet, PacketReader, PacketWriter,
+  GameServerConfiguration;
 
 type
 
@@ -44,9 +45,7 @@ type
 
       var m_lobbies: TLobbiesList;
 
-      var m_host: RawByteString;
-      var m_port: Integer;
-      var m_name: RawByteString;
+      var m_serverConfiguration: TGameServerConfiguration;
 
       var m_iffManager: TIffManager;
       var m_serverOptions: TServerOptions;
@@ -140,6 +139,7 @@ constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
 begin
   inherited create('GameServer', cryptLib);
   Console.Log('TGameServer.Create');
+  m_serverConfiguration := TGameServerConfiguration.Create;
   m_lobbies := TLobbiesList.Create;
   m_iffManager := iffManager;
   m_serverOptions := TServerOptions.Create;
@@ -149,6 +149,7 @@ destructor TGameServer.Destroy;
 begin
   m_lobbies.Free;
   m_serverOptions.Free;
+  m_serverConfiguration.Free;
   inherited;
 end;
 
@@ -158,27 +159,10 @@ begin
 end;
 
 procedure TGameServer.Init;
-var
-  iniFile: TIniFile;
 begin
-  iniFile := TIniFile.Create('../config/server.ini');
-
-  m_port := iniFile.ReadInteger('game', 'port', 7997);
-  self.SetPort(m_port);
-
-  m_host := iniFile.ReadString('game', 'host', '127.0.0.1');
-
-  m_name := iniFile.ReadString('game', 'name', 'GameServer');
-
-  self.SetSyncPort(
-    iniFile.ReadInteger('sync', 'port', 7998)
-  );
-
-  self.setSyncHost(
-    iniFile.ReadString('sync', 'host', '127.0.0.1')
-  );
-
-  iniFile.Free;
+  self.SetPort(m_serverConfiguration.Port);
+  self.SetSyncPort(m_serverConfiguration.SyncServerPort);
+  self.setSyncHost(m_serverConfiguration.SyncServerHost);
 end;
 
 procedure TGameServer.OnClientConnect(const client: TGameClient);
@@ -2823,9 +2807,14 @@ begin
   res := TPacketWriter.Create;
   res.WriteUInt16(0);
   res.WriteUInt8(2); // Login server
-  res.WritePStr(m_name);
-  res.WriteInt32(m_port);
-  res.WritePStr(m_host);
+
+  with m_serverConfiguration do
+  begin
+    res.WritePStr(Name);
+    res.WriteUInt16(Port);
+    res.WritePStr(Host);
+  end;
+
   self.Sync(res);
   res.Free;
 end;

@@ -43,7 +43,7 @@ type
       function GetContextData(AContext: TIdContext): TObject;
 
     protected
-      procedure SetPort(port: Integer);
+      procedure SetPort(port: UInt16);
       procedure Init; virtual; abstract;
 
       procedure OnClientConnect(const client: TClient<ClientType>); virtual; abstract;
@@ -111,7 +111,7 @@ begin
   inherited;
 end;
 
-procedure TServer<ClientType>.SetPort(port: Integer);
+procedure TServer<ClientType>.SetPort(port: UInt16);
 begin
   Console.Log('TServer.SetPort', C_BLUE);
   Console.Log(Format('Port : %d', [port]));

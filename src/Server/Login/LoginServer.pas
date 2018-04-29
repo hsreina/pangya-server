@@ -11,7 +11,7 @@ unit LoginServer;
 interface
 
 uses Client, LoginPlayer, SyncClient, Server, SyncableServer,
-  CryptLib, IniFiles, PacketReader, PacketWriter;
+  CryptLib, PacketReader, PacketWriter, LoginServerConfiguration;
 
 type
 
@@ -42,9 +42,7 @@ type
 
       procedure RegisterServer;
 
-      var m_host: RawByteString;
-      var m_port: Integer;
-      var m_name: RawByteString;
+      var m_serverConfiguration: TLoginServerConfiguration;
 
     public
       procedure Debug;
@@ -59,35 +57,20 @@ uses Logging, PacketsDef, ConsolePas, SysUtils, defs;
 constructor TLoginServer.Create(cryptLib: TCryptLib);
 begin
   inherited Create('LoginServer', cryptLib);
+  m_serverConfiguration := TLoginServerConfiguration.Create;
 end;
 
 destructor TLoginServer.Destroy;
 begin
+  m_serverConfiguration.Free;
   inherited;
 end;
 
 procedure TLoginServer.Init;
-var
-  iniFile: TIniFile;
 begin
-  iniFile := TIniFile.Create('../config/server.ini');
-
-  m_port := iniFile.ReadInteger('login', 'port', 10103);
-  self.SetPort(m_port);
-
-  m_host := iniFile.ReadString('login', 'host', '127.0.0.1');;
-
-  m_name := iniFile.ReadString('login', 'name', 'LoginServer');;
-
-  self.SetSyncPort(
-    iniFile.ReadInteger('sync', 'port', 7998)
-  );
-
-  self.setSyncHost(
-    iniFile.ReadString('sync', 'host', '127.0.0.1')
-  );
-
-  iniFile.Free;
+  self.SetPort(m_serverConfiguration.Port);
+  self.SetSyncPort(m_serverConfiguration.SyncServerPort);
+  self.setSyncHost(m_serverConfiguration.SyncServerHost);
 end;
 
 procedure TLoginServer.OnClientConnect(const client: TLoginClient);
@@ -257,9 +240,14 @@ begin
   res := TPacketWriter.Create;
   res.WriteUInt16(0);
   res.WriteUInt8(1); // Login server
-  res.WritePStr(m_name);
-  res.WriteInt32(m_port);
-  res.WritePStr(m_host);
+
+  with m_serverConfiguration do
+  begin
+    res.WritePStr(Name);
+    res.WriteUInt16(Port);
+    res.WritePStr(Host);
+  end;
+
   self.Sync(res);
   res.Free;
 end;

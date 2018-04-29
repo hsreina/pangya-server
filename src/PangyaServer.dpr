@@ -102,7 +102,10 @@ uses
   Types.PangyaTypes in 'Types\Types.PangyaTypes.pas',
   PlayerMacrosPacket in 'Packets\Server\PlayerMacrosPacket.pas',
   MMO.Lock in 'Libs\delphi-mmo-lib\MMO.Lock.pas',
-  MMO.OptionalCriticalSection in 'Libs\delphi-mmo-lib\MMO.OptionalCriticalSection.pas';
+  MMO.OptionalCriticalSection in 'Libs\delphi-mmo-lib\MMO.OptionalCriticalSection.pas',
+  GameServerConfiguration in 'Configuration\GameServerConfiguration.pas',
+  LoginServerConfiguration in 'Configuration\LoginServerConfiguration.pas',
+  SyncServerConfiguration in 'Configuration\SyncServerConfiguration.pas';
 
 var
   serverApp: TServerApp;

@@ -11,8 +11,8 @@ unit SyncServer;
 interface
 
 uses Client, SyncUser, Server, CryptLib, SysUtils, defs,
-  Database, IniFiles, PacketsDef, Generics.Collections, System.TypInfo,
-  PacketReader, PacketWriter, Packet;
+  Database, PacketsDef, Generics.Collections, System.TypInfo,
+  PacketReader, PacketWriter, Packet, SyncServerConfiguration;
 
 type
 
@@ -23,6 +23,7 @@ type
     private
 
       var m_database: TDatabase;
+      var m_serverConfiguration: TSyncServerConfiguration;
 
       procedure Init; override;
       procedure OnClientConnect(const client: TSyncClient); override;
@@ -76,6 +77,7 @@ uses Logging, ConsolePas, PlayerCharacters, PlayerCharacter,
 constructor TSyncServer.Create(cryptLib: TCryptLib);
 begin
   inherited;
+  m_serverConfiguration := TSyncServerConfiguration.Create;
   m_database := TDatabase.Create;
   Randomize;
 end;
@@ -84,22 +86,13 @@ destructor TSyncServer.Destroy;
 begin
   inherited;
   m_database.Free;
+  m_serverConfiguration.Free;
 end;
 
 procedure TSyncServer.Init;
-var
-  iniFile: TIniFile;
 begin
-
-  iniFile := TIniFile.Create('../config/server.ini');
-
-  self.SetPort(
-    iniFile.ReadInteger('sync', 'port', 7998)
-  );
-
+  self.SetPort(m_serverConfiguration.Port);
   m_database.Init;
-
-  iniFile.Free;
 end;
 
 procedure TSyncServer.OnClientConnect(const client: TSyncClient);
@@ -731,7 +724,7 @@ begin
   if
     not packetReader.Read(clientType, 1) or
     not packetReader.ReadPStr(client.Data.Name) or
-    not packetReader.ReadInt32(client.Data.Port) or
+    not packetReader.ReadUInt16(client.Data.Port) or
     not packetReader.ReadPStr(client.Data.Host)
   then
   begin
