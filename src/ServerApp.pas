@@ -6,7 +6,7 @@ uses
   LoginServer,
   GameServer,
   SyncServer,
-  CryptLib, DataChecker, IffManager, SysUtils, Logging;
+  CryptLib, DataChecker, IffManager, SysUtils, LoggerInterface;
 
 type
   TServerApp = class
@@ -19,11 +19,10 @@ type
       var m_cryptLib: TCryptLib;
       var m_dataChecker: TDataChecker;
       var m_iffManager: TIffManager;
-
-      procedure OnServerLog(sender: TObject; msg: string; logType: TLogType);
+      var m_logger: ILoggerInterface;
 
     public
-      constructor Create;
+      constructor Create(const ALogger: ILoggerInterface);
       destructor Destroy; override;
       function ParseCommand(command: String): Boolean;
       property IsRunning: Boolean read m_isRunning;
@@ -33,14 +32,13 @@ type
 
 implementation
 
-uses ConsolePas;
-
-constructor TServerApp.Create;
+constructor TServerApp.Create(const ALogger: ILoggerInterface);
 begin
-  inherited;
+  inherited Create;
+  m_logger := ALogger;
   m_isRunning := true;
 
-  Console.Log('PANGYA SERVER by HSReina', C_GREEN);
+  m_logger.Notice('PANGYA SERVER by HSReina');
 
   m_dataChecker := TDataChecker.Create;
 
@@ -49,7 +47,7 @@ begin
   except
     on E : Exception do
     begin
-      Console.Log(Format('Data validation failed : %s', [E.Message]), C_RED);
+      m_logger.Error('Data validation failed : %s', [E.Message]);
     end;
   end;
 
@@ -58,7 +56,7 @@ begin
 
   if not m_iffManager.Load then
   begin
-    Console.Log('You should have valid US pangya_gb.iff content in ../data/pangya_gb.iff directory');
+    m_logger.Warning('You should have valid US pangya_gb.iff content in ../data/pangya_gb.iff directory');
     raise Exception.Create('Failed to load Iff');
     Exit;
   end;
@@ -66,19 +64,16 @@ begin
   //m_iffManager.PatchAndSave;
 
 {$IFDEF SYNC_SERVER}
-  m_synServer := TSyncServer.Create(m_cryptLib);
-  m_synServer.OnLog := self.OnServerLog;
+  m_synServer := TSyncServer.Create(ALogger, m_cryptLib);
   //m_synServer.Debug;
 {$ENDIF}
 
 {$IFDEF LOGIN_SERVER}
-  m_loginServer := TLoginServer.Create(m_cryptLib);
-  m_loginServer.OnLog := self.OnServerLog;
+  m_loginServer := TLoginServer.Create(ALogger, m_cryptLib);
 {$ENDIF}
 
 {$IFDEF GAME_SERVER}
-  m_gameServer := TGameServer.Create(m_cryptLib, m_iffManager);
-  m_gameServer.OnLog := self.OnServerLog;
+  m_gameServer := TGameServer.Create(ALogger, m_cryptLib, m_iffManager);
 {$ENDIF}
 
 end;
@@ -111,9 +106,12 @@ begin
   if command = 'exit' then
   begin
     m_isRunning := false;
-    exit;
+    Exit;
+  end else if command = 'g' then
+  begin
+    m_gameServer.Debug;
+    Exit;
   end;
-
   Exit(False);
 end;
 
@@ -135,21 +133,6 @@ end;
 
 procedure TServerApp.Stop;
 begin
-end;
-
-procedure TServerApp.OnServerLog(sender: TObject; msg: string; logType: TLogType);
-var
-  color: integer;
-begin
-
-  case logType of
-    TLogType_msg: ;
-    TLogType_wrn: color := C_ORANGE;
-    TLogType_err: color := C_RED;
-    TLogType_not: color := C_BLUE;
-  end;
-
-  Console.Log(msg, color);
 end;
 
 end.

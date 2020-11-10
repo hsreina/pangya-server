@@ -369,7 +369,6 @@
         </DelphiCompile>
         <DCCReference Include="Libs\Fast\FastMM4.pas"/>
         <DCCReference Include="ConsolePas.pas"/>
-        <DCCReference Include="Logging.pas"/>
         <DCCReference Include="CryptLib.pas"/>
         <DCCReference Include="Client\SyncClient.pas"/>
         <DCCReference Include="Server\Client.pas"/>
@@ -451,6 +450,13 @@
         <DCCReference Include="Configuration\GameServerConfiguration.pas"/>
         <DCCReference Include="Configuration\LoginServerConfiguration.pas"/>
         <DCCReference Include="Configuration\SyncServerConfiguration.pas"/>
+        <DCCReference Include="Log\AbstractLogger.pas"/>
+        <DCCReference Include="Log\LoggerInterface.pas"/>
+        <DCCReference Include="Log\LogLevel.pas"/>
+        <DCCReference Include="Log\NullLogger.pas"/>
+        <DCCReference Include="Log\ConsoleLogger.pas"/>
+        <DCCReference Include="Server\Game\MiniGames\ScratchyCard\ScratchyCard.pas"/>
+        <DCCReference Include="Server\Game\GameClient.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

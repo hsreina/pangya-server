@@ -11,7 +11,7 @@ unit GameHoles;
 interface
 
 uses
-  Generics.Collections, GameHoleInfo, defs;
+  Generics.Collections, GameHoleInfo, defs, LoggerInterface;
 
 type
   TGameHoles = class
@@ -20,6 +20,7 @@ type
       var m_rainDropRatio: UInt8;
       var m_currentHole: UInt8;
       var m_holeCount: UInt8;
+      var m_logger: ILoggerInterface;
 
       function FGetCurrentHole: TGameHoleInfo;
 
@@ -28,7 +29,7 @@ type
       procedure InitGameHoles(gameMode: TGAME_MODE; map: UInt8);
 
     public
-      constructor Create;
+      constructor Create(const ALogger: ILoggerInterface);
       destructor Destroy; override;
       procedure Init(gameMode: TGAME_MODE; map: UInt8; holeCount: UInt8);
 
@@ -39,13 +40,12 @@ type
 
 implementation
 
-uses ConsolePas;
-
-constructor TGameHoles.Create;
+constructor TGameHoles.Create(const ALogger: ILoggerInterface);
 var
   I: UInt8;
 begin
-  inherited;
+  inherited Create;
+  m_logger := ALogger;
 
   m_holeCount := 0;
   m_rainDropRatio := 10;
@@ -148,7 +148,7 @@ begin
       end;
     end
     else begin
-      console.log('Unregistred game mode', C_RED);
+      m_logger.Error('Unregistred game mode');
       for x := 0 to 17 do begin
         m_gameHoles[x].Hole := x + 1;
       end;

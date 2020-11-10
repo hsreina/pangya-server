@@ -11,7 +11,7 @@ unit Lobby;
 interface
 
 uses PacketData, GameServerPlayer, Generics.Collections, GamesList, Game,
-  SysUtils, Packet, PacketReader, PacketWriter;
+  SysUtils, Packet, PacketReader, PacketWriter, LoggerInterface;
 
 type
 
@@ -26,6 +26,7 @@ type
 
       var m_maxPlayers: UInt16;
       var m_nullGame: TGame;
+      var m_logger: ILoggerInterface;
 
       procedure OnCreateGame(game: TGame);
       procedure OnDestroyGame(game: TGame);
@@ -59,22 +60,23 @@ type
       procedure HandleAdminJoinGame(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const packetReader: TPacketReader);
 
-      constructor Create(lobbyName: RawByteString);
+      constructor Create(const ALogger: ILoggerInterface; lobbyName: RawByteString);
       destructor Destroy; override;
   end;
 
 implementation
 
-uses ConsolePas, GameServerExceptions, defs;
+uses GameServerExceptions, defs;
 
-constructor TLobby.Create;
+constructor TLobby.Create(const ALogger: ILoggerInterface; lobbyName: RawByteString);
 var
   gameInfo: TPlayerCreateGameInfo;
   args: TGameCreateArgs;
 begin
   inherited Create;
+  m_logger := ALogger;
   m_players := TList<TGameClient>.Create;
-  m_games := TGamesList.Create;
+  m_games := TGamesList.Create(ALogger);
   m_name := lobbyName;
 
   m_games.OnCreateGame.Event := self.OnCreateGame;
@@ -374,7 +376,7 @@ var
   res: TPacketWriter;
   args: TGameCreateArgs;
 begin
-  Console.Log('TGameServer.HandlePlayerCreateGame', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerCreateGame');
   packetReader.Read(gameInfo.un1, SizeOf(TPlayerCreateGameInfo));
 
   packetReader.ReadPStr(gameName);
@@ -412,7 +414,7 @@ begin
   except
     on E: Exception do
     begin
-      Console.Log(E.Message, C_RED);
+      m_logger.Error(E.Message);
       Exit;
     end;
   end;
@@ -441,7 +443,7 @@ end;
 
 procedure TLobby.HandleAdminJoinGame(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandleAdminJoinGame', C_BLUE);
+  m_logger.Info('TGameServer.HandleAdminJoinGame');
   HandlePlayerJoinGame(client, packetReader);
 end;
 
@@ -451,11 +453,11 @@ var
   password: RawByteString;
   game: TGame;
 begin
-  Console.Log('TGameServer.HandlePlayerJoinGame', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerJoinGame');
   {09 00 01 00 00 00  }
   if not packetReader.ReadUInt16(gameId) then
   begin
-    Console.Log('Failed to get game Id', C_RED);
+    m_logger.Error('Failed to get game Id');
     Exit;
   end;
   packetReader.ReadPStr(password);
@@ -465,7 +467,7 @@ begin
   Except
     on e: Exception do
     begin
-      Console.Log('well, i ll move that in another place one day or another', C_RED);
+      m_logger.Error('well, i ll move that in another place one day or another');
       Exit;
     end;
   end;
@@ -475,7 +477,7 @@ begin
   except
     on e: GameFullException do
     begin
-      Console.Log(e.Message + ' should maybe tell to the user that the game is full?', C_RED);
+      m_logger.Error(e.Message + ' should maybe tell to the user that the game is full?');
       Exit;
     end;
   end;
@@ -503,7 +505,7 @@ var
   game: TGame;
   args: TGameCreateArgs;
 begin
-  Console.Log('TGameServer.HandlePlayerEnterGrandPrixEvent', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerEnterGrandPrixEvent');
 
   gameInfo.gameType := TGAME_TYPE.GAME_TYPE_TOURNEY_TOURNEY;
   gameInfo.map := 0;

@@ -11,7 +11,8 @@ unit LoginServer;
 interface
 
 uses Client, LoginPlayer, SyncClient, Server, SyncableServer,
-  CryptLib, PacketReader, PacketWriter, LoginServerConfiguration;
+  CryptLib, PacketReader, PacketWriter, LoginServerConfiguration,
+  LoggerInterface;
 
 type
 
@@ -20,6 +21,8 @@ type
   TLoginServer = class(TSyncableServer<TLoginPlayer>)
     protected
     private
+      var m_serverConfiguration: TLoginServerConfiguration;
+
       procedure Init; override;
       procedure OnClientConnect(const client: TLoginClient); override;
       procedure OnClientDisconnect(const client: TLoginClient); override;
@@ -41,22 +44,19 @@ type
       procedure HandlePlayerLogin(const client: TLoginClient; const packetReader: TPacketReader);
 
       procedure RegisterServer;
-
-      var m_serverConfiguration: TLoginServerConfiguration;
-
     public
       procedure Debug;
-      constructor Create(cryptLib: TCryptLib);
+      constructor Create(const ALogger: ILoggerInterface; const ACryptLib: TCryptLib);
       destructor Destroy; override;
   end;
 
 implementation
 
-uses Logging, PacketsDef, ConsolePas, SysUtils, defs;
+uses PacketsDef, SysUtils, defs;
 
-constructor TLoginServer.Create(cryptLib: TCryptLib);
+constructor TLoginServer.Create(const ALogger: ILoggerInterface; const ACryptLib: TCryptLib);
 begin
-  inherited Create('LoginServer', cryptLib);
+  inherited Create(ALogger, 'LoginServer', ACryptLib);
   m_serverConfiguration := TLoginServerConfiguration.Create;
 end;
 
@@ -77,7 +77,7 @@ procedure TLoginServer.OnClientConnect(const client: TLoginClient);
 var
   player: TLoginPlayer;
 begin
-  self.Log('TLoginServer.OnConnectClient', TLogType_not);
+  m_logger.Info('TLoginServer.OnConnectClient');
   player := TLoginPlayer.Create;
   client.Data := player;
   client.Send(#$00#$0B#$00#$00#$00#$00 + UTF8Char(client.GetKey) + #$00#$00#$00#$0F#$27#$00#$00, false);
@@ -85,12 +85,12 @@ end;
 
 procedure TLoginServer.OnClientDisconnect(const client: TLoginClient);
 begin
-  self.Log('TLoginServer.OnDisconnectClient', TLogType_not);
+  m_logger.Debug('TLoginServer.OnDisconnectClient');
 end;
 
 procedure TLoginServer.OnStart;
 begin
-  self.Log('TLoginServer.OnStart', TLogType_not);
+  m_logger.Info('TLoginServer.OnStart');
   self.StartSyncClient;
 end;
 
@@ -99,7 +99,7 @@ var
   playerUID: TPlayerUID;
   test: RawByteString;
 begin
-  self.Log('TLoginServer.PlayerSync', TLogType_not);
+  m_logger.Info('TLoginServer.PlayerSync');
   // Then forward the data
   client.Send(packetReader.GetRemainingData);
 end;
@@ -108,7 +108,7 @@ procedure TLoginServer.ServerPlayerAction(const packetReader: TPacketReader; con
 var
   actionId: TSSAPID;
 begin
-  self.Log('TLoginServer.PlayerSync', TLogType_not);
+  m_logger.Info('TLoginServer.PlayerSync');
   if packetReader.Read(actionId, 2) then
   begin
     case actionId of
@@ -118,7 +118,7 @@ begin
       end;
       else
       begin
-        self.Log(Format('Unknow action Id %x', [Word(actionId)]), TLogType_err);
+        m_logger.Error('Unknow action Id %x', [Word(actionId)]);
       end;
     end;
   end;
@@ -131,7 +131,7 @@ end;
 
 procedure TLoginServer.OnConnect(sender: TObject);
 begin
-  self.Log('TLoginServer.OnConnect', TLogType_not);
+  m_logger.Info('TLoginServer.OnConnect');
 end;
 
 procedure TLoginServer.OnReceiveSyncData(const packetReader: TPacketReader);
@@ -140,7 +140,7 @@ var
   playerUID: TPlayerUID;
   client: TLoginClient;
 begin
-  self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
+  m_logger.Info('TLoginServer.OnReceiveSyncData');
   if (packetReader.Read(packetID, 2)) then
   begin
 
@@ -150,7 +150,7 @@ begin
     client := self.GetClientByUID(playerUID);
     if client = nil then
     begin
-      Console.Log('something went wrong client not found', C_RED);
+      m_logger.Error('something went wrong client not found');
       Exit;
     end;
 
@@ -158,7 +158,7 @@ begin
     begin
       client.UID.id := playerUID.id;
     end;
-    console.Log(Format('player UID : %s/%d', [playerUID.login, playerUID.id]));
+    m_logger.Debug('player UID : %s/%d', [playerUID.login, playerUID.id]);
 
     case packetId of
       TSSPID.PLAYER_SYNC:
@@ -171,7 +171,7 @@ begin
       end;
       else
       begin
-        self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+        m_logger.Error('Unknow packet Id %x', [Word(packetID)]);
       end;
     end;
   end;
@@ -181,7 +181,7 @@ procedure TLoginServer.OnReceiveClientData(const client: TLoginClient; const pac
 var
   packetId: TCLPID;
 begin
-  self.Log('TLoginServer.OnReceiveClientData', TLogType_not);
+  m_logger.Info('TLoginServer.OnReceiveClientData');
 
   if not (packetReader.Read(packetID, 2)) then
   begin
@@ -211,25 +211,25 @@ begin
     end;
     TCLPID.PLAYER_RECONNECT: // ??
     begin
-      self.Log('CLPID_PLAYER_RECONNECT', TLogType.TLogType_not);
+      m_logger.Debug('CLPID_PLAYER_RECONNECT');
       self.HandlePlayerReconnect(client, packetReader);
     end
     else
     begin
-      self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+      m_logger.Error('Unknow packet Id %x', [Word(packetID)]);
     end;
   end;
 end;
 
 procedure TLoginServer.OnConnectSuccess(sender: TObject);
 begin
-  Console.Log('TLoginServer.OnConnectSuccess', C_BLUE);
+  m_logger.Info('TLoginServer.OnConnectSuccess');
   self.RegisterServer;
 end;
 
 procedure TLoginServer.Sync(const client: TLoginClient; const packetReader: TPacketReader);
 begin
-  self.Log('TLoginServer.Sync', TLogType.TLogType_not);
+  m_logger.Info('TLoginServer.Sync');
   self.Sync(#$01#$00 + write(client.UID.id, 4) + WritePStr(client.UID.login) + packetReader.ToStr);
 end;
 
@@ -264,10 +264,10 @@ end;
 
 procedure TLoginServer.HandlePlayerServerSelect(const client: TLoginClient; const packetReader: TPacketReader);
 begin
-  self.Log('TLoginServer.HandleConfirmNickname', TLogType_not);
+  m_logger.Info('TLoginServer.HandleConfirmNickname');
   packetReader.Log;
   // this code will be send by the client to the game server
-  client.Send(#$03#$00#$00#$00#$00#$00 + WritePStr('1f766c8'));
+  client.Send(#$03#$00 + #$00#$00#$00#$00 + WritePStr('1f766c8'));
 end;
 
 procedure TLoginServer.HandlePlayerReconnect(const client: TLoginClient; const packetReader: TPacketReader);
@@ -275,17 +275,17 @@ var
   userLogin, token: RawByteString;
   un: UInt32;
 begin
-  Console.Log('TLoginServer.HandlePlayerReconnect', C_BLUE);
+  m_logger.Info('TLoginServer.HandlePlayerReconnect');
 
   packetReader.ReadPStr(userLogin);
   packetReader.ReadUInt32(un);
   packetReader.ReadPStr(token);
 
-  console.Log(String.Format('userLogin %s', [userLogin]));
-  console.Log(String.Format('un %d', [un]));
-  console.Log(String.Format('token %s', [token]));
+  m_logger.Debug('userLogin %s', [userLogin]);
+  m_logger.Debug('un %d', [un]);
+  m_logger.Debug('token %s', [token]);
 
-  console.Log('should implement that', C_ORANGE);
+  m_logger.Warning('should implement that');
 end;
 
 procedure TLoginServer.Debug;

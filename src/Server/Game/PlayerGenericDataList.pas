@@ -11,11 +11,12 @@ unit PlayerGenericDataList;
 interface
 
 uses
-  Generics.Collections, PacketData, PlayerGenericData, PacketReader;
+  Generics.Collections, PacketData, PlayerGenericData, PacketReader,
+  LoggerInterface;
 
 type
 
-  // theses are just helper
+  // these are just helper
   TMascotCounter = Packed record
     count: UInt8;
   end;
@@ -29,11 +30,12 @@ type
     PlayerDataClass: TPlayerGenericData<DataType>, constructor; GenericCounter> = class
   private
     m_dataList: TList<PlayerDataClass>;
+    var m_logger: ILoggerInterface;
 
     // m_emptyData is used as item 0 when a player unequip something
     m_emptyData: PlayerDataClass;
   public
-    constructor Create;
+    constructor Create(const ALogger: ILoggerInterface);
     destructor Destroy; override;
 
     function Add(PacketData: TPacketData): PlayerDataClass; overload;
@@ -41,6 +43,8 @@ type
     function GetOrAddByIffId(IffId: UInt32): PlayerDataClass;
 
     procedure Remove(entry: PlayerDataClass);
+    function RemoveQty(const AEntry: PlayerDataClass; const AQty: UInt32): Boolean;
+    function RemoveQtyByIffId(const AIffId: UInt32; const AQty: UInt32): Boolean;
 
     function ToPacketData: TPacketData;
 
@@ -58,9 +62,10 @@ implementation
 
 uses ConsolePas, SysUtils, GameServerExceptions, PacketWriter;
 
-constructor TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Create;
+constructor TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Create(const ALogger: ILoggerInterface);
 begin
-  inherited;
+  inherited Create;
+  m_logger := ALogger;
   m_dataList := TList<PlayerDataClass>.Create;
   m_emptyData := PlayerDataClass.Create;
 end;
@@ -118,6 +123,37 @@ begin
   entry.free;
 end;
 
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.RemoveQty(const AEntry: PlayerDataClass; const AQty: UInt32): Boolean;
+begin
+  if not AEntry.RemQty(AQty) then
+  begin
+    Result := False;
+  end;
+  if AEntry.GetQty = 0 then
+  begin
+     m_dataList.Remove(AEntry);
+  end;
+end;
+
+function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.RemoveQtyByIffId(const AIffId: UInt32; const AQty: UInt32): Boolean;
+var
+  entry: PlayerDataClass;
+begin
+  if not TryGetByIffId(AIffId, entry) then
+  begin
+    Exit(False);
+  end;
+  if not entry.RemQty(AQty) then
+  begin
+    Exit(False);
+  end;
+  if entry.GetQty = 0 then
+  begin
+     m_dataList.Remove(entry);
+  end;
+  Exit(True);
+end;
+
 function TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.ToPacketData
   : TPacketData;
 var
@@ -160,29 +196,31 @@ var
   tmp: RawByteString;
 begin
   packetReader := TPacketReader.CreateFromRawByteString(PacketData);
-
-  count := 0;
-  // TODO: should rethink that
-  if TypeInfo(GenericCounter) = TypeInfo(TMascotCounter) then
-  begin
-    packetReader.Read(count, 1);
-  end
-  else if TypeInfo(GenericCounter) = TypeInfo(TDoubleCounter) then
-  begin
-    packetReader.Read(count, 2);
-    packetReader.Read(count, 2);
-  end;
-
-  setlength(tmp, sizeof(DataType));
-
-  for i := 1 to count do
-  begin
-    if packetReader.Read(tmp[1], sizeof(DataType)) then
+  try
+    count := 0;
+    // TODO: should rethink that
+    if TypeInfo(GenericCounter) = TypeInfo(TMascotCounter) then
     begin
-      playerData := self.Add(tmp);
+      packetReader.Read(count, 1);
+    end
+    else if TypeInfo(GenericCounter) = TypeInfo(TDoubleCounter) then
+    begin
+      packetReader.Read(count, 2);
+      packetReader.Read(count, 2);
     end;
+
+    setlength(tmp, sizeof(DataType));
+
+    for i := 1 to count do
+    begin
+      if packetReader.Read(tmp[1], sizeof(DataType)) then
+      begin
+        playerData := self.Add(tmp);
+      end;
+    end;
+  finally
+    packetReader.Free;
   end;
-  packetReader.Free;
 end;
 
 procedure TPlayerGenericDataList<DataType, PlayerDataClass, GenericCounter>.Clear;

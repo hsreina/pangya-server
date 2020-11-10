@@ -10,7 +10,8 @@ unit SyncableServer;
 
 interface
 
-uses SyncClient, Server, CryptLib, SysUtils, Packet, PacketReader;
+uses SyncClient, Server, CryptLib, SysUtils, Packet, PacketReader,
+  LoggerInterface;
 
 type
   TSyncableServer<ClientType> = class abstract (TServer<ClientType>)
@@ -29,22 +30,19 @@ type
 
     private
       var m_syncClient: TSyncClient;
-
       procedure OnClientRead(Sender: TObject; const packetReader: TPacketReader);
 
     public
-      constructor Create(const name: string; const cryptLib: TCryptLib);
+      constructor Create(const ALogger: ILoggerInterface; const name: string; const cryptLib: TCryptLib);
       destructor Destroy; override;
   end;
 
 implementation
 
-uses Logging, ConsolePas;
-
-constructor TSyncableServer<ClientType>.Create(const name: string; const cryptLib: TCryptLib);
+constructor TSyncableServer<ClientType>.Create(const ALogger: ILoggerInterface; const name: string; const cryptLib: TCryptLib);
 begin
-  inherited Create(cryptLib);
-  m_syncClient := TSyncClient.Create(name + 'SyncableServer', cryptLib);
+  inherited Create(ALogger, cryptLib);
+  m_syncClient := TSyncClient.Create(ALogger, name + 'SyncableServer', cryptLib);
   m_syncClient.OnRead := self.OnClientRead;
   m_syncClient.OnConnect := OnConnect;
   m_syncClient.OnConnectSuccess := OnConnectSuccess;
@@ -58,40 +56,39 @@ end;
 
 procedure TSyncableServer<ClientType>.SetSyncPort(port: Integer);
 begin
-  Console.Log('TSyncableServer<ClientType>.SetSyncPort', C_BLUE);
-  Console.Log(Format('port : %d', [port]));
+  m_logger.Info('TSyncableServer<ClientType>.SetSyncPort');
+  m_logger.Debug('port : %d', [port]);
   m_syncClient.SetPort(port);
 end;
 
 procedure TSyncableServer<ClientType>.Sync(data: RawByteString);
 begin
-  self.Log('TSyncableServer<ClientType>.Sync', TLogType_not);
+  m_logger.Info('TSyncableServer<ClientType>.Sync');
   m_syncClient.Send(data);
 end;
 
 procedure TSyncableServer<ClientType>.Sync(data: TPacket);
 begin
-  self.Log('TSyncableServer<ClientType>.Sync', TLogType_not);
+  m_logger.Info('TSyncableServer<ClientType>.Sync');
   m_syncClient.Send(data.ToStr);
 end;
 
 procedure TSyncableServer<ClientType>.StartSyncClient;
 begin
-  self.Log('TSyncableServer<ClientType>.StartSyncClient', TLogType_not);
-  m_syncClient.OnLog := self.OnLog;
+  m_logger.Info('TSyncableServer<ClientType>.StartSyncClient');
   m_syncClient.Start;
 end;
 
 procedure TSyncableServer<ClientType>.StopSyncClient;
 begin
-  self.Log('TSyncableServer<ClientType>.StopSyncClient', TLogType_not);
+  m_logger.Info('TSyncableServer<ClientType>.StopSyncClient');
   m_syncClient.Stop;
 end;
 
 procedure TSyncableServer<ClientType>.SetSyncHost(host: string);
 begin
-  Console.Log('TSyncableServer<ClientType>.SetSyncHost', C_BLUE);
-  Console.Log(Format('host : %s', [host]));
+  m_logger.Info('TSyncableServer<ClientType>.SetSyncHost');
+  m_logger.Debug('host : %s', [host]);
   m_syncClient.SetHost(host);
 end;
 

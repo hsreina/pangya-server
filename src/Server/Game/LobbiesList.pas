@@ -11,7 +11,8 @@ unit LobbiesList;
 interface
 
 uses
-  Generics.Collections, Lobby, PacketData, GameServerPlayer, Game, SerialList;
+  Generics.Collections, Lobby, PacketData, GameServerPlayer, Game, SerialList,
+  LoggerInterface, Packet;
 
 type
 
@@ -23,13 +24,14 @@ type
       var m_lobbies: TLobbyList;
       procedure DestroyLobbies;
     public
-      constructor Create;
+      constructor Create(const ALogger: ILoggerInterface);
       destructor Destroy; override;
       function GetLobbyById(const lobbyId: Byte): TLobby;
       function GetPlayerLobby(const player: TGameClient): TLobby;
       function TryGetPlayerLobby(const player: TGameClient; var lobby: TLobby): Boolean;
       function GetPlayerGame(const player: TGameClient): TGame;
-      procedure Send(const data: RawByteString);
+      procedure Send(const data: RawByteString); overload;
+      procedure Send(const AData: TPacket); overload;
       function Build: TPacketData;
   end;
 
@@ -37,14 +39,14 @@ implementation
 
 uses GameServerExceptions, PacketWriter;
 
-constructor TLobbiesList.Create;
+constructor TLobbiesList.Create(const ALogger: ILoggerInterface);
 var
   lobby: TLobby;
   index: integer;
 begin
-  inherited;
+  inherited Create;
   m_lobbies := TLobbyList.Create;
-  lobby := TLobby.Create('lobby 1');
+  lobby := TLobby.Create(ALogger, 'lobby 1');
   lobby.Id := m_lobbies.Add(lobby);
 end;
 
@@ -124,6 +126,16 @@ begin
   for lobby in m_lobbies do
   begin
     lobby.Send(data);
+  end;
+end;
+
+procedure TLobbiesList.Send(const AData: TPacket);
+var
+  lobby: TLobby;
+begin
+  for lobby in m_lobbies do
+  begin
+    lobby.Send(AData);
   end;
 end;
 

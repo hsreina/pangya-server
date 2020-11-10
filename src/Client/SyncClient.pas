@@ -10,8 +10,9 @@ unit SyncClient;
 
 interface
 
-uses CryptLib, Logging, IdTcpClient,
-  SyncClientReadThread, Classes, PacketReader, Types.PangyaBytes;
+uses CryptLib, IdTcpClient,
+  SyncClientReadThread, Classes, PacketReader, Types.PangyaBytes,
+  LoggerInterface;
 
 type
 
@@ -19,13 +20,14 @@ type
   TSyncClientConnectEvent = procedure (sender: TObject) of object;
   TSyncClientConnectSuccessEvent = procedure (sender: TObject) of object;
 
-  TSyncClient = class (TLogging)
+  TSyncClient = class
     private
       var m_client: TIdTcpClient;
       var m_clientReadThread: TSyncClientReadThread;
       var m_cryptLib: TCryptLib;
       var m_key: Byte;
       var m_haveKey: Boolean;
+      var m_Logger: ILoggerInterface;
 
       var FOnRead: TSyncClientReadEvent;
       procedure TriggerOnRead(const packetReader: TPacketReader);
@@ -42,7 +44,7 @@ type
       procedure HandleReadKey(packetReader: TPacketReader);
 
     public
-      constructor Create(const name: string; const cryptLib: TCryptLib);
+      constructor Create(const ALogger: ILoggerInterface; const name: string; const cryptLib: TCryptLib);
       destructor Destroy; override;
 
       property OnRead: TSyncClientReadEvent read FOnRead write FOnRead;
@@ -57,18 +59,17 @@ type
       procedure Send(data: RawByteString; encrypt: Boolean); overload;
     end;
 
-  implementation
+implementation
 
-uses ConsolePas;
-
-constructor TSyncClient.Create(const name: string; const cryptLib: TCryptLib);
+constructor TSyncClient.Create(const ALogger: ILoggerInterface; const name: string; const cryptLib: TCryptLib);
 begin
   inherited Create;
+  m_Logger := ALogger;
   m_client := TIdTcpClient.Create(nil);
   m_client.OnConnected := OnClientConnected;
   m_client.OnDisconnected := OnClientDisconnected;
 
-  m_clientReadThread := TSyncClientReadThread.Create(name + 'SyncClient', m_client);
+  m_clientReadThread := TSyncClientReadThread.Create(ALogger, name + 'SyncClient', m_client);
   m_clientReadThread.OnRead := OnClientRead;
 
   m_haveKey := false;
@@ -132,7 +133,7 @@ begin
   packetReader.Skip(4);
   if not packetReader.ReadUInt8(m_key) then
   begin
-    Console.Log('Failed to get Key', C_RED);
+    m_logger.Error('Failed to get Key');
     Exit;
   end;
   m_haveKey := true;

@@ -11,7 +11,7 @@ unit Client;
 interface
 
 uses
-  CryptLib, defs, SysUtils, utils, IdContext, Classes, Packet;
+  CryptLib, defs, SysUtils, utils, IdContext, Classes, Packet, LoggerInterface;
 
 type
 
@@ -20,10 +20,11 @@ type
       var m_key: Byte;
       var m_context: TIdContext;
       var m_cryptLib: TCryptLib;
+      var m_logger: ILoggerInterface;
       function FGetHost: RawByteString;
       var m_useIndy: Boolean;
     public
-      constructor Create(const AContext: TIdContext; const cryptLib: TCryptLib); overload;
+      constructor Create(const ALogger: ILoggerInterface; const AContext: TIdContext; const cryptLib: TCryptLib); overload;
       destructor Destroy; override;
 
       function GetKey: Byte;
@@ -42,8 +43,6 @@ type
   end;
 
 implementation
-
-uses ConsolePas;
 
 function TClient<ClientType>.FGetHost: RawByteString;
 begin
@@ -72,7 +71,7 @@ begin
 
   if Length(data) = 0 then
   begin
-    Console.Log('data too small');
+    m_logger.Error('data too small');
     Exit;
   end;
 
@@ -97,11 +96,12 @@ begin
   tmp.free;
 end;
 
-constructor TClient<ClientType>.Create(const AContext: TIdContext; const cryptLib: TCryptLib);
+constructor TClient<ClientType>.Create(const ALogger: ILoggerInterface; const AContext: TIdContext; const cryptLib: TCryptLib);
 var
   rnd: Byte;
 begin
   inherited Create;
+  m_logger := ALogger;
   m_context := AContext;
   m_useIndy := true;
   Randomize;

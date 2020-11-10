@@ -115,24 +115,24 @@ begin
   end else if fileExists(path) then
   begin
     zip := TZipFile.Create;
-    zip.Open(path, zmRead);
-
-    Result :=
-      m_part.Load(zip, 'Part.iff') and
-      m_item.Load(zip, 'Item.iff') and
-      m_ball.Load(zip, 'Ball.iff') and
-      m_caddie.Load(zip, 'Caddie.iff') and
-      m_clubSet.Load(zip, 'ClubSet.iff') and
-      m_skin.Load(zip, 'Skin.iff') and
-      m_mascot.Load(zip, 'Mascot.iff') and
-      m_auxPart.Load(zip, 'AuxPart.iff') and
-      m_SetItem.Load(zip, 'SetItem.iff') and
-      m_character.Load(zip, 'Character.iff') and
-      m_hairStyle.Load(zip, 'HairStyle.iff');
-
-    zip.Free;
+    try
+      zip.Open(path, zmRead);
+      Result :=
+        m_part.Load(zip, 'Part.iff') and
+        m_item.Load(zip, 'Item.iff') and
+        m_ball.Load(zip, 'Ball.iff') and
+        m_caddie.Load(zip, 'Caddie.iff') and
+        m_clubSet.Load(zip, 'ClubSet.iff') and
+        m_skin.Load(zip, 'Skin.iff') and
+        m_mascot.Load(zip, 'Mascot.iff') and
+        m_auxPart.Load(zip, 'AuxPart.iff') and
+        m_SetItem.Load(zip, 'SetItem.iff') and
+        m_character.Load(zip, 'Character.iff') and
+        m_hairStyle.Load(zip, 'HairStyle.iff');
+    finally
+      zip.Free;
+    end;
   end;
-
 end;
 
 function TIffManager.PatchAndSave: Boolean;

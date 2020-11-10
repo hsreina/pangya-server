@@ -17,17 +17,18 @@ uses
   FireDAC.Comp.Client, FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteDef,
   FireDAC.Phys.SQLite, FireDAC.ConsoleUI.Wait, FireDac.Dapt, sysUtils,
   PacketData, PlayerCharacters, Classes, PlayerData, PlayerItems, PlayerCaddies,
-  PlayerMascots;
+  PlayerMascots, LoggerInterface;
 
 type
   TDatabase = class
     private
-      m_connection: TFDConnection;
-      m_physDriver: TFDPhysSQLiteDriverLink;
-      m_query: TFDQuery;
+      var m_connection: TFDConnection;
+      var m_physDriver: TFDPhysSQLiteDriverLink;
+      var m_query: TFDQuery;
+      var m_logger: ILoggerInterface;
     public
 
-      constructor Create;
+      constructor Create(const ALogger: ILoggerInterface);
       destructor Destroy; override;
 
       function DoLogin(userName: RawByteString; password: RawByteString): Integer;
@@ -58,13 +59,12 @@ type
 
 implementation
 
-uses ConsolePas;
-
-constructor TDatabase.Create;
+constructor TDatabase.Create(const ALogger: ILoggerInterface);
 var
   dbPath: string;
 begin
-  inherited;
+  inherited Create;
+  m_logger := ALogger;
   FFDGUIxProvider := 'Console';
   m_connection := TFDConnection.Create(nil);
   m_physDriver := TFDPhysSQLiteDriverLink.Create(nil);
@@ -96,7 +96,7 @@ var
 begin
   try
     m_connection.Open;
-    Console.Log('connection success');
+    m_logger.Info('connection success');
 
     m_connection.ExecSQL(
       'CREATE TABLE IF NOT EXISTS "player" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL , "login" varchar(16) NOT NULL, "password" varchar(32) NOT NULL, "nickname" varchar(16), "cookies" INTEGER NOT NULL  DEFAULT 0, "data" BLOB NOT NULL);'
@@ -137,7 +137,7 @@ begin
   except
     on E: EDatabaseError do
     begin
-      Console.Log('Exception raised with message' + E.Message, C_RED);
+      m_logger.Error('Exception raised with message' + E.Message);
     end;
   end;
 end;

@@ -30,7 +30,10 @@ type
       function GetId: UInt32; virtual; abstract;
       procedure SetId(id: UInt32); virtual; abstract;
       function GetQty: UInt32; virtual; abstract;
+      procedure SetQty(const AQty: UInt32); virtual; abstract;
       function GetLifeTime: UInt16; virtual; abstract;
+      procedure AddQty(const AQty: UInt32); virtual; abstract;
+      function RemQty(const AQty: UInt32): Boolean; virtual; abstract;
   end;
 
   TPlayerGenericData<DataType: record> = class (TGenericPacketDatabase)
@@ -52,7 +55,12 @@ type
       function GetId: UInt32; override;
       procedure SetId(id: UInt32); override;
       function GetQty: UInt32; override;
+      procedure SetQty(const AQty: UInt32); override;
+      function RemQty(const AQty: UInt32): Boolean; override;
+      procedure AddQty(const AQty: UInt32); override;
       function GetLifeTime: UInt16; override;
+      property Id: UInt32 read GetId write SetId;
+      property IffId: UInt32 read GetIffId write SetIffId;
   end;
 
 implementation
@@ -60,6 +68,20 @@ implementation
 function TPlayerGenericData<DataType>.GetQty: UInt32;
 begin
   Result := 0;
+end;
+
+procedure TPlayerGenericData<DataType>.SetQty(const AQty: UInt32);
+begin
+end;
+
+function TPlayerGenericData<DataType>.RemQty(const AQty: UInt32): Boolean;
+begin
+  Result := False;
+end;
+
+procedure TPlayerGenericData<DataType>.AddQty(const AQty: UInt32);
+begin
+
 end;
 
 function TPlayerGenericData<DataType>.GetLifeTime: UInt16;

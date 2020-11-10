@@ -10,10 +10,11 @@ unit Server;
 
 interface
 
-uses Logging, Client, Generics.Collections, CryptLib,
+uses Client, Generics.Collections, CryptLib,
   SyncClient, defs, PacketData, SysUtils,
   SerialList, IdTcpServer, IdContext, IdGlobal, IdComponent,
-  IdSchedulerOfThreadPool, PacketReader, Types.PangyaBytes, MMO.Lock;
+  IdSchedulerOfThreadPool, PacketReader, Types.PangyaBytes, MMO.Lock,
+  LoggerInterface;
 
 type
 
@@ -22,7 +23,7 @@ type
     and some other basic function to send back message to the game
   }
 
-  TServer<ClientType> = class abstract (TLogging)
+  TServer<ClientType> = class abstract
     private
 
       var m_clients: TSerialList<TClient<ClientType>>;
@@ -43,6 +44,8 @@ type
       function GetContextData(AContext: TIdContext): TObject;
 
     protected
+      var m_logger: ILoggerInterface;
+
       procedure SetPort(port: UInt16);
       procedure Init; virtual; abstract;
 
@@ -63,7 +66,7 @@ type
       // Should replace this by something better
       property Clients: TSerialList<TClient<ClientType>> read m_clients;
     public
-      constructor Create(cryptLib: TCryptLib);
+      constructor Create(const ALogger: ILoggerInterface; cryptLib: TCryptLib);
       destructor Destroy; override;
 
       procedure SendDebugData(data: TPacketData);
@@ -73,12 +76,13 @@ type
 
   implementation
 
-uses ConsolePas, PacketsDef;
+uses PacketsDef;
 
-constructor TServer<ClientType>.Create(cryptLib: TCryptLib);
+constructor TServer<ClientType>.Create(const ALogger: ILoggerInterface; cryptLib: TCryptLib);
 begin
   inherited Create;
-  console.Log('TServer<ClientType>.Create');
+  m_logger := ALogger;
+  m_logger.Info('TServer<ClientType>.Create');
   m_lock := TLock.Create(True);
   m_cryptLib := cryptLib;
   m_clients := TSerialList<TClient<ClientType>>.Create;
@@ -113,14 +117,14 @@ end;
 
 procedure TServer<ClientType>.SetPort(port: UInt16);
 begin
-  Console.Log('TServer.SetPort', C_BLUE);
-  Console.Log(Format('Port : %d', [port]));
+  m_logger.Info('TServer.SetPort');
+  m_logger.Debug('Port : %d', [port]);
   self.m_server.DefaultPort := port;
 end;
 
 function TServer<ClientType>.Start: Boolean;
 begin
-  Log('TServer.Start', TLogType.TLogType_not);
+  m_logger.Info('TServer.Start');
   self.Init;
   try
     m_server.Active := true;
@@ -180,8 +184,6 @@ procedure TServer<ClientType>.SendDebugData(data: TPacketData);
 var
   client: TClient<ClientType>;
 begin
-  //Console.Log('SendDebugData', C_BLUE);
-  //Console.WriteDump(data);
   m_clients.First.Send(data);
   for client in m_clients do
   begin
@@ -195,15 +197,15 @@ var
 begin
   m_lock.Synchronize(procedure
   begin
-    Console.Log('TServer<ClientType>.ServerOnConnect');
+    m_logger.Info('TServer<ClientType>.ServerOnConnect');
     if (m_clients.Count >= m_maxPlayers) then
     begin
-      Console.Log('Server full', C_RED);
+      m_logger.Error('Server full');
       AContext.Connection.Disconnect;
       Exit;
     end;
 
-    client := TClient<ClientType>.Create(AContext, m_cryptLib);
+    client := TClient<ClientType>.Create(m_logger, AContext, m_cryptLib);
     client.ID := m_clients.Add(client);
     SetContextData(AContext, client);
     OnClientConnect(client);
@@ -258,7 +260,7 @@ begin
   dataSize := pheader.size;
   if not (dataSize + 4 = bufferSize) then
   begin
-    Console.Log('Something went wrong! Fix me', C_RED);
+    m_logger.Error('Something went wrong! Fix me');
     AContext.Connection.Disconnect;
     Exit;
   end;
@@ -267,39 +269,34 @@ begin
 
   if nil = client then
   begin
-    Console.Log('Something went wrong v2! Fix me', C_RED);
+    m_logger.Error('Something went wrong v2! Fix me');
     AContext.Connection.Disconnect;
     Exit;
   end;
 
   m_cryptLib.ClientDecrypt2(TPangyaBytes(buffer), decryptedBuffer, client.GetKey);
-
   packetReader := TPacketReader.CreateFromPangyaBytes(decryptedBuffer);
-
-  m_lock.Synchronize(procedure
-  begin
-    OnReceiveClientData(client, packetReader);
-  end);
-
-  packetReader.Free;
+  try
+    m_lock.Synchronize(procedure
+    begin
+      OnReceiveClientData(client, packetReader);
+    end);
+  finally
+    packetReader.Free;
+  end;
 end;
 
 procedure TServer<ClientType>.ServerOnException(AContext: TIdContext;
   AException: Exception);
 begin
-  m_lock.Synchronize(procedure
-  begin
-    //Console.Log('TServer<ClientType>.ServerOnException');
-  end);
+  m_logger.Info('TServer<ClientType>.ServerOnException');
+  m_logger.Error(AException.Message);
 end;
 
 procedure TServer<ClientType>.ServerOnStatus(ASender: TObject;
   const AStatus: TIdStatus; const AStatusText: string);
 begin
-  m_lock.Synchronize(procedure
-  begin
-    //Console.Log('TServer<ClientType>.ServerOnStatus');
-  end);
+
 end;
 
 function TServer<ClientType>.GetClientByContext(AContext: TIdContext): TClient<ClientType>;

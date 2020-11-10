@@ -88,6 +88,7 @@ type
     PLAYER_ACTION                       = $0063,
     PLAYER_DELETE_ITEM                  = $0064,
     PLAYER_FAST_FORWARD                 = $0065,
+    PLAYER_PLAY_SCRATCHY_CARD           = $0070,
     PLAYER_ENTER_SCRATCHY_SERIAL        = $0071,
     PLAYER_SET_MASCOT_TEXT              = $0073,
     PLAYER_CLOSE_SHOP                   = $0075,

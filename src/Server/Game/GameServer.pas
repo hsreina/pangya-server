@@ -13,11 +13,9 @@ interface
 uses Client, GameServerPlayer, Server, SysUtils, LobbiesList, CryptLib,
   SyncableServer, PacketsDef, Lobby, Game,
   IffManager, ServerOptions, Packet, PacketReader, PacketWriter,
-  GameServerConfiguration;
+  GameServerConfiguration, LoggerInterface, GameClient, ScratchyCard;
 
 type
-
-  TGameClient = TClient<TGameServerPlayer>;
 
   TGameServer = class (TSyncableServer<TGameServerPlayer>)
     protected
@@ -44,11 +42,10 @@ type
       procedure SavePlayer(const client: TGameClient);
 
       var m_lobbies: TLobbiesList;
-
       var m_serverConfiguration: TGameServerConfiguration;
-
       var m_iffManager: TIffManager;
       var m_serverOptions: TServerOptions;
+      var m_scratchyCard: TScratchyCard;
 
       function LobbiesList: RawByteString;
 
@@ -75,7 +72,6 @@ type
       procedure HandlePlayerRequestMessengerList(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerGMCommand(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const packetReader: TPacketReader);
-      procedure HandlePlayerOpenScratchyCard(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerSetAssistMode(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestGuildListSearch(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerCharMastery(const client: TGameClient; const packetReader: TPacketReader);
@@ -84,7 +80,6 @@ type
       procedure HandlePlayerRequestJoinGuild(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestGuildList(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerUnknow0140(const client: TGameClient; const packetReader: TPacketReader);
-      procedure HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestAchievements(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerSendInvite(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerGiveUpDailyQuest(const client: TGameClient; const packetReader: TPacketReader);
@@ -122,25 +117,29 @@ type
       procedure RegisterServer;
 
     public
-      constructor Create(cryptLib: TCryptLib; iffManager: TIffManager);
+      constructor Create(const ALogger: ILoggerInterface; cryptLib: TCryptLib;
+        iffManager: TIffManager);
       destructor Destroy; override;
+      procedure Debug;
   end;
 
 implementation
 
-uses Logging, ConsolePas, utils, PacketData, defs,
-        PlayerCharacter, GameServerExceptions,
+uses utils, PacketData, defs,
+  PlayerCharacter, GameServerExceptions,
   PlayerAction, Types.Vector3, PlayerData, BongdatriShop, PlayerEquipment,
   PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem,
   IffManager.HairStyle, PlayerItem, PlayerGenericData, PlayerItems,
-  PlayerMoneyPacket;
+  PlayerMoneyPacket, System.IOUtils;
 
-constructor TGameServer.Create(cryptLib: TCryptLib; iffManager: TIffManager);
+constructor TGameServer.Create(const ALogger: ILoggerInterface;
+  cryptLib: TCryptLib; iffManager: TIffManager);
 begin
-  inherited create('GameServer', cryptLib);
-  Console.Log('TGameServer.Create');
+  inherited create(ALogger, 'GameServer', cryptLib);
+  m_logger.Info('TGameServer.Create');
+  m_scratchyCard := TScratchyCard.Create(ALogger);
   m_serverConfiguration := TGameServerConfiguration.Create;
-  m_lobbies := TLobbiesList.Create;
+  m_lobbies := TLobbiesList.Create(ALogger);
   m_iffManager := iffManager;
   m_serverOptions := TServerOptions.Create;
 end;
@@ -150,7 +149,24 @@ begin
   m_lobbies.Free;
   m_serverOptions.Free;
   m_serverConfiguration.Free;
+  m_scratchyCard.Free;
   inherited;
+end;
+
+procedure TGameServer.Debug;
+var
+  packetWriter: TPacketWriter;
+  fileData: TBytes;
+begin
+  m_logger.Info('TGameServer.Debug');
+  packetWriter := TPacketWriter.Create;
+  try
+    fileData := TFile.ReadAllBytes('debug.dat');
+    packetWriter.Write(fileData[0], Length(fileData));
+    self.m_lobbies.Send(packetWriter);
+  finally
+    packetWriter.Free;
+  end;
 end;
 
 function TGameServer.LobbiesList: RawByteString;
@@ -171,11 +187,11 @@ var
   res: TPacketWriter;
   tmp: RawByteString;
 begin
-  self.Log('TGameServer.OnConnectClient', TLogType_not);
+  m_logger.Info('TGameServer.OnConnectClient');
 
   res := TPacketWriter.Create;
 
-  player := TGameServerPlayer.Create;
+  player := TGameServerPlayer.Create(m_logger);
   client.Data := player;
 
   tmp := #$00#$3F#$00#$01#$01 +
@@ -194,7 +210,7 @@ procedure TGameServer.OnClientDisconnect(const client: TGameClient);
 var
   lobby: TLobby;
 begin
-  self.Log('TGameServer.OnDisconnectClient', TLogType_not);
+  m_logger.Info('TGameServer.OnDisconnectClient');
   try
     lobby := m_lobbies.GetLobbyById(client.Data.Lobby);
     SavePlayer(client);
@@ -202,26 +218,26 @@ begin
   Except
     on E: Exception do
     begin
-      Console.Log(E.Message, C_RED);
+      m_logger.Error(E.Message);
     end;
   end;
 end;
 
 procedure TGameServer.OnStart;
 begin
-  self.Log('TGameServer.OnStart', TLogType_not);
+  m_logger.Info('TGameServer.OnStart');
   self.StartSyncClient;
 end;
 
 procedure TGameServer.OnConnectSuccess(sender: TObject);
 begin
-  Console.Log('TGameServer.OnConnectSuccess', C_BLUE);
+  m_logger.Info('TGameServer.OnConnectSuccess');
   self.RegisterServer;
 end;
 
 procedure TGameServer.Sync(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  self.Log('TGameServer.Sync', TLogType.TLogType_not);
+  m_logger.Info('TGameServer.Sync');
   self.Sync(
     #$01#$00 + // SSPID_PLAYER_SYNC
     write(client.UID.id, 4) +
@@ -232,7 +248,7 @@ end;
 
 procedure TGameServer.SyncPlayerAction(const client: TGameClient; const packet: TPacket);
 begin
-  self.Log('TGameServer.Sync', TLogType.TLogType_not);
+  m_logger.Info('TGameServer.Sync');
   self.Sync(
     #$02#$00 + // PLAYER_ACTION
     write(client.UID.id, 4) +
@@ -250,7 +266,7 @@ var
   checkC: UInt32;
   clientVersion: RawByteString;
 begin
-  self.Log('TGameServer.HandlePlayerLogin', TLogType_not);
+  m_logger.Info('TGameServer.HandlePlayerLogin');
 
   packetReader.ReadPStr(login);
 
@@ -261,16 +277,15 @@ begin
 
   packetReader.ReadUInt32(checkc);
   checkc := self.Deserialize(checkc);
-  self.Log(Format('check c dec : %x, %d', [checkc, checkc]));
+  m_logger.Debug('check c dec : %x, %d', [checkc, checkc]);
 
   packetReader.seek(4, 1);
 
   packetReader.ReadPStr(checkb);
-  self.Log(Format('Check b  : %s', [checkb]));
+  m_logger.Debug('Check b  : %s', [checkb]);
 
   client.UID.login := login;
   client.UID.id := 0;
-
 
 
   self.Sync(client, packetReader);
@@ -338,7 +353,7 @@ var
   res: TPacketWriter;
   target: TGameClient;
 begin
-  Console.Log('TGameeServer.HandlePlayerSendMessage', C_BLUE);
+  m_logger.Info('TGameeServer.HandlePlayerSendMessage');
   {
     Whisper is supposed to work between servers
     we'll see that later
@@ -354,8 +369,8 @@ begin
     Exit;
   end;
 
-  Console.Log(Format('whisper to: %s', [targetNickname]));
-  Console.Log(Format('whisper msg: %s', [msg]));
+  m_logger.Debug('whisper to: %s', [targetNickname]);
+  m_logger.Debug('whisper msg: %s', [msg]);
 
   target := GetPlayerByNickname(targetNickname);
 
@@ -392,7 +407,7 @@ var
   msg: RawByteString;
   reply: TPacketWriter;
 begin
-  Console.Log('TGameeServer.HandlePlayerSendMessage', C_BLUE);
+  m_logger.Info('TGameeServer.HandlePlayerSendMessage');
   packetReader.ReadPStr(userNickname);
   packetReader.ReadPStr(msg);
 
@@ -414,9 +429,9 @@ end;
 
 procedure TGameServer.HandlePlayerRequestServerTime(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerRequestServerTime', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestServerTime');
 
-  Console.Log('Should analyse that better', C_ORANGE);
+  m_logger.Warning('Should analyse that better');
 
   // Should check more about that, it's used with the time displayed
   client.Send(
@@ -430,12 +445,12 @@ procedure TGameServer.HandlerPlayerException(const client: TGameClient; const pa
 var
   msg: RawByteString;
 begin
-  self.Log('TGameServer.HandlerPlayerException', TLogType_not);
+  m_logger.Info('TGameServer.HandlerPlayerException');
   packetReader.Log;
   packetReader.Skip(1);
   if packetReader.ReadPStr(msg) then
   begin
-    Console.Error(Format('Exception : %s', [msg]));
+    m_logger.Error('Exception : %s', [msg]);
   end;
 end;
 
@@ -444,11 +459,11 @@ var
   lobbyId: UInt8;
   lobby: TLobby;
 begin
-  self.Log('TGameServer.HandlePlayerJoinLobby', TLogType_not);
+  m_logger.Info('TGameServer.HandlePlayerJoinLobby');
 
   if false = packetReader.ReadUInt8(lobbyId) then
   begin
-    Console.Log('Failed to read lobby id', C_RED);
+    m_logger.Error('Failed to read lobby id');
     Exit;
   end;
 
@@ -457,7 +472,7 @@ begin
   except
     on E: Exception do
     begin
-      Console.Log(E.Message, C_RED);
+      m_logger.Error(E.Message);
       Exit;
     end;
   end;
@@ -498,7 +513,7 @@ var
   totalCost: UInt32;
   packetWriter: TPacketWriter;
 begin
-  self.Log('TGameServer.HandlePlayerBuyItem', TLogType_not);
+  m_logger.Info('TGameServer.HandlePlayerBuyItem');
 
   shopResult := '';
   successCount := 0;
@@ -529,11 +544,11 @@ begin
 
     if not client.Data.SubStractIffEntryPrice(iffEntry, itemQty) then
     begin
-      Console.Log('player don''t have enough money!!', C_RED);
+      m_logger.Error('player don''t have enough money!!');
       Exit;
     end;
 
-    Console.Log('item found');
+    m_logger.Debug('item found');
     writeInfo := true;
 
     // TODO: Should work on another way to detect items
@@ -541,7 +556,7 @@ begin
     case TITEM_TYPE(shopItem.IffId.typ) of
       ITEM_TYPE_CHARACTER:
       begin
-        Console.Log('ITEM_TYPE_CHARACTER');
+        m_logger.Debug('ITEM_TYPE_CHARACTER');
         with client.Data.Characters.Add(GetDataFromFile(Format('../data/c_%X.dat', [shopItem.IffId.id]))) do
         begin
           SetIffId(shopItem.IffId.id);
@@ -551,7 +566,7 @@ begin
       end;
       ITEM_TYPE_FASHION:
       begin
-        Console.Log('ITEM_TYPE_FASHION');
+        m_logger.Debug('ITEM_TYPE_FASHION');
         with client.Data.Items.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
@@ -560,7 +575,7 @@ begin
       end;
       ITEM_TYPE_CLUB:
       begin
-        Console.Log('ITEM_TYPE_CLUB');
+        m_logger.Debug('ITEM_TYPE_CLUB');
         with client.Data.Items.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
@@ -570,7 +585,7 @@ begin
       end;
       ITEM_TYPE_AZTEC:
       begin
-        Console.Log('ITEM_TYPE_AZTEC');
+        m_logger.Debug('ITEM_TYPE_AZTEC');
         with client.Data.Items.GetOrAddByIffId(shopItem.IffId.id) do
         begin
           itemId := getId;
@@ -580,7 +595,7 @@ begin
       end;
       ITEM_TYPE_ITEM1:
       begin
-        Console.Log('ITEM_TYPE_ITEM1');
+        m_logger.Debug('ITEM_TYPE_ITEM1');
         with client.Data.Items.GetOrAddByIffId(shopItem.IffId.id) do
         begin
           itemId := getId;
@@ -590,7 +605,7 @@ begin
       end;
       ITEM_TYPE_ITEM2:
       begin
-        Console.Log('ITEM_TYPE_ITEM2');
+        m_logger.Debug('ITEM_TYPE_ITEM2');
         with client.Data.Items.GetOrAddByIffId(shopItem.IffId.id) do
         begin
           itemId := getId;
@@ -600,7 +615,7 @@ begin
       end;
       ITEM_TYPE_CADDIE:
       begin
-        Console.Log('ITEM_TYPE_CADDIE');
+        m_logger.Debug('ITEM_TYPE_CADDIE');
         with client.Data.Caddies.GetOrAddByIffId(shopItem.IffId.id) do
         begin
           itemId := getId;
@@ -608,11 +623,11 @@ begin
       end;
       ITEM_TYPE_CADDIE_ITEM:
       begin
-        Console.Log('ITEM_TYPE_CADDIE_ITEM');
+        m_logger.Debug('ITEM_TYPE_CADDIE_ITEM');
       end;
       ITEM_TYPE_ITEM_SET:
       begin
-        Console.Log('ITEM_TYPE_ITEM_SET');
+        m_logger.Debug('ITEM_TYPE_ITEM_SET');
         with TSetItemDataClass(iffEntry) do
         begin
           for J := 0 to GetCount - 1 do
@@ -644,20 +659,20 @@ begin
       end;
       ITEM_TYPE_CADDIE_ITEM2:
       begin
-        Console.Log('ITEM_TYPE_CADDIE_ITEM2');
+        m_logger.Debug('ITEM_TYPE_CADDIE_ITEM2');
       end;
       ITEM_TYPE_SKIN:
       begin
-        Console.Log('ITEM_TYPE_SKIN');
+        m_logger.Debug('ITEM_TYPE_SKIN');
       end;
       ITEM_TYPE_TITLE:
       begin
-        Console.Log('ITEM_TYPE_TITLE');
+        m_logger.Debug('ITEM_TYPE_TITLE');
       end;
       ITEM_TYPE_HAIR_COLOR1,
       ITEM_TYPE_HAIR_COLOR2:
       begin
-        Console.Log('ITEM_TYPE_HAIR_COLOR');
+        m_logger.Debug('ITEM_TYPE_HAIR_COLOR');
         with THairStyleDataClass(IffEntry) do
         begin
           if client.Data.Characters.TryGetByIffId(GetCharacterIffId, character) then
@@ -672,7 +687,7 @@ begin
       end;
       ITEM_TYPE_MASCOT:
       begin
-        Console.Log('ITEM_TYPE_MASCOT');
+        m_logger.Debug('ITEM_TYPE_MASCOT');
         with client.Data.Mascots.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
@@ -680,7 +695,7 @@ begin
       end;
       ITEM_TYPE_FURNITURE:
       begin
-        Console.Log('ITEM_TYPE_FURNITURE');
+        m_logger.Debug('ITEM_TYPE_FURNITURE');
         with client.Data.Mascots.Add(shopItem.IffId.id) do
         begin
           itemId := getId;
@@ -688,15 +703,15 @@ begin
       end;
       ITEM_TYPE_CARD_SET:
       begin
-        Console.Log('ITEM_TYPE_CARD_SET');
+        m_logger.Debug('ITEM_TYPE_CARD_SET');
       end;
       ITEM_TYPE_UNKNOW:
       begin
-        Console.Log('ITEM_TYPE_UNKNOW');
+        m_logger.Debug('ITEM_TYPE_UNKNOW');
       end
       else
       begin
-        Console.Log(Format('Unknow item type %x', [shopItem.IffId.typ]));
+        m_logger.Error('Unknow item type %x', [shopItem.IffId.typ]);
       end;
     end;
 
@@ -764,11 +779,11 @@ var
   mode: UInt32;
   playerName: RawByteString;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestIdentity', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestIdentity');
   packetReader.ReadUInt32(mode);
   packetReader.ReadPStr(playerName);
 
-  Console.Log(Format('playerName : %s', [playerName]));
+  m_logger.Debug(Format('playerName : %s', [playerName]));
 
   case mode of
     $80: begin
@@ -792,7 +807,7 @@ procedure TGameServer.HandlePlayerRequestServerList(const client: TGameClient; c
 var
   packetWriter: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestServerList', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestServerList');
   // Request server list to sync server
   packetWriter := TPacketWriter.Create;
   packetWriter.WriteAction(TSSAPID.SEND_SERVER_LIST);
@@ -818,11 +833,11 @@ var
   actionType: TActionType;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerUpgrade', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerUpgrade');
 
   if not packetReader.Read(header, SizeOf(TPacketHeader)) then
   begin
-    Console.Log('Failed to read header', C_RED);
+    m_logger.Error('Failed to read header');
     Exit;
   end;
 
@@ -846,7 +861,7 @@ begin
       actionType := actionType_downgrade;
     end;
     else begin
-      Console.Log('Unknow action');
+      m_logger.Error('Unknow action');
     end;
   end;
   
@@ -876,7 +891,7 @@ procedure TGameServer.HandlePlayerNotice(const client: TGameClient; const packet
 var
   notice: RawByteString;
 begin
-  Console.Log('TGameServer.HandlePlayerNotice', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerNotice');
 
   if not client.data.IsAdmin then
   begin
@@ -895,7 +910,7 @@ end;
 
 procedure TGameServer.HandlePlayerLeaveGrandPrix(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerLeaveGrandPrix', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerLeaveGrandPrix');
 
   {
     Should Send me leaving
@@ -911,7 +926,7 @@ end;
 
 procedure TGameServer.HandlePlayerEnterGrandPrix(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerEnterGrandPrix', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerEnterGrandPrix');
 
   {
     Should Send
@@ -937,14 +952,14 @@ procedure TGameServer.HandlePlayerJoinMultiplayerGamesList(const client: TGameCl
 var
   playerLobby: TLobby;
 begin
-  Console.Log('TGameServer.HandlePlayerJoinMultiplayerGamesList', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerJoinMultiplayerGamesList');
 
   try
     playerLobby := m_lobbies.GetPlayerLobby(client);
   except
     on E: Exception do
     begin
-      Console.Log(E.Message, C_RED);
+      m_logger.Error(E.Message);
       Exit;
     end;
   end;
@@ -956,14 +971,14 @@ procedure TGameServer.HandlePlayerLeaveMultiplayerGamesList(const client: TGameC
 var
   playerLobby: TLobby;
 begin
-  Console.Log('TGameServer.HandlePlayerLeaveMultiplayerGamesList', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerLeaveMultiplayerGamesList');
 
   try
     playerLobby := m_lobbies.GetPlayerLobby(client);
   except
     on E: Exception do
     begin
-      Console.Log(E.Message, C_RED);
+      m_logger.Error(E.Message);
       Exit;
     end;
   end;
@@ -973,7 +988,7 @@ end;
 
 procedure TGameServer.HandlePlayerOpenRareShop(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerOpenRareShop', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerOpenRareShop');
   client.Send(#$0B#$01#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$00#$00#$00#$00);
 end;
 
@@ -981,7 +996,7 @@ procedure TGameServer.HandlePlayerRequestMessengerList(const client: TGameClient
 var
   packet: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestMessengerList', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestMessengerList');
 
   packet := TPacketWriter.Create;
   
@@ -1016,7 +1031,7 @@ var
   tmpPStr: RawByteString;
   game: TGame;
 begin
-  Console.Log('TGameServer.HandlePlayerGMCommand', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerGMCommand');
 
   if not client.data.IsAdmin then
   begin
@@ -1026,13 +1041,13 @@ begin
   try
     game := m_lobbies.GetPlayerGame(client);
   except
-    Console.Log('Failed to get player game');
+    m_logger.Error('Failed to get player game');
     Exit;
   end;
 
   if not packetReader.ReadUInt16(command) then
   begin
-    Console.Log(Format('Unknow Command %d', [command]), C_RED);
+    m_logger.Error('Unknow Command %d', [command]);
     Exit;
   end;
 
@@ -1049,45 +1064,45 @@ begin
     $8: begin // open
       if (packetReader.ReadPStr(tmpPStr)) then
       begin
-        Console.Log(Format('open %s', [tmpPStr]));
+        m_logger.Debug('open %s', [tmpPStr]);
       end;
     end;
     $9: begin // close
       if (packetReader.ReadPStr(tmpPStr)) then
       begin
-        Console.Log(Format('close %s', [tmpPStr]));
+        m_logger.Debug('close %s', [tmpPStr]);
       end;
     end;
     $E: begin // wind (speed - dir)
       if packetReader.ReadUInt8(tmpUInt8) and packetReader.ReadUInt8(tmp1UInt8) then
       begin
-        Console.Log(Format('wind %d, %d', [tmpUInt8, tmp1UInt8]));
+        m_logger.Debug('wind %d, %d', [tmpUInt8, tmp1UInt8]);
       end;
     end;
     $A: begin // kick
       if (packetReader.ReadUInt32(tmpUInt32)) then
       begin
-        console.Log(Format('kick %d', [tmpUInt32]));
+        m_logger.Debug('kick %d', [tmpUInt32]);
       end;
     end;
     $F: begin // weather (fine|rain|snow|cloud)
       if (packetReader.ReadUInt8(tmpUInt8)) then
       begin
-        console.Log(Format('weather %d', [tmpUInt8]));
+        m_logger.Debug('weather %d', [tmpUInt8]);
         game.Send(#$9E#$00 + UTF8Char(tmpUInt8) + #$00#$00);
       end;
     end;
     $1C: begin // setmission
       if (packetReader.ReadUInt32(tmpUInt32)) then
       begin
-        console.Log(Format('setmission %d', [tmpUInt8]));
+        m_logger.Debug('setmission %d', [tmpUInt8]);
       end;
     end;
     $1F: begin // matchmap
-      console.Log('matchmap');
+      m_logger.Debug('matchmap');
       if (packetReader.ReadUInt32(tmpUInt32)) then
       begin
-        console.Log(Format('matchmap %d', [tmpUInt8]));
+        m_logger.Debug('matchmap %d', [tmpUInt8]);
       end;
     end;
   end;
@@ -1096,7 +1111,7 @@ end;
 
 procedure TGameServer.HandlePlayerUnknow00EB(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerUnknow0140', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerUnknow0140');
   // Should send that to all players
   client.Send(
     #$96#$01 +
@@ -1105,17 +1120,11 @@ begin
   );
 end;
 
-procedure TGameServer.HandlePlayerOpenScratchyCard(const client: TGameClient; const packetReader: TPacketReader);
-begin
-  Console.Log('TGameServer.HandlePlayerOpenScratchyCard', C_BLUE);
-  client.Send(#$EB#$01#$00#$00#$00#$00#$00);
-end;
-
 procedure TGameServer.HandlePlayerCharMastery(const client: TGameClient; const packetReader: TPacketReader);
 var
   packetWriter: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerCharMastery', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerCharMastery');
   packetReader.Log;
              //hsreina
   {
@@ -1164,10 +1173,10 @@ var
   un1: UInt32;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestGuildListSearch', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestGuildListSearch');
   packetReader.ReadUInt32(un1);
   packetReader.ReadPStr(keyword);
-  Console.Log(Format('keyword : %s', [keyword]));
+  m_logger.Debug('keyword : %s', [keyword]);
 
   res := TPacketWriter.Create;
 
@@ -1205,11 +1214,11 @@ var
   description: RawByteString;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerCreateGuild', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerCreateGuild');
   packetReader.ReadPStr(name);
   packetReader.ReadPStr(description);
-  Console.Log(Format('Name: %s', [name]));
-  Console.Log(Format('Description: %s', [description]));
+  m_logger.Debug('Name: %s', [name]);
+  m_logger.Info('Description: %s', [description]);
 
   // On success, should remove the item to create guild
 
@@ -1229,9 +1238,9 @@ var
   guildName: RawByteString;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerCheckGuildName', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerCheckGuildName');
   packetReader.ReadPStr(guildName);
-  Console.Log(Format('guildName : %s', [guildName]));
+  m_logger.Debug('guildName : %s', [guildName]);
 
   res := TPacketWriter.Create;
   res.WriteStr(#$B6#$01);
@@ -1249,11 +1258,11 @@ var
   un1: UInt32;
   applicationMessage: RawByteString;
 begin
-  console.Log('TGameServer.HandlePlayerRequestJoinGuild', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestJoinGuild');
   packetReader.ReadUInt32(un1);
   packetReader.ReadPStr(applicationMessage);
-  console.Log(Format('un1 %x', [un1]));
-  console.Log(Format('Application message : %s', [applicationMessage]));
+  m_logger.Info('un1 %x', [un1]);
+  m_logger.Info('Application message : %s', [applicationMessage]);
 
 end;
 
@@ -1262,9 +1271,9 @@ var
   page: UInt32;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestGuildList', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestGuildList');
   packetReader.ReadUInt32(page);
-  Console.Log(Format('page : %x', [page]));
+  m_logger.Debug('page : %x', [page]);
 
   res := TPacketWriter.Create;
 
@@ -1298,7 +1307,7 @@ end;
 
 procedure TGameServer.HandlePlayerSetAssistMode(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.log('TGameServer.HandlePlayerSetAssistMode');
+  m_logger.Info('TGameServer.HandlePlayerSetAssistMode');
 
   client.Send(
     #$16#$02 +
@@ -1320,56 +1329,8 @@ end;
 
 procedure TGameServer.HandlePlayerUnknow0140(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  self.Log('TGameServer.HandlePlayerUnknow0140', TLogType_not);
+  m_logger.Info('TGameServer.HandlePlayerUnknow0140');
   client.Send(#$0E#$02#$00#$00#$00#$00#$00#$00#$00#$00);
-end;
-
-procedure TGameServer.HandlePlayerEnterScratchyCardSerial(const client: TGameClient; const packetReader: TPacketReader);
-const
-  validSerialSize = 13;
-var
-  serial: RawByteString;
-  serialSize: Uint32;
-begin
-  Console.Log('TGameServer.HandlePlayerEnterScratchyCardSerial', C_BLUE);
-
-  packetReader.Log;
-
-  if not packetReader.ReadUInt32(serialSize) then
-  begin
-    Exit;
-  end;
-
-  if not (serialSize = validSerialSize) then
-  begin
-    Exit;
-  end;
-
-  setLength(serial, validSerialSize);
-
-  if not packetReader.Read(serial[1], validSerialSize) then
-  begin
-    Exit;
-  end;
-
-  Console.Log(Format('serial : %s', [serial]));
-
-  // The server seem to alway answer that with any wrong serial
-  // Serial seem broken in original Pangya
-  client.Send(
-    #$DE#$00 + #$16#$26#$26#$00
-  );
-
-  // Old server data was
-  {
-  client.Send(
-    #$DE#$00 +
-    #$00#$00#$00#$00 +
-    #$00#$00#$00#$00 + // return code 0 success, 1 used, 2 invalid, 3 expired etc...
-    #$00#$00#$00#$00
-  );
-  }
-
 end;
 
 procedure TGameServer.HandlePlayerRequestAchievements(const client: TGameClient; const packetReader: TPacketReader);
@@ -1377,23 +1338,23 @@ var
   something: UInt32;
   achievementsData: RawByteString;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestAchievements', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestAchievements');
 
   packetReader.Log;
 
   if not packetReader.ReadUInt32(something) then
   begin
-    Console.Error('Faield to read something');
+    m_logger.Error('Faield to read something');
     Exit;
   end;
 
-  console.Log(Format('something %x', [something]));
+  m_logger.Debug('something %x', [something]);
 
   achievementsData := GetDataFromFile('../data/achievements.dbg');
 
   if Length(achievementsData) = 0 then
   begin
-    Console.Log('missing achievement data', C_RED);
+    m_logger.Error('missing achievement data');
   end;
 
   // Achievements
@@ -1404,14 +1365,14 @@ end;
 
 procedure TGameServer.HandlePlayerSendInvite(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerSendInvite', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerSendInvite');
   packetReader.Log;
-  Console.Log('Should implement that', C_ORANGE);
+  m_logger.Warning('Should implement that');
 end;
 
 procedure TGameServer.HandlePlayerGiveUpDailyQuest(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerGiveUpDailyQuest', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerGiveUpDailyQuest');
   {
     00000000  54 01 03 00 00 00 A2 6F  E0 02 A3 6F E0 02 A4 6F    T.....¢o‡.£o‡.§o
     00000010  E0 02                                               ‡.
@@ -1450,7 +1411,7 @@ end;
 
 procedure TGameServer.HandlePlayerAcceptDailyQuest(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerAcceptDailyQuest', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerAcceptDailyQuest');
   {
     00000000  52 01 03 00 00 00 A2 6F  E0 02 A3 6F E0 02 A4 6F    R.....¢o‡.£o‡.§o
     00000010  E0 02                                               ‡.
@@ -1508,7 +1469,7 @@ var
   I: Integer;
   packetWriter: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerRecycleItem', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRecycleItem');
   {
       offset   0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F
     00000000  8D 01 01 00 00 00 01 00  00 18 51 10 84 00 01 00    ç.........Q.Ñ...
@@ -1527,10 +1488,10 @@ begin
   for I := 1 to count do
   begin
     packetReader.Read(itemInfo, SizeOf(TRecycleItemInfo));
-    console.Log('recycle info : ');
-    console.Log(Format('IffId %x', [itemInfo.IffId]));
-    console.Log(Format('Id %x', [itemInfo.Id]));
-    console.Log(Format('Un %x', [itemInfo.Un]));
+    m_logger.Debug('recycle info : ');
+    m_logger.Debug('IffId %x', [itemInfo.IffId]);
+    m_logger.Debug('Id %x', [itemInfo.Id]);
+    m_logger.Debug('Un %x', [itemInfo.Un]);
   end;
 
   packetWriter := TPlayerMoneyPacket.CreateForPlayer(client.data);
@@ -1574,7 +1535,7 @@ end;
 
 procedure TGameServer.HandlePlayerRequestDailyQuest(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerRequestDailyQuest', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestDailyQuest');
   client.Send(
     #$16#$02 +
     #$83#$62#$77#$56 +
@@ -1613,7 +1574,7 @@ procedure TGameServer.HandlePlayerRequestInbox(const client: TGameClient; const 
 var
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestInbox', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestInbox');
   res := TPacketWriter.Create;
 
   res.WriteStr(#$11#$02);
@@ -1659,14 +1620,14 @@ var
   itemId: UInt32;
   playerItems: TPlayerItems;
 begin
-  Console.Log('TGameServer.HandlePlayerDeleteItem', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerDeleteItem');
 
   if not packetReader.ReadUInt32(itemIffId) or not packetReader.ReadUInt32(count) then
   begin
     Exit;
   end;
 
-  Console.Log(Format('Delete: %x, %d', [itemIffId, count]));
+  m_logger.Debug('Delete: %x, %d', [itemIffId, count]);
 
   playerItems := client.Data.Items;
 
@@ -1707,7 +1668,7 @@ var
   action: TACTION_TYPE;
   pangsAmount: UInt64;
 begin
-  Console.Log('TGameServer.HandlerPlayerPangsTransaction', C_BLUE);
+  m_logger.Info('TGameServer.HandlerPlayerPangsTransaction');
 
   packetReader.Log;
 
@@ -1724,11 +1685,11 @@ begin
   case action of
     ACTION_TYPE_REMOVE:
     begin
-      console.Log(Format('Should remove %d pangs', [pangsAmount]));
+      m_logger.Debug('Should remove %d pangs', [pangsAmount]);
     end;
     ACTION_TYPE_ADD:
     begin
-      console.Log(Format('Should add %d pangs', [pangsAmount]));
+      m_logger.Debug('Should add %d pangs', [pangsAmount]);
     end;
   end;
 
@@ -1742,7 +1703,7 @@ end;
 
 procedure TGameServer.HandlePlayerRequestLockerPage(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerRequestLockerPage', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestLockerPage');
   client.Send(
     #$6D#$01 +
     #$03#$00 + // Pages
@@ -1757,7 +1718,7 @@ var
   pangs: UInt64;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerChangeLockerPassword', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerChangeLockerPassword');
 
   pangs := 99999999;
 
@@ -1775,32 +1736,31 @@ var
   oldPassword: RawByteString;
   newPassword: RawByteString;
 begin
-  Console.Log('TGameServer.HandlePlayerChangeLockerPassword', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerChangeLockerPassword');
 
   if not packetReader.ReadPStr(oldPassword) then
   begin
-    Console.Error('Failed to read old password');
+    m_logger.Error('Failed to read old password');
   end;
 
   if not packetReader.ReadPStr(newPassword) then
   begin
-    Console.Error('Failed to read new password');
+    m_logger.Error('Failed to read new password');
   end;
 
-  Console.Log(Format('old: %s; new: %s', [oldPassword, newPassword]));
-
+  m_logger.Debug('old: %s; new: %s', [oldPassword, newPassword]);
 end;
 
 procedure TGameServer.HandlerPlayerRequestLockerAccess(const client: TGameClient; const packetReader: TPacketReader);
 var
   password: RawByteString;
 begin
-  Console.Log('TGameServer.HandlerPlayerRequestLockerAccess', C_BLUE);
+  m_logger.Info('TGameServer.HandlerPlayerRequestLockerAccess');
   if not packetReader.ReadPStr(password) then
   begin
     Exit;
   end;
-  console.log(Format('Access code: %s', [password]));
+  m_logger.Debug('Access code: %s', [password]);
 
   client.Send(#$6C#$01#$00#$00#$00#$00);
 
@@ -1808,7 +1768,7 @@ end;
 
 procedure TGameServer.HandlePlayerRequestLocker(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerRequestLocker', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestLocker');
   client.Send(#$70#$01#$00#$00#$00#$00#$4C#$00#$00#$00);
 end;
 
@@ -1819,7 +1779,7 @@ var
   mascot: TPlayerMascot;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerSetMascotText', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerSetMascotText');
   if not packetReader.ReadUInt32(mascotId) or not packetReader.ReadPStr(text) then
   begin
     Exit;
@@ -1878,7 +1838,7 @@ var
   playerQuests: TPlayerQuest;
   newQuestStatus: UInt32;
 begin
-  Console.Log('TGameServer.HandlerPlayerClearQuest', C_BLUE);
+  m_logger.Info('TGameServer.HandlerPlayerClearQuest');
 
   if not packetReader.Read(questData, SizeOf(TQuestData)) then
   begin
@@ -1915,10 +1875,10 @@ var
   un1, un2: UInt32;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlerPlayerDeleteMail', C_BLUE);
+  m_logger.Info('TGameServer.HandlerPlayerDeleteMail');
   packetReader.ReadUInt32(un1);
   packetReader.ReadUInt32(un2);
-  Console.Log(Format('un1: %x, un2: %x', [un1, un2]));
+  m_logger.Debug('un1: %x, un2: %x', [un1, un2]);
 
   res := TPacketWriter.Create;
 
@@ -1966,11 +1926,11 @@ var
   un1, un2: UInt32;
   packetWriter: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlerPlayerSendMail', C_BLUE);
+  m_logger.Info('TGameServer.HandlerPlayerSendMail');
 
   packetReader.ReadUInt32(un1);
   packetReader.ReadUInt32(un2);
-  Console.Log(Format('un1: %x, un2: %x', [un1, un2]));
+  m_logger.Debug('un1: %x, un2: %x', [un1, un2]);
 
   if not packetReader.ReadPStr(mailTo) then
   begin
@@ -1984,8 +1944,8 @@ begin
     Exit;
   end;
 
-  console.Log(Format('mailTo : %s', [mailto]));
-  console.Log(Format('mailBody : %s', [mailBody]));
+  m_logger.Debug('mailTo : %s', [mailto]);
+  m_logger.Debug('mailBody : %s', [mailBody]);
 
   packetWriter := TPlayerMoneyPacket.CreateForPlayer(client.data);
   client.Send(packetWriter);
@@ -2016,7 +1976,7 @@ var
   nick: RawByteString;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestOfflinePlayerInfo', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestOfflinePlayerInfo');
 
   packetReader.Skip(1);
 
@@ -2025,7 +1985,7 @@ begin
     Exit;
   end;
 
-  console.Log(Format('search nickname %s', [nick]));
+  m_logger.Debug('search nickname %s', [nick]);
 
   res := TPacketWriter.Create;
 
@@ -2047,7 +2007,7 @@ var
   inboxId: UInt32;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerMoveInboxGift', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerMoveInboxGift');
   packetReader.Log;
 
   if not packetReader.ReadUInt32(inboxId) then
@@ -2081,7 +2041,7 @@ var
   inboxId: UInt32;
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestInboxDetails', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestInboxDetails');
   if not packetReader.ReadUInt32(inboxId) then
   begin
     Exit;
@@ -2122,7 +2082,7 @@ procedure TGameServer.HandlePlayerRequestCookiesCount(const client: TGameClient;
 var
   res: TPacketWriter;
 begin
-  Console.Log('TGameServer.PlayerRequestDailyReward', C_BLUE);
+  m_logger.Info('TGameServer.PlayerRequestDailyReward');
   res := TPacketWriter.Create;
   res.WriteStr(WriteAction(TSGPID.PLAYER_COOKIES));
   res.WriteInt64(client.Data.Cookies);
@@ -2132,7 +2092,7 @@ end;
 
 procedure TGameServer.HandlePlayerRequestDailyReward(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.PlayerRequestDailyReward', C_BLUE);
+  m_logger.Info('TGameServer.PlayerRequestDailyReward');
   client.Send(
     #$48#$02 +
     #$00#$00#$00#$00#$01#$08#$02#$00#$1A#$01#$00#$00#$00 +
@@ -2153,7 +2113,7 @@ var
   bongdariTransactionResult: TBongdariTransactionResult;
   I: UInt32;
 begin
-  Console.Log('TGameServer.HandlePlayerPlayBongdariShop', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerPlayBongdariShop');
 
   res := TPacketWriter.Create;
   res2 := TPacketWriter.Create;
@@ -2231,7 +2191,7 @@ var
   un1: UInt8;
   targetPlayer: TGameClient;
 begin
-  Console.Log('TGameServer.HandlePlayerRequestInfo', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerRequestInfo');
 
 
   if not packetReader.ReadUInt32(playerId) then
@@ -2473,7 +2433,7 @@ begin
     end;
     TCGPID.PLAYER_OPEN_SCRATCHY_CARD:
     begin
-      self.HandlePlayerOpenScratchyCard(client, packetReader);
+      m_scratchyCard.HandlePlayerOpenScratchyCard(client, packetReader);
     end;
     TCGPID.PLAYER_UN_0140:
     begin
@@ -2491,9 +2451,13 @@ begin
     begin
       self.HandlePlayerRequestAchievements(client, packetReader);
     end;
+    TCGPID.PLAYER_PLAY_SCRATCHY_CARD:
+    begin
+      m_scratchyCard.HandlerPlayerPlayScratchyCard(client, packetReader);
+    end;
     TCGPID.PLAYER_ENTER_SCRATCHY_SERIAL:
     begin
-      self.HandlePlayerEnterScratchyCardSerial(client, packetReader);
+      m_scratchyCard.HandlePlayerEnterScratchyCardSerial(client, packetReader);
     end;
     TCGPID.PLAYER_REQUEST_DAILY_QUEST:
     begin
@@ -2622,7 +2586,7 @@ begin
       except
         on e: Exception do
         begin
-          Console.Log(e.Message, C_RED);
+          m_logger.Error(e.Message);
           Exit;
         end;
       end;
@@ -2641,7 +2605,7 @@ var
   packetId: TCGPID;
   playerLobby: TLobby;
 begin
-  self.Log('TGameServer.OnReceiveClientData', TLogType_not);
+  m_logger.Info('TGameServer.OnReceiveClientData');
   packetReader.Log;
 
   player := client.Data;
@@ -2672,7 +2636,7 @@ begin
         except
           on e: Exception do
           begin
-            Console.Log(e.Message, C_RED);
+            m_logger.Error(e.Message);
             Exit;
           end;
         end;
@@ -2686,7 +2650,7 @@ procedure TGameServer.HandlerSyncServerPlayerSync(const packetReader: TPacketRea
 var
   actionId: TSGPID;
 begin
-  self.Log('TGameServer.HandlerSyncServerPlayerSync', TLogType_not);
+  m_logger.Info('TGameServer.HandlerSyncServerPlayerSync');
   client.Send(packetReader.GetRemainingData);
 end;
 
@@ -2694,7 +2658,7 @@ procedure TGameServer.SendServerList(const packetReader: TPacketReader; const cl
 var
   packetWriter: TPacketWriter;
 begin
-  Console.Log('TGameServer.SendServerList', C_BLUE);
+  m_logger.Info('TGameServer.SendServerList');
 
   packetWriter := TPacketWriter.Create;
   packetWriter.WriteStr(#$9F#$00);
@@ -2712,7 +2676,7 @@ var
   d: RawByteString;
   mascot: TPlayerMascot;
 begin
-  self.Log('TGameServer.HandleSyncServerPlayerAction', TLogType_not);
+  m_logger.Info('TGameServer.HandleSyncServerPlayerAction');
   if packetReader.Read(actionId, 2) then
   begin
     case actionId of
@@ -2741,7 +2705,7 @@ begin
       end;
       TSSAPID.PLAYER_CHARACTERS:
       begin
-        Console.Log('Characters');
+        m_logger.Debug('Characters');
         client.Data.Characters.Load(packetReader.GetRemainingData);
         client.Send(
           WriteAction(TSGPID.PLAYER_CHARACTERS_DATA) +
@@ -2750,7 +2714,7 @@ begin
       end;
       TSSAPID.PLAYER_ITEMS:
       begin
-        Console.Log('Items');
+        m_logger.Debug('Items');
         client.Data.Items.Load(packetReader.GetRemainingData);
         client.Send(
           WriteAction(TSGPID.PLAYER_ITEMS_DATA) +
@@ -2759,7 +2723,7 @@ begin
       end;
       TSSAPID.PLAYER_CADDIES:
       begin
-        Console.Log('caddies');
+        m_logger.Debug('caddies');
         client.Data.Caddies.Load(packetReader.GetRemainingData);
         client.Send(
           WriteAction(TSGPID.PLAYER_CADDIES_DATA) +
@@ -2768,13 +2732,13 @@ begin
       end;
       TSSAPID.PLAYER_MASCOTS:
       begin
-        Console.Log('mascots');
+        m_logger.Debug('mascots');
         client.Data.Mascots.Load(packetReader.GetRemainingData);
 
-        console.WriteDump(
-          WriteAction(TSGPID.PLAYER_MASCOTS_DATA) +
-          client.Data.Mascots.ToPacketData
-        );
+//        console.WriteDump(
+//          WriteAction(TSGPID.PLAYER_MASCOTS_DATA) +
+//          client.Data.Mascots.ToPacketData
+//        );
 
         client.Send(
           WriteAction(TSGPID.PLAYER_MASCOTS_DATA) +
@@ -2783,13 +2747,13 @@ begin
       end;
       TSSAPID.PLAYER_COOKIES:
       begin
-        Console.Log('cookies');
+        m_logger.Debug('cookies');
         packetReader.ReadInt64(client.Data.Cookies);
         client.Send(#$96#$00 + Write(client.Data.Cookies, 8));
       end;
       else
       begin
-        self.Log(Format('Unknow action Id %x', [Word(actionId)]), TLogType_err);
+        m_logger.Error('Unknow action Id %x', [Word(actionId)]);
       end;
     end;
   end;
@@ -2821,7 +2785,7 @@ end;
 
 procedure TGameServer.OnConnect(sender: TObject);
 begin
-  self.Log('TGameServer.OnConnect', TLogType_not);
+  m_logger.Info('TGameServer.OnConnect');
 end;
 
 procedure TGameServer.OnReceiveSyncData(const packetReader: TPacketReader);
@@ -2830,7 +2794,7 @@ var
   playerUID: TPlayerUID;
   client: TGameClient;
 begin
-  self.Log('TLoginServer.OnReceiveSyncData', TLogType_not);
+  m_logger.Info('TLoginServer.OnReceiveSyncData');
   if not (packetReader.Read(packetID, 2)) then
   begin
     Exit;
@@ -2842,7 +2806,7 @@ begin
   client := self.GetClientByUID(playerUID);
   if client = nil then
   begin
-    Console.Log('something went wrong client not found', C_RED);
+    m_logger.Error('something went wrong client not found');
     Exit;
   end;
 
@@ -2850,7 +2814,7 @@ begin
   begin
     client.UID.id := playerUID.id;
   end;
-  console.Log(Format('player UID : %s/%d', [playerUID.login, playerUID.id]));
+  m_logger.Debug('player UID : %s/%d', [playerUID.login, playerUID.id]);
 
   case packetId of
     TSSPID.PLAYER_SYNC:
@@ -2863,7 +2827,7 @@ begin
     end;
     else
     begin
-      self.Log(Format('Unknow packet Id %x', [Word(packetID)]), TLogType_err);
+      m_logger.Error('Unknow packet Id %x', [Word(packetID)]);
     end;
   end;
 end;
@@ -2877,7 +2841,7 @@ begin
   except
     on e: Exception do
     begin
-      Console.Log(e.Message, C_RED);
+      m_logger.Error(e.Message);
       Exit;
     end;
   end;
@@ -2893,7 +2857,7 @@ begin
   except
     on e: Exception do
     begin
-      Console.Log(e.Message, C_RED);
+      m_logger.Error(e.Message);
       Exit;
     end;
   end;
@@ -2912,7 +2876,7 @@ begin
   except
     on e: Exception do
     begin
-      Console.Log(e.Message, C_RED);
+      m_logger.Debug(e.Message);
       Exit;
     end;
   end;
@@ -2928,7 +2892,7 @@ begin
   except
     on e: Exception do
     begin
-      Console.Log(e.Message, C_RED);
+      m_logger.Debug(e.Message);
       Exit;
     end;
   end;
@@ -2939,7 +2903,7 @@ procedure TGameServer.SavePlayer(const client: TGameClient);
 var
   packetWriter: TPacketWriter;
 begin
-  Console.Log('TGameServer.SavePlayer', C_BLUE);
+  m_logger.Info('TGameServer.SavePlayer');
 
   packetWriter := TPacketWriter.Create;
 

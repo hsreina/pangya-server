@@ -13,7 +13,7 @@ interface
 uses
   Generics.Collections, GameServerPlayer, defs, utils, SysUtils,
   GameHoleInfo, Types.Vector3, System.TypInfo, PlayersList, GameHoles, PacketsDef,
-  Packet, PacketReader, PacketWriter;
+  Packet, PacketReader, PacketWriter, LoggerInterface;
 
 type
 
@@ -65,6 +65,7 @@ type
 
   TGame = class
     private
+      var m_logger: ILoggerInterface;
       var m_id: UInt16;
       var m_players: TPlayersList;
       var m_name: RawByteString;
@@ -141,7 +142,7 @@ type
       property OnPlayerJoinGame: TGamePlayerGenericEvent read m_onPlayerJoinGame;
       property OnPlayerLeaveGame: TGamePlayerGenericEvent read m_onPlayerLeaveGame;
 
-      constructor Create(args: TGameCreateArgs; onUpdate: TGameEvent);
+      constructor Create(const ALogger: ILoggerInterface; args: TGameCreateArgs; onUpdate: TGameEvent);
       destructor Destroy; override;
 
       function AddPlayer(player: TGameClient): Boolean;
@@ -160,7 +161,7 @@ type
 
 implementation
 
-uses GameServerExceptions, ConsolePas,
+uses GameServerExceptions,
   PlayerGenericData, PlayerAction, PlayerCharacter, PlayerEquipment,
   PlayerShopItem, Types.ShotData;
 
@@ -200,18 +201,19 @@ begin
   end;
 end;
 
-constructor TGame.Create(args: TGameCreateArgs; onUpdate: TGameEvent);
+constructor TGame.Create(const ALogger: ILoggerInterface; args: TGameCreateArgs; onUpdate: TGameEvent);
 var
   I: Integer;
 begin
   inherited Create;
-  Console.Log('TGame.Create', C_BLUE);
+  m_logger := ALogger;
+  m_logger.Info('TGame.Create');
   m_onUpdateGame := TGameGenericEvent.Create;
   m_onPlayerJoinGame := TGamePlayerGenericEvent.Create;
   m_onPlayerLeaveGame := TGamePlayerGenericEvent.Create;
 
-  Console.Log(Format('mode : %s', [GetEnumName(TypeInfo(TGAME_MODE), Integer(args.GameInfo.mode))]));
-  Console.Log(Format('type : %s', [GetEnumName(TypeInfo(TGAME_TYPE), Integer(args.GameInfo.gameType))]));
+  m_logger.Debug('mode : %s', [GetEnumName(TypeInfo(TGAME_MODE), Integer(args.GameInfo.mode))]);
+  m_logger.Debug('type : %s', [GetEnumName(TypeInfo(TGAME_TYPE), Integer(args.GameInfo.gameType))]);
 
   m_onUpdateGame.Event := onUpdate;
   m_name := args.Name;
@@ -225,7 +227,7 @@ begin
   m_grandPrix := args.GrandPrix = 1;
 
   generateKey;
-  m_gameHoles := TGameHoles.Create;
+  m_gameHoles := TGameHoles.Create(ALogger);
 end;
 
 destructor TGame.Destroy;
@@ -559,10 +561,10 @@ var
   progress: UInt8;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerLoadingInfo', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerLoadingInfo');
   packetReader.ReadUInt8(progress);
 
-  console.Log(Format('percent loaded: %d', [progress * 10]));
+  m_logger.Debug('percent loaded: %d', [progress * 10]);
 
   res := TPacketWriter.Create;
 
@@ -586,10 +588,10 @@ var
   data: TData;
 begin
   // Should validate this between players
-  Console.Log('TGame.HandlePlayerHoleInformations', C_BLUE);
-  Console.Log('Should do that', C_ORANGE);
+  m_logger.Info('TGame.HandlePlayerHoleInformations');
+  m_logger.Warning('Should do that');
   packetReader.Read(data, sizeOf(TData));
-  Console.Log(Format('a: %f, b: %f, c:%f, d: %f', [data.a, data.b, data.x, data.z]), C_RED);
+  m_logger.Error('a: %f, b: %f, c:%f, d: %f', [data.a, data.b, data.x, data.z]);
 
   m_currentHolePos.x := data.x;
   m_currentHolePos.z := data.z;
@@ -620,7 +622,7 @@ var
   numberOfPlayerRdy: UInt8;
   player: TGameClient;
 begin
-  Console.Log('TGame.HandlePlayerLoadOk', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerLoadOk');
   AllPlayersReady := false;
   numberOfPlayerRdy := 0;
 
@@ -705,7 +707,7 @@ var
   connectionId: UInt32;
   reply: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerReady', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerReady');
 
   packetReader.ReadUInt8(status);
 
@@ -733,7 +735,7 @@ var
   player: TGameClient;
   gameHoleInfo: TGameHoleInfo;
 begin
-  Console.Log('TGame.HandlePlayerStartGame', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerStartGame');
 
   m_gameStarted := true;
 
@@ -843,13 +845,13 @@ var
   tmpUInt32: UInt32;
   currentPlayersCount: UInt16;
 begin
-  Console.Log('TGame.HandlePlayerChangeGameSettings', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerChangeGameSettings');
 
   packetReader.Skip(2);
 
   if not packetReader.ReadUInt8(nbOfActions) then
   begin
-    Console.Log('Failed to read nbOfActions', C_RED);
+    m_logger.Error('Failed to read nbOfActions');
     Exit;
   end;
 
@@ -858,7 +860,7 @@ begin
   for i := 1 to nbOfActions do begin
 
     if not packetReader.ReadUInt8(action) then begin
-      console.log('Failed to read action', C_RED);
+      m_logger.Error('Failed to read action');
       break;
     end;
 
@@ -923,7 +925,7 @@ begin
         end;
       end
       else begin
-        Console.Log(Format('Unknow action %d', [action]));
+        m_logger.Error('Unknow action %d', [action]);
       end;
     end;
   end;
@@ -949,7 +951,7 @@ var
   player: TGameClient;
   numberOfPlayerRdy: UInt8;
 begin
-  Console.Log('TGame.HandlePlayerChangeGameSettings', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerChangeGameSettings');
 
   numberOfPlayerRdy := 0;
 
@@ -979,7 +981,7 @@ var
   shotInfo: TInfo;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerActionShot', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerActionShot');
 
   packetReader.Log;
 
@@ -1012,8 +1014,8 @@ var
   angle: Double;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerActionRoate', C_BLUE);
-  Console.Log(Format('Angle : %f', [angle]));
+  m_logger.Info('TGame.HandlePlayerActionRoate');
+  m_logger.Debug('Angle : %f', [angle]);
 
   packetReader.ReadDouble(angle);
   res := TPacketWriter.Create;
@@ -1029,7 +1031,7 @@ end;
 
 procedure TGame.HandlePlayerActionHit(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGame.HandlePlayerActionHit', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerActionHit');
 
 end;
 
@@ -1038,7 +1040,7 @@ var
   clubType: TCLUB_TYPE;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerActionChangeClub', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerActionChangeClub');
   if not packetReader.Read(clubType, 1) then
   begin
     Exit;
@@ -1069,7 +1071,7 @@ procedure TGame.HandlePlayerFastForward(const client: TGameClient; const packetR
 var
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerFastForward', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerFastForward');
   {
     offset   0  1  2  3  4  5  6  7   8  9  A  B  C  D  E  F
   00000000  65 00 00 00 40 40                                   e...@@
@@ -1094,7 +1096,7 @@ var
   character: TPlayerCharacter;
   ok: Boolean;
 begin
-  Console.Log('TGame.HandlePlayerChangeEquipment2', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerChangeEquipment2');
 
   Ok := False;
 
@@ -1120,7 +1122,7 @@ begin
       end;
     end;
     2: begin
-      Console.Log('look like equiped items');
+      m_logger.Debug('look like equiped items');
       if packetReader.Read(equipedItem, SizeOf(TPlayerEquipedItems)) then
       begin
         client.Data.Data.witems.items := equipedItem;
@@ -1133,7 +1135,7 @@ begin
       end;
     end;
     4: begin // Decoration
-      Console.Log('Look like decorations');
+      m_logger.Debug('Look like decorations');
       if packetReader.Read(decorations, SizeOf(TDecorations)) then
       begin
         client.Data.Data.witems.decorations := decorations;
@@ -1147,7 +1149,7 @@ begin
     end
     else;
     begin
-      Console.Log(Format('Unknow item type %x', [itemType]), C_RED);
+      m_logger.Error('Unknow item type %x', [itemType]);
       packetReader.Log;
       Exit;
     end;
@@ -1172,11 +1174,11 @@ var
   item: TPlayerShopItem;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerShopBuyItem', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerShopBuyItem');
   packetReader.Log;
 
   packetReader.ReadUInt32(ownerId);
-  console.Log(Format('ownerId : %x', [ownerId]));
+  m_logger.Debug('ownerId : %x', [ownerId]);
 
   if not packetReader.Read(item, SizeOf(TPlayerShopItem)) then
   begin
@@ -1256,7 +1258,7 @@ procedure TGame.HandlePlayerRequestShopIncome(const client: TGameClient; const p
 var
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerRequestShopIncome', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerRequestShopIncome');
   res := TPacketWriter.Create;
 
   res.WriteStr(#$EA#$00);
@@ -1273,7 +1275,7 @@ var
   playerId: UInt32;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlerPlayerEnterShop', C_BLUE);
+  m_logger.Info('TGame.HandlerPlayerEnterShop');
   if not packetReader.ReadUInt32(playerId) then
   begin
     Exit;
@@ -1326,7 +1328,7 @@ var
   pos: TVector3;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerMoveAztec', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerMoveAztec');
   if not packetReader.Read(pos, SizeOf(TVector3)) then
   begin
     Exit;
@@ -1346,7 +1348,7 @@ var
   status: UInt8;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerPausegame', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerPausegame');
   if not packetReader.ReadUInt8(status) then
   begin
     Exit;
@@ -1367,7 +1369,7 @@ procedure TGame.HandlePlayerRequestShopVisitorsCount(const client: TGameClient; 
 var
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerRequestShopVisitorCount', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerRequestShopVisitorCount');
   res := TPacketWriter.Create;
 
   res.WriteStr(#$E9#$00);
@@ -1386,7 +1388,7 @@ var
   entry: TPlayerShopItem;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerEditShopItems', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerEditShopItems');
 
   if not packetReader.ReadUInt32(count) then
   begin
@@ -1427,7 +1429,7 @@ procedure TGame.HandlePlayerCloseShop(const client: TGameClient; const packetRea
 var
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerCloseShop', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerCloseShop');
 
   res := TPacketWriter.Create;
 
@@ -1450,7 +1452,7 @@ var
   shopName: RawByteString;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerEditShopName', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerEditShopName');
   if not packetReader.ReadPStr(shopName) then
   begin
     Exit;
@@ -1476,7 +1478,7 @@ procedure TGame.HandlePlayerEditShop(const client: TGameClient; const packetRead
 var
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerEditShop', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerEditShop');
 
   res := TPacketWriter.Create;
 
@@ -1517,13 +1519,13 @@ var
   ok: Boolean;
   equipment: TGenericPacketData;
 begin
-  Console.Log('TGame.HandlePlayerChangeEquipment', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerChangeEquipment');
   if not packetReader.Read(header, SizeOf(THeader)) then
   begin
     Exit;
   end;
-  Console.Log(Format('action : %x', [header.Action]));
-  Console.Log(Format('id : %x', [header.Id]));
+  m_logger.Debug('action : %x', [header.Action]);
+  m_logger.Debug('id : %x', [header.Id]);
 
   ok := true;
 
@@ -1535,7 +1537,7 @@ begin
 
   case header.Action of
     1: begin // Caddie
-      Console.Log('Caddie');
+      m_logger.Debug('Caddie');
       client.Data.EquipCaddieById(header.Id);
 
       // Equiped caddie data
@@ -1544,31 +1546,31 @@ begin
       );
     end;
     2: begin
-      Console.Log('Aztec');
+      m_logger.Debug('Aztec');
       client.Data.EquipAztecByIffId(header.Id);
       res.WriteUint32(header.Id);
     end;
     3: begin
-      Console.Log('Club');
+      m_logger.Debug('Club');
       client.Data.EquipClubById(header.Id);
       res.WriteStr(
         client.Data.Data.equipedClub.ToStr
       );
     end;
     4: begin
-      Console.Log('Character');
+      m_logger.Debug('Character');
       client.Data.EquipCharacterById(header.Id);
       res.WriteStr(
         client.Data.Data.equipedCharacter.ToPacketData
       );
     end;
     5: begin
-      Console.Log('mascot');
+      m_logger.Debug('mascot');
       client.Data.EquipMascotById(header.id);
       res.WriteStr(client.Data.Data.equipedMascot.ToStr);
     end
     else begin
-      Console.Log(Format('Unknow action %x', [header.Action]));
+      m_logger.Error('Unknow action %x', [header.Action]);
       ok := false;
     end;
   end;
@@ -1593,7 +1595,7 @@ var
   action: UInt8;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerPowerShot', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerPowerShot');
   if not packetReader.ReadUInt8(action) then
   begin
     Exit;
@@ -1619,7 +1621,7 @@ var
   res: TPacketWriter;
   reply: TReply;
 begin
-  Console.Log('TGame.HandlePlayerUseItem', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerUseItem');
   if not packetReader.ReadUInt32(IffId) then
   begin
     Exit;
@@ -1643,7 +1645,7 @@ var
   str: RawByteString;
   res: TPacketWriter;
 begin
-  console.Log('TGame.HandlePlayerShotData', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerShotData');
 
   client.Data.gameInfo.ShotSync := false;
 
@@ -1664,7 +1666,7 @@ begin
   client.Data.GameInfo.holedistance :=
     abs(sqrt(sqr(m_currentHolePos.x - shotData.pos.x) + sqr(m_currentHolePos.z - shotData.pos.z)));
 
-  console.Log(Format('hole distance : %f', [client.Data.GameInfo.holedistance]), C_RED);
+  m_logger.Error('hole distance : %f', [client.Data.GameInfo.holedistance]);
 end;
 
 procedure TGame.HandlePlayerShotSync(const client: TGameClient; const packetReader: TPacketReader);
@@ -1674,7 +1676,7 @@ var
   numberOfPlayerRdy: UInt8;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerShotSync', C_BLUE);
+  m_logger.Info('TGame.HandlePlayerShotSync');
   client.Data.gameInfo.ShotSync := true;
   numberOfPlayerRdy := 0;
 
@@ -1733,7 +1735,7 @@ var
   numberOfPlayerRdy: UInt8;
   player: TGameClient;
 begin
-  Console.Log('TGame.HandlerPlayerHoleComplete', C_BLUE);
+  m_logger.Info('TGame.HandlerPlayerHoleComplete');
   client.Data.GameInfo.HoleComplete := true;
 
   numberOfPlayerRdy := 0;
@@ -1755,7 +1757,7 @@ end;
 
 procedure TGame.GoToNextHole;
 begin
-  Console.Log('TGame.GoToNextHole', C_BLUE);
+  m_logger.Info('TGame.GoToNextHole');
   if self.m_gameHoles.GoToNext then
   begin
     self.Send(#$65#$00);
@@ -1811,7 +1813,7 @@ var
   playerId: UInt32;
   playerToKick: TGameClient;
 begin
-  Console.Log('TGame.HandleMasterKickPlayer', C_BLUE);
+  m_logger.Info('TGame.HandleMasterKickPlayer');
 
   if not packetReader.ReadUInt32(playerId) then
   begin
@@ -1820,24 +1822,24 @@ begin
 
   if not (client.Data.GameInfo.Role = 8) then
   begin
-    Console.Log('player is not a master', C_RED);
+    m_logger.Error('player is not a master');
     Exit;
   end;
 
-  Console.Log('should kick out the player', C_RED);
+  m_logger.Error('should kick out the player');
 
   try
     playerToKick := m_players.GetById(playerId);
   Except
     on e: NotFoundException do
     begin
-      Console.Log(e.Message, C_RED);
+      m_logger.Error(e.Message);
       Exit;
     end;
   end;
 
   // TODO: kick the player out of the game
-  Console.Log('Should kick the player now', C_RED);
+  m_logger.Error('Should kick the player now');
 
 end;
 
@@ -1852,8 +1854,8 @@ var
   test: TPlayerAction;
   res: TPacketWriter;
 begin
-  Console.Log('TGame.HandlePlayerAction', C_BLUE);
-  Console.Log(Format('ConnectionId : %x', [client.Data.Data.playerInfo1.ConnectionId]));
+  m_logger.Info('TGame.HandlePlayerAction');
+  m_logger.Debug('ConnectionId : %x', [client.Data.Data.playerInfo1.ConnectionId]);
 
   if self.Id = 0 then
   begin
@@ -1864,7 +1866,7 @@ begin
 
   if not packetReader.Read(action, 1) then
   begin
-    Console.Log('Failed to read player action', C_RED);
+    m_logger.Error('Failed to read player action');
     Exit;
   end;
 
@@ -1879,54 +1881,65 @@ begin
     // This action is used in vs mode
     // The original version seem to don't have initial value loaded when player join the game
     // Should check about that
-    TPLAYER_ACTION.PLAYER_ACTION_NULL: begin
-      console.log('rotate?');
+    TPLAYER_ACTION.PLAYER_ACTION_NULL:
+    begin
+      m_logger.Debug('rotate?');
       // Just forward the data
     end;
-    TPLAYER_ACTION.PLAYER_ACTION_APPEAR: begin
+    TPLAYER_ACTION.PLAYER_ACTION_APPEAR:
+    begin
 
-      console.log('Player appear');
-      if not packetReader.Read(gamePlayer.Action.pos.x, 12) then begin
-        console.log('Failed to read player appear position', C_RED);
+      m_logger.Debug('Player appear');
+      if not packetReader.Read(gamePlayer.Action.pos.x, 12) then
+      begin
+        m_logger.Error('Failed to read player appear position');
         Exit;
       end;
 
-      with client.Data.Action do begin
-        console.log(Format('pos : %f, %f, %f', [pos.x, pos.y, pos.z]));
+      with client.Data.Action do
+      begin
+        m_logger.Debug('pos : %f, %f, %f', [pos.x, pos.y, pos.z]);
       end;
 
     end;
-    TPLAYER_ACTION.PLAYER_ACTION_SUB: begin
+    TPLAYER_ACTION.PLAYER_ACTION_SUB:
+    begin
 
-      console.log('player sub action');
+      m_logger.Debug('player sub action');
 
-      if not packetReader.Read(subAction, 1) then begin
-        console.log('Failed to read sub action', C_RED);
+      if not packetReader.Read(subAction, 1) then
+      begin
+        m_logger.Error('Failed to read sub action');
       end;
 
       client.Data.Action.lastAction := byte(subAction);
 
       case subAction of
-        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_STAND: begin
-          console.log('stand');
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_STAND:
+        begin
+          m_logger.Debug('stand');
         end;
-        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SIT: begin
-          console.log('sit');
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SIT:
+        begin
+          m_logger.Debug('sit');
         end;
-        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SLEEP: begin
-          console.log('sleep');
-        end else begin
-          console.log('Unknow sub action : ' + IntToHex(byte(subAction), 2));
+        TPLAYER_ACTION_SUB.PLAYER_ACTION_SUB_SLEEP:
+        begin
+          m_logger.Debug('sleep');
+        end else
+        begin
+          m_logger.Error('Unknow sub action : ' + IntToHex(byte(subAction), 2));
           Exit;
         end;
       end;
     end;
     TPLAYER_ACTION.PLAYER_ACTION_MOVE: begin
 
-        console.log('player move');
+        m_logger.Debug('player move');
 
-        if not packetReader.Read(pos.x, 12) then begin
-          console.log('Failed to read player moved position', C_RED);
+        if not packetReader.Read(pos.x, 12) then
+        begin
+          m_logger.Error('Failed to read player moved position');
           Exit;
         end;
 
@@ -1934,16 +1947,17 @@ begin
         client.Data.Action.pos.y := client.Data.Action.pos.y + pos.y;
         client.Data.Action.pos.z := pos.z;
 
-        with client.Data.Action do begin
-          console.log(Format('pos : %f, %f, %f', [pos.x, pos.y, pos.z]));
+        with client.Data.Action do
+        begin
+          m_logger.Debug('pos : %f, %f, %f', [pos.x, pos.y, pos.z]);
         end;
     end;
     TPLAYER_ACTION.PLAYER_ACTION_ANIMATION: begin
-      console.log('play animation');
+      m_logger.Debug('play animation');
       packetReader.ReadPStr(animationName);
-      console.log('Animation : ' + animationName);
+      m_logger.Debug('Animation : ' + animationName);
     end else begin
-      console.log('Unknow action ' + inttohex(byte(action), 2));
+      m_logger.Debug('Unknow action ' + inttohex(byte(action), 2));
     end;
   end;
 
@@ -1953,7 +1967,7 @@ end;
 
 procedure TGame.HandlePlayerLeaveGame(const client: TGameClient; const packetReader: TPacketReader);
 begin
-  Console.Log('TGameServer.HandlePlayerLeaveGame', C_BLUE);
+  m_logger.Info('TGameServer.HandlePlayerLeaveGame');
 
   self.RemovePlayer(client);
   //playerLobby.NullGame.AddPlayer(client);
@@ -2114,7 +2128,7 @@ begin
       game.HandlePlayerLeaveGame(client, packetReader);
     end;
     else begin
-      Console.Log(Format('Unknow packet Id %x', [Word(packetID)]), C_RED);
+      m_logger.Error('Unknow packet Id %x', [Word(packetID)]);
     end;
   end;
 end;

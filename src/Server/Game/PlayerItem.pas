@@ -27,9 +27,9 @@ type
     public
       constructor Create;
       function GetClubForEquip: TPlayerClubData;
-      procedure SetQty(qty: UInt32);
-      procedure AddQty(qty: UInt32);
-      function RemQty(qty: UInt32): Boolean;
+      procedure SetQty(const AQty: UInt32); override;
+      procedure AddQty(const AQty: UInt32); override;
+      function RemQty(const AQty: UInt32): Boolean; override;
       function GetQty: UInt32; override;
   end;
 
@@ -59,24 +59,29 @@ begin
   Result.Stats := pstat^;
 end;
 
-procedure TPlayerItem.SetQty(qty: Cardinal);
+procedure TPlayerItem.SetQty(const AQty: UInt32);
 begin
-  m_data.qty := qty;
+  m_data.qty := AQty;
 end;
 
-procedure TPlayerItem.AddQty(qty: Cardinal);
+procedure TPlayerItem.AddQty(const AQty: UInt32);
 begin
-  Inc(m_data.qty, qty);
+  Inc(m_data.qty, AQty);
 end;
 
-function TPlayerItem.RemQty(qty: Cardinal): Boolean;
+function TPlayerItem.RemQty(const AQty: UInt32): Boolean;
+var
+  qty: UInt32;
 begin
-
   Result := false;
-
-  if (m_data.qty - qty) >= 0 then
+  qty := m_data.qty;
+  if qty = 0 then
   begin
-    Dec(m_data.qty, qty);
+    Exit;
+  end;
+  if (qty - AQty) >= 0 then
+  begin
+    Dec(m_data.qty, AQty);
     Result := true;
   end;
 end;

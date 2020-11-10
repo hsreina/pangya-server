@@ -11,12 +11,13 @@ unit GamesList;
 interface
 
 uses
-  Game, GameServerPlayer, SerialList;
+  Game, GameServerPlayer, SerialList, LoggerInterface;
 
 type
 
   TGamesList = class
     private
+      var m_logger: ILoggerInterface;
       var m_games: TSerialList<TGame>;
       var m_maxGames: UInt32;
 
@@ -25,7 +26,7 @@ type
 
       procedure DestroyGames;
     public
-      constructor Create;
+      constructor Create(const ALogger: ILoggerInterface);
       destructor Destroy; override;
 
       property List: TSerialList<TGame> read m_games;
@@ -43,9 +44,10 @@ implementation
 
 uses GameServerExceptions;
 
-constructor TGamesList.Create;
+constructor TGamesList.Create(const ALogger: ILoggerInterface);
 begin
-  inherited;
+  inherited Create;
+  m_logger := ALogger;
   m_maxGames := 10;
   m_games := TSerialList<TGame>.Create;
   m_onCreateGame := TGameGenericEvent.Create;
@@ -80,7 +82,7 @@ begin
   begin
     raise LobbyGamesFullException.CreateFmt('oups, too much game', []);
   end;
-  game := TGame.Create(args, onUpdate);
+  game := TGame.Create(m_logger, args, onUpdate);
   game.Id := m_games.Add(game);
   m_onCreateGame.Trigger(game);
   Result := game;

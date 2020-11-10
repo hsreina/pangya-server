@@ -24,7 +24,6 @@ uses
   {$ENDIF }
   SysUtils,
   ConsolePas in 'ConsolePas.pas',
-  Logging in 'Logging.pas',
   CryptLib in 'CryptLib.pas',
   SyncClient in 'Client\SyncClient.pas',
   Client in 'Server\Client.pas',
@@ -105,38 +104,46 @@ uses
   MMO.OptionalCriticalSection in 'Libs\delphi-mmo-lib\MMO.OptionalCriticalSection.pas',
   GameServerConfiguration in 'Configuration\GameServerConfiguration.pas',
   LoginServerConfiguration in 'Configuration\LoginServerConfiguration.pas',
-  SyncServerConfiguration in 'Configuration\SyncServerConfiguration.pas';
+  SyncServerConfiguration in 'Configuration\SyncServerConfiguration.pas',
+  AbstractLogger in 'Log\AbstractLogger.pas',
+  LoggerInterface in 'Log\LoggerInterface.pas',
+  LogLevel in 'Log\LogLevel.pas',
+  NullLogger in 'Log\NullLogger.pas',
+  ConsoleLogger in 'Log\ConsoleLogger.pas',
+  ScratchyCard in 'Server\Game\MiniGames\ScratchyCard\ScratchyCard.pas',
+  GameClient in 'Server\Game\GameClient.pas';
 
 var
   serverApp: TServerApp;
   command: string;
+  logger: ILoggerInterface;
 
 begin
 {$IFDEF MSWINDOWS}
 	ReportMemoryLeaksOnShutdown := DebugHook <> 0;
 {$ENDIF}
   try
-    serverApp := TServerApp.Create;
-
-    serverApp.Start;
-
-    while serverApp.IsRunning do
-    begin
-      Write('>');
-      ReadLn(command);
-      if not serverApp.ParseCommand(command) then
+    logger := TConsoleLogger.Create;
+    serverApp := TServerApp.Create(logger);
+    try
+      serverApp.Start;
+      while serverApp.IsRunning do
       begin
-        Console.Log('Invalid command');
+        Write('>');
+        ReadLn(command);
+        if not serverApp.ParseCommand(command) then
+        begin
+          WriteLn('Invalid command');
+        end;
       end;
+      serverApp.Stop;
+    finally
+      serverApp.Free;
     end;
-
-    serverApp.Stop;
-    serverApp.Free;
-
   except
     on E: Exception do
     begin
-      Console.Log(E.ClassName + ': ' + E.Message, C_RED);
+      logger.Emergency(E.ClassName + ': ' + E.Message);
       ReadLn;
     end;
   end;

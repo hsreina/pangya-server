@@ -12,7 +12,7 @@ interface
 
 uses PlayerData, PlayerCharacters, Client, PlayerAction, PlayerItems,
   PlayerCaddies, PlayerQuest, PlayerMascots, IffManager.IffEntryBase,
-  PacketWriter;
+  PacketWriter, LoggerInterface;
 
 type
 
@@ -38,6 +38,7 @@ type
       var m_mascots: TPlayerMascots;
       var m_items: TPlayerItems;
       var m_quest: TPlayerQuest;
+      var m_logger: ILoggerInterface;
 
       function FGetPlayerData: PPlayerData;
       function FReadIsAdmin: Boolean;
@@ -76,7 +77,7 @@ type
       procedure EquipClubById(Id: UInt32);
       procedure EquipAztecByIffId(IffId: UInt32);
 
-      constructor Create;
+      constructor Create(const ALogger: ILoggerInterface);
       destructor Destroy; override;
   end;
 
@@ -86,13 +87,14 @@ implementation
 
 uses PlayerCharacter, utils, PlayerEquipment, defs;
 
-constructor TGameServerPlayer.Create;
+constructor TGameServerPlayer.Create(const ALogger: ILoggerInterface);
 begin
-  inherited;
-  m_characters := TPlayerCharacters.Create;
-  m_items := TPlayerItems.Create;
-  m_caddies := TPlayerCaddies.Create;
-  m_mascots := TPlayerMascots.Create;
+  inherited Create;
+  m_logger := ALogger;
+  m_characters := TPlayerCharacters.Create(ALogger);
+  m_items := TPlayerItems.Create(ALogger);
+  m_caddies := TPlayerCaddies.Create(ALogger);
+  m_mascots := TPlayerMascots.Create(ALogger);
   m_lobby := $FF;
   InGameList := false;
   m_quest := TPlayerQuest.Create;

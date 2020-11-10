@@ -3,7 +3,7 @@ unit SyncClientReadThread;
 interface
 
 uses
-  Classes, IdTcpClient, SyncObjs, Types.PangyaBytes;
+  Classes, IdTcpClient, SyncObjs, Types.PangyaBytes, LoggerInterface;
 
 type
 
@@ -15,10 +15,11 @@ type
       var m_lock: TCriticalSection;
       var m_onRead: TSyncClientReadThreadReadEvent;
       var m_name: string;
+      var m_logger: ILoggerInterface;
       procedure Execute; override;
       procedure TriggerRead(const buffer: TPangyaBytes);
     public
-      constructor Create(const name: string; const client: TIdTcpClient);
+      constructor Create(const ALogger: ILoggerInterface; const name: string; const client: TIdTcpClient);
       destructor Destroy; override;
       property OnRead: TSyncClientReadThreadReadEvent read m_onRead write m_onRead;
   end;
@@ -26,11 +27,12 @@ type
 implementation
 
 uses
-  IdIOHandler, IdGlobal, PacketsDef, ConsolePas;
+  IdIOHandler, IdGlobal, PacketsDef;
 
-constructor TSyncClientReadThread.Create(const name: string; const client: TIdTCPClient);
+constructor TSyncClientReadThread.Create(const ALogger: ILoggerInterface; const name: string; const client: TIdTCPClient);
 begin
   inherited Create(False);
+  m_logger := ALogger;
   m_name := name;
   m_client := client;
   m_lock := TCriticalSection.Create;
@@ -76,7 +78,7 @@ begin
     dataSize := pheader.size;
     if not (dataSize + 4 = bufferSize) then
     begin
-      Console.Log('Something went wrong! Fix me', C_RED);
+      m_logger.Error('Something went wrong! Fix me');
       m_client.Disconnect;
       Exit;
     end;
