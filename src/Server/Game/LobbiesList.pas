@@ -23,6 +23,7 @@ type
     private
       var m_lobbies: TLobbyList;
       procedure DestroyLobbies;
+      function GetFirstLobby: TLobby;
     public
       constructor Create(const ALogger: ILoggerInterface);
       destructor Destroy; override;
@@ -33,6 +34,7 @@ type
       procedure Send(const data: RawByteString); overload;
       procedure Send(const AData: TPacket); overload;
       function Build: TPacketData;
+      function GetFirstPlayer: TgameClient;
   end;
 
 implementation
@@ -137,6 +139,29 @@ begin
   begin
     lobby.Send(AData);
   end;
+end;
+
+function TLobbiesList.GetFirstLobby: TLobby;
+var
+  lobby: TLobby;
+begin
+  for lobby in m_lobbies do
+  begin
+    Exit(lobby);
+  end;
+  Exit(nil);
+end;
+
+function TLobbiesList.GetFirstPlayer: TGameClient;
+var
+  lobby: TLobby;
+begin
+  lobby := GetFirstLobby;
+  if lobby = nil then
+  begin
+    Exit(nil);
+  end;
+  Exit(lobby.GetFirstPlayer);
 end;
 
 end.

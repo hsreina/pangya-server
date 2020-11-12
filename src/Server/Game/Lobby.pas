@@ -59,6 +59,7 @@ type
       procedure HandlePlayerJoinGame(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandleAdminJoinGame(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerEnterGrandPrixEvent(const client: TGameClient; const packetReader: TPacketReader);
+      function GetFirstPlayer: TgameClient;
 
       constructor Create(const ALogger: ILoggerInterface; lobbyName: RawByteString);
       destructor Destroy; override;
@@ -607,5 +608,15 @@ begin
   res.Free;
 end;
 
+function TLobby.GetFirstPlayer: TGameClient;
+var
+  gameCLient: TGameCLient;
+begin
+  for gameCLient in self.m_players do
+  begin
+    Exit(gameCLient);
+  end;
+  Exit(nil);
+end;
 
 end.

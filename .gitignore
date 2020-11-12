@@ -16,3 +16,4 @@ howto
 *.local
 *.stat
 *.o
+*.db-journal

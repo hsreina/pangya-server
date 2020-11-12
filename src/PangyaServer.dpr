@@ -60,7 +60,6 @@ uses
   PlayerMascots in 'Server\Game\PlayerMascots.pas',
   PlayerMascot in 'Server\Game\PlayerMascot.pas',
   GenericDataRecord in 'Server\Game\GenericDataRecord.pas',
-  BongdatriShop in 'Server\Game\MiniGames\Bongdari\BongdatriShop.pas',
   PlayerEquipment in 'Server\Game\PlayerEquipment.pas',
   PlayerQuest in 'Server\Game\PlayerQuest.pas',
   PlayersList in 'Server\Game\PlayersList.pas',
@@ -111,7 +110,12 @@ uses
   NullLogger in 'Log\NullLogger.pas',
   ConsoleLogger in 'Log\ConsoleLogger.pas',
   ScratchyCard in 'Server\Game\MiniGames\ScratchyCard\ScratchyCard.pas',
-  GameClient in 'Server\Game\GameClient.pas';
+  GameClient in 'Server\Game\GameClient.pas',
+  BongdatriShop in 'Server\Game\MiniGames\RareShop\BongdatriShop.pas',
+  MemorialShop in 'Server\Game\MiniGames\RareShop\MemorialShop.pas',
+  TransactionPacket in 'Packets\Server\TransactionPacket.pas',
+  Transaction in 'Server\Game\Transaction.pas',
+  Types.IffId in 'Types\Types.IffId.pas';
 
 var
   serverApp: TServerApp;

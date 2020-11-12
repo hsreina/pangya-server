@@ -135,6 +135,7 @@ type
     PLAYER_LEAVE_GRAND_PRIX             = $0177,
     ENTER_GRAND_PRIX_EVENT              = $0179,
     LEAVE_GRAND_PRIX_EVENT              = $017A,
+    PLAYER_PLAY_MEMORIAL_SHOP           = $017F,
     PLAYER_SET_ASSIST_MODE              = $0184,
     PLAYER_CHAR_MASTERY                 = $0188,
     PLAYER_RECYCLE_ITEM                 = $018D,

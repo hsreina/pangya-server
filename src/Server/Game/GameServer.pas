@@ -13,7 +13,8 @@ interface
 uses Client, GameServerPlayer, Server, SysUtils, LobbiesList, CryptLib,
   SyncableServer, PacketsDef, Lobby, Game,
   IffManager, ServerOptions, Packet, PacketReader, PacketWriter,
-  GameServerConfiguration, LoggerInterface, GameClient, ScratchyCard;
+  GameServerConfiguration, LoggerInterface, GameClient, ScratchyCard,
+  BongdatriShop, MemorialShop;
 
 type
 
@@ -46,6 +47,8 @@ type
       var m_iffManager: TIffManager;
       var m_serverOptions: TServerOptions;
       var m_scratchyCard: TScratchyCard;
+      var m_bongdaryShop: TBongdariShop;
+      var m_memorialShop: TMemorialShop;
 
       function LobbiesList: RawByteString;
 
@@ -68,7 +71,6 @@ type
       procedure HandlePlayerEnterGrandPrix(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerJoinMultiplayerGamesList(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerLeaveMultiplayerGamesList(const client: TGameClient; const packetReader: TPacketReader);
-      procedure HandlePlayerOpenRareShop(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestMessengerList(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerGMCommand(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerUnknow00EB(const client: TGameClient; const packetReader: TPacketReader);
@@ -103,7 +105,6 @@ type
       procedure HandlePlayerRequestInboxDetails(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestCookiesCount(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestDailyReward(const client: TGameClient; const packetReader: TPacketReader);
-      procedure HandlePlayerPlayBongdariShop(const client: TGameClient; const packetReader: TPacketReader);
       procedure HandlePlayerRequestInfo(const client: TGameClient; const packetReader: TPacketReader);
 
       procedure SendToGame(const client: TGameClient; data: RawByteString); overload;
@@ -127,17 +128,19 @@ implementation
 
 uses utils, PacketData, defs,
   PlayerCharacter, GameServerExceptions,
-  PlayerAction, Types.Vector3, PlayerData, BongdatriShop, PlayerEquipment,
+  PlayerAction, Types.Vector3, PlayerData, PlayerEquipment,
   PlayerQuest, PlayerMascot, IffManager.IffEntryBase, IffManager.SetItem,
   IffManager.HairStyle, PlayerItem, PlayerGenericData, PlayerItems,
-  PlayerMoneyPacket, System.IOUtils;
+  PlayerMoneyPacket, System.IOUtils, Transaction;
 
 constructor TGameServer.Create(const ALogger: ILoggerInterface;
   cryptLib: TCryptLib; iffManager: TIffManager);
 begin
   inherited create(ALogger, 'GameServer', cryptLib);
   m_logger.Info('TGameServer.Create');
-  m_scratchyCard := TScratchyCard.Create(ALogger);
+  m_bongdaryShop := TBongdariShop.Create(ALogger);
+  m_scratchyCard := TScratchyCard.Create(ALogger, iffManager);
+  m_memorialShop := TMemorialShop.Create(ALogger, iffManager);
   m_serverConfiguration := TGameServerConfiguration.Create;
   m_lobbies := TLobbiesList.Create(ALogger);
   m_iffManager := iffManager;
@@ -149,24 +152,16 @@ begin
   m_lobbies.Free;
   m_serverOptions.Free;
   m_serverConfiguration.Free;
+  m_memorialShop.Free;
+  m_bongdaryShop.Free;
   m_scratchyCard.Free;
   inherited;
 end;
 
 procedure TGameServer.Debug;
-var
-  packetWriter: TPacketWriter;
-  fileData: TBytes;
 begin
   m_logger.Info('TGameServer.Debug');
-  packetWriter := TPacketWriter.Create;
-  try
-    fileData := TFile.ReadAllBytes('debug.dat');
-    packetWriter.Write(fileData[0], Length(fileData));
-    self.m_lobbies.Send(packetWriter);
-  finally
-    packetWriter.Free;
-  end;
+
 end;
 
 function TGameServer.LobbiesList: RawByteString;
@@ -525,16 +520,18 @@ begin
   packetReader.ReadUInt8(rental);
   packetReader.ReadUInt16(count);
 
-  itemId := random($FFFFFFFF);
+  itemId := random($FFFFFFFF); // Should use a real Id for prod one day
 
   for I := 1 to count do
   begin
     packetReader.Read(shopItem.un1, sizeof(TShopItemDesc));
 
     itemQty := shopItem.qty;
+    m_logger.Debug('IffId: 0x%x', [shopItem.IffId.id]);
 
     if not self.m_iffManager.TryGetByIffId(shopItem.IffId.id, iffEntry) then
     begin
+      m_logger.Error('Player is trying to buy an item who not exists');
       client.Send(
         #$68#$00 +
         #$03#$00#$00#$00
@@ -545,6 +542,10 @@ begin
     if not client.Data.SubStractIffEntryPrice(iffEntry, itemQty) then
     begin
       m_logger.Error('player don''t have enough money!!');
+      client.Send(
+        #$68#$00 +
+        #$02#$00#$00#$00
+      );
       Exit;
     end;
 
@@ -630,16 +631,17 @@ begin
         m_logger.Debug('ITEM_TYPE_ITEM_SET');
         with TSetItemDataClass(iffEntry) do
         begin
+          m_logger.Debug('Player buy item set %s', [Name]);
           for J := 0 to GetCount - 1 do
           begin
             itemSetDetails := GetItem(J);
 
             if m_iffManager.TryGetByIffId(itemSetDetails.IffId, iffEntry2) then
             begin
-              with client.Data.Items.Add(shopItem.IffId.id) do
+              with client.Data.Items.GetOrAddByIffId(shopItem.IffId.id) do
               begin
                 itemId := getId;
-                SetQty(1);
+                AddQty(itemSetDetails.Count);
                 inc(successCount);
                 itemQty := GetQty;
 
@@ -986,12 +988,6 @@ begin
   playerLobby.LeaveMultiplayerGamesList(client);
 end;
 
-procedure TGameServer.HandlePlayerOpenRareShop(const client: TGameClient; const packetReader: TPacketReader);
-begin
-  m_logger.Info('TGameServer.HandlePlayerOpenRareShop');
-  client.Send(#$0B#$01#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$FF#$00#$00#$00#$00);
-end;
-
 procedure TGameServer.HandlePlayerRequestMessengerList(const client: TGameClient; const packetReader: TPacketReader);
 var
   packet: TPacketWriter;
@@ -1129,7 +1125,7 @@ begin
              //hsreina
   {
   client.Send(
-    #$16#$02#$D2#$6E#$FE#$58#$01#$00#$00#$00#$02#$84#$00#$40#$6C#$4A +
+    #$16#$02 + #$D2#$6E#$FE#$58 + #$01#$00#$00#$00 + #$02#$84#$00#$40#$6C#$4A +
     #$C7#$00#$00#$00#$00#$00#$00#$03#$00#$00#$00#$04#$00#$00#$00#$01 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
@@ -1153,7 +1149,10 @@ begin
 
   {
   client.Send(
-    #$16#$02#$D3#$6E#$FE#$58#$01#$00#$00#$00#$C9#$00#$00#$00#$04#$B9 +
+    #$16#$02 +
+    #$D3#$6E#$FE#$58 +
+    #$01#$00#$00#$00 +
+    #$C9#$00#$00#$00#$04#$B9 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$01#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
     #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
@@ -1309,17 +1308,24 @@ procedure TGameServer.HandlePlayerSetAssistMode(const client: TGameClient; const
 begin
   m_logger.Info('TGameServer.HandlePlayerSetAssistMode');
 
+  // Remove a user item
   client.Send(
     #$16#$02 +
     #$D9#$C2#$53#$56 + // seem to increase
     #$01#$00#$00#$00 +
-    #$02#$16#$00#$E0#$1B#$12 +
-    #$49#$76#$06#$00#$00#$00#$00 +
+    #$02 +
+    #$16#$00#$E0#$1B +
+    #$12#$49#$76#$06 +
+    #$00#$00#$00#$00 +
     #$01#$00#$00#$00 +
     #$02#$00#$00#$00 +
     #$01#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00
+    #$00#$00#$00#$00 +
+    #$00#$00#$00#$00 +
+    #$00#$00#$00#$00 +
+    #$00#$00#$00#$00 +
+    #$00#$00#$00#$00 +
+    #$00#$00#$00#$00#$00
   );
 
   client.Send(
@@ -1881,42 +1887,42 @@ begin
   m_logger.Debug('un1: %x, un2: %x', [un1, un2]);
 
   res := TPacketWriter.Create;
+  try
+    res.WriteStr(#$15#$02);
 
-  res.WriteStr(#$15#$02);
+    // same as requestMail List
+    res.WriteUInt32(0);
+    res.WriteUInt32(1); // page number
+    res.WriteUInt32(1); // page count
+    res.WriteUInt32(1); // entries count
 
-  // same as requestMail List
-  res.WriteUInt32(0);
-  res.WriteUInt32(1); // page number
-  res.WriteUInt32(1); // page count
-  res.WriteUInt32(1); // entries count
+    res.WriteStr(
+      #$01#$00#$00#$00 + // Email ID?
+      #$40#$53#$47#$49 +
+      #$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$01#$00#$00#$00#$00 +
+      #$00#$00#$00#$00 +
+      #$FF#$FF#$FF#$FF +
+      #$00#$00#$00#$18 + // item Idd Id
+      #$00 +
+      #$03#$00#$00#$00 + // count
+      #$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
+      #$FF#$FF#$FF#$FF#$00#$00#$00#$00#$30#$00#$00#$00#$00#$00#$00#$00 +
+      #$00#$00#$00#$00#$00#$00
+    );
 
-  res.WriteStr(
-    #$01#$00#$00#$00 + // Email ID?
-    #$40#$53#$47#$49 +
-    #$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$01#$00#$00#$00#$00 +
-    #$00#$00#$00#$00 +
-    #$FF#$FF#$FF#$FF +
-    #$00#$00#$00#$18 + // item Idd Id
-    #$00 +
-    #$03#$00#$00#$00 + // count
-    #$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00#$00 +
-    #$FF#$FF#$FF#$FF#$00#$00#$00#$00#$30#$00#$00#$00#$00#$00#$00#$00 +
-    #$00#$00#$00#$00#$00#$00
-  );
-
-  client.Send(res);
-  res.Free;
-
-
+    client.Send(res);
+  finally
+    res.Free;
+  end;
 end;
 
 procedure TGameServer.HandlerPlayerSendMail(const client: TGameClient; const packetReader: TPacketReader);
@@ -2100,88 +2106,6 @@ begin
     #$03#$00#$00#$00 + // item count
     #$1E#$00#$00#$00 // days logged
   );
-end;
-
-procedure TGameServer.HandlePlayerPlayBongdariShop(const client: TGameClient; const packetReader: TPacketReader);
-const
-  ballCount: UInt32 = 1;
-  transactionCount: UInt32 = 1;
-var
-  res: TPacketWriter;
-  res2: TPacketWriter;
-  bongdariResultItem: TBongdariResultItem;
-  bongdariTransactionResult: TBongdariTransactionResult;
-  I: UInt32;
-begin
-  m_logger.Info('TGameServer.HandlePlayerPlayBongdariShop');
-
-  res := TPacketWriter.Create;
-  res2 := TPacketWriter.Create;
-
-  with bongdariTransactionResult do
-  begin
-    Un1 := 2;
-    un2 := 0;
-    un3 := 0;
-    un4 := 0;
-    un5 := 0;
-    un6 := 0;
-    un7 := 0;
-    un8 := 0;
-    un9 := 0;
-  end;
-
-  { // Pop a warning message
-  client.Send(
-    #$FB#$00 +
-    #$FF#$FF#$FF#$FF +
-    #$FD#$FF#$FF#$FF
-  );
-  }
-
-  // res2 will be a kind of resume of the transaction
-  res2.WriteStr(#$16#$02);
-  res2.WriteStr(#$3C#$96#$75#$56);
-  res2.WriteUInt32(transactionCount);
-
-  res.WriteStr(#$1B#$02);
-  res.WriteStr(#$00#$00#$00#$00#$15#$0E#$5B#$06);
-
-  res.WriteUInt32(ballCount); // ball count
-
-  for I := 1 to ballCount do
-  begin
-    bongdariResultItem.BallType := 2;
-    bongdariResultItem.IffId := $18000008;
-    bongdariResultItem.Id := $10101010;
-    bongdariResultItem.Quantity := 1;
-    bongdariResultItem.Spec := 0;
-    res.Write(bongdariResultItem, SizeOf(TBongdariResultItem));
-
-
-    bongdariTransactionResult.IffId := $18000008;
-    bongdariTransactionResult.Id := $10101010;
-    bongdariTransactionResult.QtyBefore := 0;
-    bongdariTransactionResult.QtyAfter := 1;
-    bongdariTransactionResult.Qty := 1;
-    res2.Write(bongdariTransactionResult, SizeOf(TBongdariTransactionResult));
-
-  end;
-
-  with client.Data do
-  begin
-    res.WriteInt64(Data.playerInfo2.pangs);
-    res.WriteInt64(Cookies);
-  end;
-
-  // Send the transaction details
-  client.Send(res2);
-
-  // Send bongdari game result
-  client.Send(res);
-
-  res.Free;
-  res2.Free;
 end;
 
 procedure TGameServer.HandlePlayerRequestInfo(const client: TGameClient; const packetReader: TPacketReader);
@@ -2425,7 +2349,7 @@ begin
     end;
     TCGPID.PLAYER_OPEN_RARE_SHOP:
     begin
-      self.HandlePlayerOpenRareShop(client, packetReader);
+      self.m_bongdaryShop.HandlePlayerOpenRareShop(client);
     end;
     TCGPID.PLAYER_UN_00EB:
     begin
@@ -2445,7 +2369,7 @@ begin
     end;
     TCGPID.PLAYER_PLAY_BONGDARI_SHOP:
     begin
-      self.HandlePlayerPlayBongdariShop(client, packetReader);
+      m_bongdaryShop.HandlePlayerPlayBongdariShop(client);
     end;
     TCGPID.PLAYER_REQUEST_ACHIEVEMENTS:
     begin
@@ -2570,6 +2494,10 @@ begin
     TCGPID.PLAYER_GUILD_REQUEST_JOIN:
     begin
       self.HandlePlayerRequestJoinGuild(client, packetReader);
+    end;
+    TCGPID.PLAYER_PLAY_MEMORIAL_SHOP:
+    begin
+      self.m_memorialShop.HandlePlayerPlayMemorialShop(client, packetReader);
     end;
     TCGPID.PLAYER_GUILD_LIST_SEARCH:
     begin

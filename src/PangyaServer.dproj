@@ -405,7 +405,6 @@
         <DCCReference Include="Server\Game\PlayerMascots.pas"/>
         <DCCReference Include="Server\Game\PlayerMascot.pas"/>
         <DCCReference Include="Server\Game\GenericDataRecord.pas"/>
-        <DCCReference Include="Server\Game\MiniGames\Bongdari\BongdatriShop.pas"/>
         <DCCReference Include="Server\Game\PlayerEquipment.pas"/>
         <DCCReference Include="Server\Game\PlayerQuest.pas"/>
         <DCCReference Include="Server\Game\PlayersList.pas"/>
@@ -457,6 +456,10 @@
         <DCCReference Include="Log\ConsoleLogger.pas"/>
         <DCCReference Include="Server\Game\MiniGames\ScratchyCard\ScratchyCard.pas"/>
         <DCCReference Include="Server\Game\GameClient.pas"/>
+        <DCCReference Include="Server\Game\MiniGames\RareShop\BongdatriShop.pas"/>
+        <DCCReference Include="Server\Game\MiniGames\RareShop\MemorialShop.pas"/>
+        <DCCReference Include="Server\Game\Transaction.pas"/>
+        <DCCReference Include="Types\Types.IffId.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -522,15 +525,15 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="..\bin\bin\PangyaServer.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win32">
-                        <RemoteName>PangyaServer.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
                 <DeployFile LocalName="..\bin\bin\pang.dylib" Configuration="Debug" Class="File">
                     <Platform Name="OSX32">
                         <RemoteName>pang.dylib</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\bin\bin\PangyaServer.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>PangyaServer.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

@@ -5,7 +5,7 @@ interface
 uses PacketReader, PacketWriter, GameServerPlayer;
 
 type
-  TPlayerMoneyPacket = class (TPacketWriter)
+  TPlayerMoneyPacket = class(TPacketWriter)
     public
       constructor CreateForPlayer(player: TGameServerPlayer);
       destructor Destroy; override;

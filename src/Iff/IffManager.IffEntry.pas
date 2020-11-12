@@ -37,8 +37,9 @@ type
   TIffEntry<EntryDataType: record> = class (TIffEntrybase)
     protected
       var m_data: EntryDataType;
-      function GetBase: PIffbase;
       const m_dataSize = SizeOf(EntryDataType);
+      function GetBase: PIffbase;
+      function GetName: string; override;
     public
       constructor Create(data: PUTF8Char);
       destructor Destroy; override;
@@ -144,6 +145,11 @@ end;
 procedure TIffEntry<EntryDataType>.SetPriceType(priceType: UInt32);
 begin
   self.GetBase.priceType := priceType;
+end;
+
+function TIffEntry<EntryDataType>.GetName: string;
+begin
+  Result := GetBase.name;
 end;
 
 end.
