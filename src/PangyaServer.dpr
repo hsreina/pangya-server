@@ -113,7 +113,6 @@ uses
   GameClient in 'Server\Game\GameClient.pas',
   BongdatriShop in 'Server\Game\MiniGames\RareShop\BongdatriShop.pas',
   MemorialShop in 'Server\Game\MiniGames\RareShop\MemorialShop.pas',
-  TransactionPacket in 'Packets\Server\TransactionPacket.pas',
   Transaction in 'Server\Game\Transaction.pas',
   Types.IffId in 'Types\Types.IffId.pas';
 
