@@ -138,7 +138,7 @@ constructor TGameServer.Create(const ALogger: ILoggerInterface;
 begin
   inherited create(ALogger, 'GameServer', cryptLib);
   m_logger.Info('TGameServer.Create');
-  m_bongdaryShop := TBongdariShop.Create(ALogger);
+  m_bongdaryShop := TBongdariShop.Create(ALogger, iffManager);
   m_scratchyCard := TScratchyCard.Create(ALogger, iffManager);
   m_memorialShop := TMemorialShop.Create(ALogger, iffManager);
   m_serverConfiguration := TGameServerConfiguration.Create;
@@ -273,6 +273,12 @@ begin
   packetReader.ReadUInt32(checkc);
   checkc := self.Deserialize(checkc);
   m_logger.Debug('check c dec : %x, %d', [checkc, checkc]);
+  if not (checkc = 0) then
+  begin
+    m_logger.Warning('Invalid check');
+    client.Disconnect;
+    Exit;
+  end;
 
   packetReader.seek(4, 1);
 
@@ -638,7 +644,7 @@ begin
 
             if m_iffManager.TryGetByIffId(itemSetDetails.IffId, iffEntry2) then
             begin
-              with client.Data.Items.GetOrAddByIffId(shopItem.IffId.id) do
+              with client.Data.Items.GetOrAddByIffId(itemSetDetails.IffId) do
               begin
                 itemId := getId;
                 AddQty(itemSetDetails.Count);

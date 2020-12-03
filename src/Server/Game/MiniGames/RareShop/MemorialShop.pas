@@ -18,7 +18,7 @@ type
 
 implementation
 
-uses PlayerItem;
+uses PlayerItem, Transaction;
 
 constructor TMemorialShop.Create(const ALogger: ILoggerInterface; const AIffManager: TIffManager);
 begin
@@ -33,9 +33,10 @@ var
   iffEntry: TIffEntryBase;
   coinItem: TPlayerItem;
   item: TPlayerItem;
+  transaction: TTransaction;
 const
   itemToAddIffId: UInt32 = $1800000B;
-  qtyWin = 1;
+  qtyWin = 2;
 begin
 
   if not APacketReader.ReadUInt32(IffId) then
@@ -61,19 +62,34 @@ begin
     Exit;
   end;
 
-  APacketWriter.WriteUInt32(0);
+  transaction := TTransaction.Create(m_logger, m_iffManager, AClient);
+  try
 
-  item := AClient.Data.Items.GetOrAddByIffId(itemToAddIffId);
-  item.AddQty(qtyWin);
+    if not transaction.TryAddItemByIffId(iffId, -1, item) then
+    begin
+      m_logger.Error('Failed to remove player coin');
+      APacketWriter.WriteUInt32(4);
+      Exit;
+    end;
 
-  APacketWriter.WriteUInt32(1);
-  APacketWriter.WriteUInt32(1);
-  APacketWriter.WriteUInt32(item.IffId);
-  APacketWriter.WriteUInt32(item.Id);
-  APacketWriter.WriteUInt32(1);
+    if not transaction.TryAddItemByIffId(itemTOAddIffId, qtyWin, item) then
+    begin
+      m_logger.Error('Failed to add item to the player');
+      APacketWriter.WriteUInt32(5);
+      Exit;
+    end;
 
-  // Should send a transaction with player items
+  finally
+    transaction.Free;
+  end;
 
+  APacketWriter.WriteUInt32(0); // No Error
+
+  APacketWriter.WriteUInt32(1); // item count is one, it will be a rare item specified by the rateType if more then we don't care about rare type
+
+  APacketWriter.WriteUInt32(1); // rare type : 3 gold
+  APacketWriter.WriteUInt32(item.IffId); // IffId
+  APacketWriter.WriteUInt32(3); // count
 end;
 
 procedure TMemorialShop.HandlePlayerPlayMemorialShop(const AClient: TGameClient; const APacketReader: TPacketReader);

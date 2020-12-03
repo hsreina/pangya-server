@@ -10,7 +10,7 @@ unit BongdatriShop;
 
 interface
 
-uses LoggerInterface, GameClient;
+uses LoggerInterface, GameClient, IffManager;
 
 type
 
@@ -49,20 +49,22 @@ type
   TBongdariShop = class
   private
     var m_logger: ILoggerInterface;
+    var m_iffManager: TIffManager;
   public
-    constructor Create(const ALogger: ILoggerInterface);
+    constructor Create(const ALogger: ILoggerInterface; const AIffManager: TIffManager);
     procedure HandlePlayerPlayBongdariShop(const client: TGameClient);
     procedure HandlePlayerOpenRareShop(const client: TGameClient);
   end;
 
 implementation
 
-uses PacketWriter;
+uses PacketWriter, Transaction;
 
-constructor TBongdariShop.Create(const ALogger: ILoggerInterface);
+constructor TBongdariShop.Create(const ALogger: ILoggerInterface; const AIffManager: TIffManager);
 begin
   Inherited Create;
   m_logger := ALogger;
+  m_iffManager := AIffManager;
 end;
 
 procedure TBongdariShop.HandlePlayerPlayBongdariShop(const client: TGameClient);
@@ -75,6 +77,7 @@ var
   bongdariResultItem: TBongdariResultItem;
   bongdariTransactionResult: TBongdariTransactionResult;
   I: UInt32;
+  transaction: TTransaction;
 begin
   m_logger.Info('TGameServer.HandlePlayerPlayBongdariShop');
 
@@ -101,6 +104,14 @@ begin
     #$FD#$FF#$FF#$FF
   );
   }
+
+  transaction := TTransaction.Create(m_logger, m_iffManager, client);
+  try
+
+  finally
+    transaction.Free;
+  end;
+
 
   // res2 will be a kind of resume of the transaction
   res2.WriteStr(#$16#$02); // Packet id

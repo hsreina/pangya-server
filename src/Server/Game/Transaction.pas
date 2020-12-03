@@ -28,7 +28,7 @@ type
     constructor Create(const ALogger: ILoggerInterface;
       const AIffManager: TIffManager; const AGameClient: TGameClient);
     destructor Destroy; override;
-    function TryAddItemByIffId(const AIffId: TIffId; const AQuantity: Int32;
+    function TryAddItemByIffId(const AIffId: TIffId; AQuantity: Int32;
       var item: TPlayerItem): Boolean;
     procedure Send;
   end;
@@ -37,7 +37,7 @@ const MaxItemCount = 1000;
 
 implementation
 
-uses IffManager.IffEntryBase, PlayerItems, PacketWriter;
+uses IffManager.IffEntryBase, PlayerItems, PacketWriter, Math;
 
 constructor TTransaction.Create(const ALogger: ILoggerInterface;
   const AIffManager: TIffManager; const AGameClient: TGameClient);
@@ -61,7 +61,7 @@ begin
 end;
 
 function TTransaction.TryAddItemByIffId(const AIffId: TIffId;
-  const AQuantity: Int32; var item: TPlayerItem): Boolean;
+  AQuantity: Int32; var item: TPlayerItem): Boolean;
 var
   iffEntry: TIffEntryBase;
   transactionItem: TTransactionItem;
@@ -90,6 +90,9 @@ begin
 
   transactionItem.Quantity := AQuantity;
   playerItems := fGameClient.Data.Items;
+
+  // Cap to MaxItem Count
+  AQuantity := Min(AQuantity, MaxItemCount);
 
   if not playerItems.TryGetByIffId(AIffId, item) then
   begin

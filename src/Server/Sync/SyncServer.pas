@@ -410,6 +410,12 @@ begin
   packetReader.ReadUInt32(checkc);
   checkc := self.Deserialize(checkc);
   m_logger.Debug('check c dec : %x, %d', [checkc, checkc]);
+  if not (checkc = 0) then
+  begin
+    m_logger.Warning('Invalid check');
+    client.Disconnect;
+    Exit;
+  end;
 
   packetReader.seek(4, 1);
 

@@ -34,7 +34,7 @@ end;
 procedure TScratchyCard.HandlePlayerOpenScratchyCard(const client: TGameClient; const packetReader: TPacketReader);
 begin
   m_logger.Info('TGameServer.HandlePlayerOpenScratchyCard');
-  client.Send(#$EB#$01#$00#$00#$00#$00#$00);
+  client.Send(#$EB#$01 + #$00#$00#$00#$00 + #$00);
 end;
 
 function TScratchyCard.TryGetPlayerScratchyCard(const client: TGameClient; var data: TPlayerItem): boolean;
