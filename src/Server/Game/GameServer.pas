@@ -258,10 +258,13 @@ var
   UID: UInt32;
   checkA: RawByteString;
   checkB: RawByteString;
-  checkC: UInt32;
-  clientVersion: RawByteString;
+  clientBuildDate, expectedClientBuildDate: UInt32;
+  clientVersion, expectedClientVersion: RawByteString;
+  gameServerConfiguration: TGameServerConfiguration;
 begin
   m_logger.Info('TGameServer.HandlePlayerLogin');
+
+  gameServerConfiguration := m_serverConfiguration;
 
   packetReader.ReadPStr(login);
 
@@ -269,13 +272,21 @@ begin
   packetReader.Skip(6);
   packetReader.ReadPStr(checkA);
   packetReader.ReadPStr(clientVersion);
-
-  packetReader.ReadUInt32(checkc);
-  checkc := self.Deserialize(checkc);
-  m_logger.Debug('check c dec : %x, %d', [checkc, checkc]);
-  if not (checkc = 0) then
+  expectedClientVersion := gameServerConfiguration.ClientVersion;
+  if not (clientVersion = expectedClientVersion) then
   begin
-    m_logger.Warning('Invalid check');
+    m_logger.Warning('Invalid client version %s. %s was expected', [clientVersion, expectedClientVersion]);
+    client.Disconnect;
+    Exit;
+  end;
+
+  packetReader.ReadUInt32(clientBuildDate);
+  clientBuildDate := self.Deserialize(clientBuildDate);
+  m_logger.Debug('clientBuildDate : %x, %d', [clientBuildDate, clientBuildDate]);
+  expectedClientBuildDate := m_serverConfiguration.ClientBuildDate;
+  if not (clientBuildDate = expectedClientBuildDate) then
+  begin
+    m_logger.Warning('Invalid client build date %d. %d was expected', [clientBuildDate, expectedClientBuildDate]);
     client.Disconnect;
     Exit;
   end;

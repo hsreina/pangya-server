@@ -90,9 +90,9 @@ procedure pangyaFree(buffout: PPUTF8Char);
   cdecl; external LIBNAME name _pangya_free
   {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
-//function pangyaDeserialize(value: UInt32): UInt32;
-//  cdecl; external LIBNAME name _pangya_deserialize
-//  {$IFDEF LINUX}dependency LibCPP{$ENDIF};
+function pangyaDeserialize(value: UInt32): UInt32;
+  cdecl; external LIBNAME name _pangya_deserialize
+  {$IFDEF LINUX}dependency LibCPP{$ENDIF};
 
 function TCryptLib.ClientDecrypt(data: RawByteString; key: Byte): RawByteString;
 var
@@ -213,7 +213,7 @@ end;
 
 function TCryptLib.Deserialize(value: UInt32): UInt32;
 begin
-  Result := 0;//pangyaDeserialize(value);
+  Result := PangyaDeserialize(value);
 end;
 
 constructor TCryptLib.Create;
