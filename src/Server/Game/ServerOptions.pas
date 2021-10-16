@@ -7,6 +7,7 @@ uses PacketData;
 type
 
   TServerOptionsData = packed record
+    // Todo: there are some missing data from my game packet?
     var un0001: array [0..$11] of UTF8Char;
     var un00FF: array [0..$05] of UTF8Char;
     var moreUnknow: Array [0..$03] of UTF8Char;

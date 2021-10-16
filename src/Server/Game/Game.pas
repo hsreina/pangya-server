@@ -760,6 +760,15 @@ begin
       gameInfo.LoadComplete := false;
       gameInfo.ShotSync := false;
       res.WriteStr(Data.ToPacketData);
+      // Todo: Few bytes are missing in this packet, I kind of removed them while trying to implement some new modes
+      // I maybe removed too much and moved them in server options
+      res.WriteStr(
+        #$00#$00#$00#$00 +
+        #$00#$00#$00#$00 +
+        #$00#$00#$00#$00 +
+        #$00#$00#$00#$00 +
+        #$00
+      )
     end;
   end;
 
